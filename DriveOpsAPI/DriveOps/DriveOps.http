@@ -1,0 +1,6 @@
+@DriveOps_HostAddress = http://localhost:5032
+
+GET {{DriveOps_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
