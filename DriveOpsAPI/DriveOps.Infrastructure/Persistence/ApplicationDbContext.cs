@@ -1,0 +1,200 @@
+﻿using DriveOps.Model.Entity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DriveOps.Infrastructure.Persistence
+{
+    public partial class ApplicationDbContext : DbContext
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) {
+        }
+
+        public virtual DbSet<Customer> Customers { get; set; }
+
+        public virtual DbSet<Driver> Drivers { get; set; }
+
+        public virtual DbSet<Trip> Trips { get; set; }
+
+        public virtual DbSet<TripRoute> TripRoutes { get; set; }
+
+        public virtual DbSet<User> Users { get; set; }
+
+        public virtual DbSet<Vehicle> Vehicles { get; set; }
+
+
+        //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("Server=DESKTOP-MFE7L4J\\mulik;Database=DriveOpsDB;Trusted_Connection=True;TrustServerCertificate=True;");
+            }
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Customer>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC074429FDDF");
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Email).HasMaxLength(255);
+                entity.Property(e => e.Name).HasMaxLength(100);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+                entity.Property(e => e.Rating)
+                    .HasDefaultValue(5.00m)
+                    .HasColumnType("decimal(3, 2)");
+                entity.Property(e => e.TotalTrips).HasDefaultValue(0);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.User).WithMany(p => p.Customers)
+                    .HasForeignKey(d => d.UserId)
+                    .HasConstraintName("FK__Customers__UserI__5535A963");
+            });
+
+            modelBuilder.Entity<Driver>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Drivers__3214EC07B4817E92");
+
+                entity.HasIndex(e => e.LicenseNumber, "UQ__Drivers__E88901666371942D").IsUnique();
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CurrentLatitude).HasColumnType("decimal(10, 8)");
+                entity.Property(e => e.CurrentLongitude).HasColumnType("decimal(11, 8)");
+                entity.Property(e => e.EmergencyContactName).HasMaxLength(100);
+                entity.Property(e => e.EmergencyContactPhone).HasMaxLength(20);
+                entity.Property(e => e.IsOnline).HasDefaultValue(false);
+                entity.Property(e => e.LicenseNumber).HasMaxLength(50);
+                entity.Property(e => e.Rating)
+                    .HasDefaultValue(5.00m)
+                    .HasColumnType("decimal(3, 2)");
+                entity.Property(e => e.Status).HasDefaultValue(1);
+                entity.Property(e => e.TotalRevenue)
+                    .HasDefaultValue(0m)
+                    .HasColumnType("decimal(10, 2)");
+                entity.Property(e => e.TotalTrips).HasDefaultValue(0);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.User).WithMany(p => p.Drivers)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__Drivers__UserId__403A8C7D");
+            });
+
+            modelBuilder.Entity<Trip>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Trips__3214EC075F28D6FF");
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.ActualDistance).HasColumnType("decimal(8, 2)");
+                entity.Property(e => e.ActualFare).HasColumnType("decimal(10, 2)");
+                entity.Property(e => e.CancellationReason).HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CustomerFeedback).HasMaxLength(1000);
+                entity.Property(e => e.DriverFeedback).HasMaxLength(1000);
+                entity.Property(e => e.DropoffAddress).HasMaxLength(500);
+                entity.Property(e => e.DropoffLatitude).HasColumnType("decimal(10, 8)");
+                entity.Property(e => e.DropoffLongitude).HasColumnType("decimal(11, 8)");
+                entity.Property(e => e.EstimatedDistance).HasColumnType("decimal(8, 2)");
+                entity.Property(e => e.EstimatedFare).HasColumnType("decimal(10, 2)");
+                entity.Property(e => e.PaymentStatus).HasDefaultValue(1);
+                entity.Property(e => e.PickupAddress).HasMaxLength(500);
+                entity.Property(e => e.PickupLatitude).HasColumnType("decimal(10, 8)");
+                entity.Property(e => e.PickupLongitude).HasColumnType("decimal(11, 8)");
+                entity.Property(e => e.RequestedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.SpecialInstructions).HasMaxLength(500);
+                entity.Property(e => e.TripStatus).HasDefaultValue(1);
+                entity.Property(e => e.TripType).HasDefaultValue(1);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.Customer).WithMany(p => p.Trips)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__Trips__CustomerI__5CD6CB2B");
+
+                entity.HasOne(d => d.Driver).WithMany(p => p.Trips)
+                    .HasForeignKey(d => d.DriverId)
+                    .HasConstraintName("FK__Trips__DriverId__5DCAEF64");
+
+                entity.HasOne(d => d.Vehicle).WithMany(p => p.Trips)
+                    .HasForeignKey(d => d.VehicleId)
+                    .HasConstraintName("FK__Trips__VehicleId__5EBF139D");
+            });
+
+            modelBuilder.Entity<TripRoute>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__TripRout__3214EC077D385975");
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Latitude).HasColumnType("decimal(10, 8)");
+                entity.Property(e => e.Longitude).HasColumnType("decimal(11, 8)");
+                entity.Property(e => e.Timestamp).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.Trip).WithMany(p => p.TripRoutes)
+                    .HasForeignKey(d => d.TripId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__TripRoute__TripI__68487DD7");
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Users__3214EC075B658B41");
+
+                entity.HasIndex(e => e.Email, "UQ__Users__A9D105348F0D93ED").IsUnique();
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Address).HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Email).HasMaxLength(255);
+                entity.Property(e => e.FirstName).HasMaxLength(100);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.LastName).HasMaxLength(100);
+                entity.Property(e => e.PasswordHash).HasMaxLength(255);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+                entity.Property(e => e.ProfileImageUrl).HasMaxLength(500);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<Vehicle>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Vehicles__3214EC076C52E23F");
+
+                entity.HasIndex(e => e.LicensePlate, "UQ__Vehicles__026BC15CA221806E").IsUnique();
+
+                entity.HasIndex(e => e.Vin, "UQ__Vehicles__C5DF234CE959122A").IsUnique();
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Color).HasMaxLength(30);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.InsurancePolicyNumber).HasMaxLength(50);
+                entity.Property(e => e.LicensePlate).HasMaxLength(20);
+                entity.Property(e => e.Make).HasMaxLength(50);
+                entity.Property(e => e.Mileage).HasDefaultValue(0);
+                entity.Property(e => e.Model).HasMaxLength(50);
+                entity.Property(e => e.SeatingCapacity).HasDefaultValue(4);
+                entity.Property(e => e.Status).HasDefaultValue(1);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Vin)
+                    .HasMaxLength(50)
+                    .HasColumnName("VIN");
+
+                entity.HasOne(d => d.AssignedDriver).WithMany(p => p.Vehicles)
+                    .HasForeignKey(d => d.AssignedDriverId)
+                    .HasConstraintName("FK__Vehicles__Assign__4F7CD00D");
+            });
+
+            OnModelCreatingPartial(modelBuilder);
+        }
+
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+
+    }
+}

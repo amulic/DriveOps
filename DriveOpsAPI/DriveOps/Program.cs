@@ -1,4 +1,7 @@
-using DriveOps.Services;
+using DriveOps.Application.Interfaces;
+using DriveOps.Application.Services;
+using DriveOps.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,8 +12,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+
 // DI
-builder.Services.AddSingleton<ICarService, CarService>();
+builder.Services.AddScoped<ICarService, CarService>();
 
 var app = builder.Build();
 

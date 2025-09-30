@@ -3,11 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35122.118
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps", "DriveOps\DriveOps.csproj", "{BABB506D-3F4A-4664-BDC6-0B0CC0D602F8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DriveOps", "DriveOps\DriveOps.csproj", "{BABB506D-3F4A-4664-BDC6-0B0CC0D602F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps.Model", "DriveOps.Model\DriveOps.Model.csproj", "{2C5F5C73-8C2C-45D5-A8A5-0D78552E00D7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DriveOps.Model", "DriveOps.Model\DriveOps.Model.csproj", "{2C5F5C73-8C2C-45D5-A8A5-0D78552E00D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps.Services", "DriveOps.Services\DriveOps.Services.csproj", "{ABE5C292-8497-4188-81E3-72432789A605}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps.API", "DriveOps.API\DriveOps.API.csproj", "{2AABB523-C4DE-4E35-AC45-6C941C41D0ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps.Application", "DriveOps.Application\DriveOps.Application.csproj", "{E2A45543-B5A3-455B-8C91-3BEBBF166BD8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps.Infrastructure", "DriveOps.Infrastructure\DriveOps.Infrastructure.csproj", "{264CBA09-0C59-4A1F-BCF0-0C804555C2A5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +27,18 @@ Global
 		{2C5F5C73-8C2C-45D5-A8A5-0D78552E00D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C5F5C73-8C2C-45D5-A8A5-0D78552E00D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C5F5C73-8C2C-45D5-A8A5-0D78552E00D7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ABE5C292-8497-4188-81E3-72432789A605}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ABE5C292-8497-4188-81E3-72432789A605}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ABE5C292-8497-4188-81E3-72432789A605}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ABE5C292-8497-4188-81E3-72432789A605}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AABB523-C4DE-4E35-AC45-6C941C41D0ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AABB523-C4DE-4E35-AC45-6C941C41D0ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AABB523-C4DE-4E35-AC45-6C941C41D0ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AABB523-C4DE-4E35-AC45-6C941C41D0ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2A45543-B5A3-455B-8C91-3BEBBF166BD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2A45543-B5A3-455B-8C91-3BEBBF166BD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2A45543-B5A3-455B-8C91-3BEBBF166BD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2A45543-B5A3-455B-8C91-3BEBBF166BD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{264CBA09-0C59-4A1F-BCF0-0C804555C2A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{264CBA09-0C59-4A1F-BCF0-0C804555C2A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{264CBA09-0C59-4A1F-BCF0-0C804555C2A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{264CBA09-0C59-4A1F-BCF0-0C804555C2A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

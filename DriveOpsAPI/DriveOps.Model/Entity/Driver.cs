@@ -1,0 +1,45 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace DriveOps.Model.Entity;
+
+public partial class Driver
+{
+    public Guid Id { get; set; }
+
+    public Guid UserId { get; set; }
+
+    public string LicenseNumber { get; set; } = null!;
+
+    public DateOnly LicenseExpiryDate { get; set; }
+
+    public string? EmergencyContactName { get; set; }
+
+    public string? EmergencyContactPhone { get; set; }
+
+    public int? Status { get; set; }
+
+    public decimal? Rating { get; set; }
+
+    public int? TotalTrips { get; set; }
+
+    public decimal? TotalRevenue { get; set; }
+
+    public decimal? CurrentLatitude { get; set; }
+
+    public decimal? CurrentLongitude { get; set; }
+
+    public DateTime? LastLocationUpdate { get; set; }
+
+    public bool? IsOnline { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public virtual ICollection<Trip> Trips { get; set; } = new List<Trip>();
+
+    public virtual User User { get; set; } = null!;
+
+    public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
+}
