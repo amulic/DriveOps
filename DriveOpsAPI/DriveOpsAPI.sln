@@ -7,11 +7,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DriveOps", "DriveOps\DriveO
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DriveOps.Model", "DriveOps.Model\DriveOps.Model.csproj", "{2C5F5C73-8C2C-45D5-A8A5-0D78552E00D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps.API", "DriveOps.API\DriveOps.API.csproj", "{2AABB523-C4DE-4E35-AC45-6C941C41D0ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DriveOps.API", "DriveOps.API\DriveOps.API.csproj", "{2AABB523-C4DE-4E35-AC45-6C941C41D0ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps.Application", "DriveOps.Application\DriveOps.Application.csproj", "{E2A45543-B5A3-455B-8C91-3BEBBF166BD8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DriveOps.Application", "DriveOps.Application\DriveOps.Application.csproj", "{E2A45543-B5A3-455B-8C91-3BEBBF166BD8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriveOps.Infrastructure", "DriveOps.Infrastructure\DriveOps.Infrastructure.csproj", "{264CBA09-0C59-4A1F-BCF0-0C804555C2A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DriveOps.Infrastructure", "DriveOps.Infrastructure\DriveOps.Infrastructure.csproj", "{264CBA09-0C59-4A1F-BCF0-0C804555C2A5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D2B40C2D-D46F-4977-A4F0-5D8F2DE8B006}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

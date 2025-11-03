@@ -1,6 +1,9 @@
 ﻿
 using DriveOps.Application.Interfaces;
+using DriveOps.Infrastructure.Persistence;
 using DriveOps.Model;
+using DriveOps.Model.Entity;
+using DriveOps.Model.Enums;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -17,21 +20,22 @@ namespace DriveOps.API.Controllers
     public class VehicleController : ControllerBase
     {
         private readonly ICarService _carService;
-
+        private ApplicationDbContext _db;
        
 
         //private readonly ILogger<WeatherForecastController> _logger;
 
-        public VehicleController(/*ILogger<WeatherForecastController> logger*/ ICarService carService)
+        public VehicleController(/*ILogger<WeatherForecastController> logger*/ ICarService carService, ApplicationDbContext context)
         {
             //_logger = logger;
             _carService = carService;
+            _db = context;
         }
 
         [HttpGet(Name = "GetCars")]
-        public Car Get()
+        public Vehicle Get()
         {
-            return new Car { Make= "m", Model="3" };
+            return _db.Vehicles.ToList()[0];
         }
     }
 }

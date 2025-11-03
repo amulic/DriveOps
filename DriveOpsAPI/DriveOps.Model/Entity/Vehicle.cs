@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DriveOps.Model.Enums;
+using System;
 using System.Collections.Generic;
 
 namespace DriveOps.Model.Entity;
@@ -29,7 +30,7 @@ public partial class Vehicle
 
     public int? Mileage { get; set; }
 
-    public int FuelType { get; set; }
+    public FuelType FuelType { get; set; }
 
     public int? SeatingCapacity { get; set; }
 

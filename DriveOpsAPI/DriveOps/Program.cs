@@ -20,6 +20,16 @@ builder.Services.AddScoped<ICarService, CarService>();
 
 var app = builder.Build();
 
+// Keycloak
+builder.Services.AddAuthentication("Bearer")
+   .AddJwtBearer("Bearer", options =>
+   {
+       options.Authority = builder.Configuration["Authentication:Schemes:Bearer:Authority"];
+       options.RequireHttpsMetadata = false;
+       options.Audience = builder.Configuration["Authentication:Schemes:Bearer:Audience"];
+   });
+builder.Services.AddAuthorizationBuilder();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
