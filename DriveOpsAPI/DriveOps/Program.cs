@@ -18,17 +18,28 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
 // DI
 builder.Services.AddScoped<ICarService, CarService>();
 
-var app = builder.Build();
-
 // Keycloak
 builder.Services.AddAuthentication("Bearer")
    .AddJwtBearer("Bearer", options =>
    {
-       options.Authority = builder.Configuration["Authentication:Schemes:Bearer:Authority"];
+       options.Authority = builder.Configuration["Keycloak:Authority"];
+       options.Audience = builder.Configuration["Keycloak:Audience"];
        options.RequireHttpsMetadata = false;
-       options.Audience = builder.Configuration["Authentication:Schemes:Bearer:Audience"];
+       options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+       {
+           ValidateAudience = true,
+           ValidateIssuer = true,
+           ValidateLifetime = true,
+           ValidAudience = builder.Configuration["Keycloak:Audience"],
+           ValidIssuer = builder.Configuration["Keycloak:Authority"]
+       };
    });
-builder.Services.AddAuthorizationBuilder();
+
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -39,6 +50,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
