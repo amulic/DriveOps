@@ -6,6 +6,7 @@ namespace DriveOps.Model.Entity;
 public partial class User
 {
     public Guid Id { get; set; }
+    public string? KeycloakId { get; set; }
 
     public string Email { get; set; } = null!;
 

@@ -1,0 +1,31 @@
+﻿using DriveOps.Infrastructure.Interface;
+using DriveOps.Infrastructure.Persistence;
+using DriveOps.Model.Entity;
+using Microsoft.EntityFrameworkCore;
+
+namespace DriveOps.Infrastructure.Repositories
+{
+    partial class UserRepository : Repository<User>, IUserRepository
+    {
+        public UserRepository(ApplicationDbContext context) : base(context) { }
+        public async Task<bool> EmailExistsAsync(string email)
+        {
+            return await _dbSet.AnyAsync(u => u.Email == email);
+        }
+
+        public async Task<IEnumerable<User>> GetActiveUsersAsync()
+        {
+            return await base.FindAsyncList(u => u.IsActive == true);
+        }
+
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task<User?> GetByKeycloakIdAsync(string keycloakId)
+        {
+            return await base.WhereByExprFirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
+        }
+    }
+}

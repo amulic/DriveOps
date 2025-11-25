@@ -1,0 +1,22 @@
+﻿using System.Linq.Expressions;
+
+namespace DriveOps.Infrastructure.Interface
+{
+    public interface IRepository<T> where T : class
+    {
+        Task<T?> GetByIdAsync(Guid id);
+        Task<IEnumerable<T>> GetAllAsync();
+        Task<T> AddAsync(T entity);
+        Task UpdateAsync(T entity);
+        Task DeleteAsync(Guid id);
+        Task<bool> ExistsAsync(Guid id);
+
+        // Query 
+        Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
+        Task<IEnumerable<T>> FindAsyncList(Expression<Func<T, bool>> predicate);
+        Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
+
+        Task<T?> WhereByExprFirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
+        Task<T?> FirstAsync(Expression<Func<T, bool>> predicate);
+    }
+}
