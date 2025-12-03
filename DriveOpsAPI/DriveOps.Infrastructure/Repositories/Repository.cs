@@ -43,11 +43,6 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet.FindAsync(id) != null;
         }
 
-        public virtual async Task<IEnumerable<T>> FindAsyncList(Expression<Func<T, bool>> predicate)
-        {
-            return await _dbSet.Where(predicate).ToListAsync();
-        }
-
         public virtual async Task<T?> WhereByExprFirstOrDefaultAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbSet.Where(predicate).FirstOrDefaultAsync();

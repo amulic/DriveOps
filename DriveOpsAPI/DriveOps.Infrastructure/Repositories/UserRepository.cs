@@ -15,7 +15,7 @@ namespace DriveOps.Infrastructure.Repositories
 
         public async Task<IEnumerable<User>> GetActiveUsersAsync()
         {
-            return await base.FindAsyncList(u => u.IsActive == true);
+            return await base._dbSet.Where(u => u.IsActive == true).ToListAsync();
         }
 
         public async Task<User?> GetByEmailAsync(string email)

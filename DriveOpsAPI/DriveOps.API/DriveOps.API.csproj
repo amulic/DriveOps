@@ -19,4 +19,9 @@
     <ProjectReference Include="..\DriveOps.Model\DriveOps.Model.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ControllerDtos\Response\" />
+    <Folder Include="ControllerDtos\Request\" />
+  </ItemGroup>
+
 </Project>

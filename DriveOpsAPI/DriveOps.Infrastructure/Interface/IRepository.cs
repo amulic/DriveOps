@@ -13,10 +13,7 @@ namespace DriveOps.Infrastructure.Interface
 
         // Query 
         Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
-        Task<IEnumerable<T>> FindAsyncList(Expression<Func<T, bool>> predicate);
         Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
-
-        Task<T?> WhereByExprFirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
         Task<T?> FirstAsync(Expression<Func<T, bool>> predicate);
     }
 }
