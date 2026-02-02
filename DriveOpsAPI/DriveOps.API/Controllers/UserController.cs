@@ -80,33 +80,18 @@ namespace DriveOps.API.Controllers
             return Ok(_userService.GetUserByDbIdAsync(uuid));
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CreateUser([FromBody] UserRequestDto userRequest)
+        {
+            var newUser = await _userService.CreateUserAsync(userRequest);
+            return Ok(newUser);
+        }   
+
         [HttpPut]
         public async Task<IActionResult> UpdateProfile([FromBody] UserRequestDto userRequest)
         {
-            var keycloakId = User.Claims.First(c => c.Type == "sub")?.Value;
-            if (string.IsNullOrEmpty(keycloakId))
-                return Unauthorized("No user claims.");
-            var user = await _userService.GetUserByKeycloakIdAsync(keycloakId);
-            if (user == null)
-                return NotFound("User not found.");
-            user.Email = userRequest.Email ?? user.Email;
-            user.FirstName =  userRequest.FirstName ?? user.FirstName;
-            user.LastName =  userRequest.LastName ?? user.LastName;
-            user.PhoneNumber =  userRequest.PhoneNumber ?? user.PhoneNumber;
-            user.ProfileImageUrl =  userRequest.ProfileImageUrl ?? user.ProfileImageUrl;
-            user.Address =  userRequest.Address ?? user.Address;
-            var updatedUser = await _userService.CreateOrUpdateUserAsync(user);
-            return Ok(new
-            {
-                updatedUser.Id,
-                updatedUser.KeycloakId,
-                updatedUser.Email,
-                updatedUser.FirstName,
-                updatedUser.LastName,
-                updatedUser.UserType,
-                updatedUser.IsActive,
-                Message = "User profile updated successfully"
-            });
+            var updatedUser = await _userService.UpdateUserAsync(user);
+            return Ok(updatedUser);
         }
     }
 }

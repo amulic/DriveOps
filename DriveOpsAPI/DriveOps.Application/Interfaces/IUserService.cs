@@ -11,7 +11,8 @@ namespace DriveOps.Application.Interfaces
     {
         Task<User> GetUserByDbIdAsync(Guid userId);
         Task<User?> GetUserByKeycloakIdAsync(string keycloakId);
-        Task<User> CreateOrUpdateUserAsync(string keycloakId); // should be DTO of user
+        Task<User> CreateUserAsync(UserRequestDto keycloakId); // should be DTO of user
+        Task<User> UpdateUserAsync(UserRequestDto userRequestDto);
         Task UpdateLastLoginAsync(Guid userId);
     }
 }

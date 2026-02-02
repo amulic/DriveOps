@@ -21,7 +21,6 @@
 
   <ItemGroup>
     <Folder Include="ControllerDtos\Response\" />
-    <Folder Include="ControllerDtos\Request\" />
   </ItemGroup>
 
 </Project>

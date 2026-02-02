@@ -46,6 +46,16 @@ namespace DriveOps.Application.Services
             return user;
         }
 
+        public Task<User> CreateUserAsync(UserRequestDto keycloakId)
+        {
+            
+        }
+
+        public Task<User> GetUserByDbIdAsync(Guid userId)
+        {
+            return _userRepository.GetByIdAsync(userId);        
+        }
+
         public Task<User?> GetUserByKeycloakIdAsync(string keycloakId)
         {
             throw new NotImplementedException();
@@ -54,6 +64,13 @@ namespace DriveOps.Application.Services
         public Task UpdateLastLoginAsync(Guid userId)
         {
             throw new NotImplementedException();
+        }
+
+        public Task<User> UpdateUserAsync(UserRequestDto userRequestDto)
+        {
+            User user = _userRepository.UpdateAsync(userRequestDto);
+
+            return user;
         }
     }
 }
