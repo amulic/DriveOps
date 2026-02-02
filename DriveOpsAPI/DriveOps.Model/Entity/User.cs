@@ -19,7 +19,7 @@ public partial class User
     public string PhoneNumber { get; set; } = null!;
 
     public int UserType { get; set; }
-
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     public bool? IsActive { get; set; }
 
     public DateTime? CreatedAt { get; set; }
