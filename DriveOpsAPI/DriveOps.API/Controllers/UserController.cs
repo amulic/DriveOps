@@ -64,8 +64,15 @@ namespace DriveOps.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
         {
-            var user = await _userService.CreateUserAsync(request.ToApplicationDto());
-            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user.ToResponse());
+            try
+            {
+                var user = await _userService.CreateUserAsync(request.ToApplicationDto());
+                return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user.ToResponse());
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         [HttpPut("{id:guid}")]

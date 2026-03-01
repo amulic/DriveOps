@@ -27,6 +27,9 @@ namespace DriveOps.Application.Services
 
         public async Task<UserDto> CreateUserAsync(CreateUserDto dto)
         {
+            if (await _userRepository.EmailExistsAsync(dto.Email))
+                throw new InvalidOperationException($"A user with email '{dto.Email}' already exists.");
+
             var user = dto.ToEntity();
             var created = await _userRepository.AddAsync(user);
             return created.ToDto();
