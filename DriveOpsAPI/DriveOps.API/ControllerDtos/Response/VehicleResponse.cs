@@ -14,7 +14,7 @@ namespace DriveOps.API.ControllerDtos.Response
         public string InsurancePolicyNumber { get; set; } = null!;
         public DateOnly InsuranceExpiryDate { get; set; }
         public DateOnly RegistrationExpiryDate { get; set; }
-        public int? Status { get; set; }
+        public VehicleStatus? Status { get; set; }
         public int? Mileage { get; set; }
         public FuelType FuelType { get; set; }
         public int? SeatingCapacity { get; set; }

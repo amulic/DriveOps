@@ -1,6 +1,7 @@
 using DriveOps.Application.Interfaces;
 using DriveOps.Infrastructure.Persistence;
 using DriveOps.Model.Entity;
+using DriveOps.Model.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace DriveOps.Infrastructure.Repositories
@@ -12,7 +13,7 @@ namespace DriveOps.Infrastructure.Repositories
         public async Task<IEnumerable<Vehicle>> GetAvailableVehiclesAsync()
         {
             return await _dbSet
-                .Where(v => v.Status == 1 && v.AssignedDriverId == null)
+                .Where(v => v.Status == VehicleStatus.Available && v.AssignedDriverId == null)
                 .ToListAsync();
         }
 

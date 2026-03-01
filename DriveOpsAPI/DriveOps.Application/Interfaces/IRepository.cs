@@ -12,6 +12,7 @@ namespace DriveOps.Application.Interfaces
         Task<bool> ExistsAsync(Guid id);
         Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
         Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
-        Task<T?> FirstAsync(Expression<Func<T, bool>> predicate);
+        /// <summary>Returns the first entity matching <paramref name="predicate"/>. Throws <see cref="InvalidOperationException"/> if no match is found.</summary>
+        Task<T> FirstAsync(Expression<Func<T, bool>> predicate);
     }
 }

@@ -1,3 +1,5 @@
+using DriveOps.Model.Enums;
+
 namespace DriveOps.Application.DTOs
 {
     public record TripDto
@@ -9,8 +11,8 @@ namespace DriveOps.Application.DTOs
         public string? DriverName { get; init; }
         public Guid? VehicleId { get; init; }
         public string? VehiclePlate { get; init; }
-        public int TripStatus { get; init; }
-        public int TripType { get; init; }
+        public TripStatus TripStatus { get; init; }
+        public TripType TripType { get; init; }
         public decimal PickupLatitude { get; init; }
         public decimal PickupLongitude { get; init; }
         public string PickupAddress { get; init; } = null!;
@@ -27,8 +29,8 @@ namespace DriveOps.Application.DTOs
         public int? ActualDuration { get; init; }
         public decimal? EstimatedFare { get; init; }
         public decimal? ActualFare { get; init; }
-        public int? PaymentMethod { get; init; }
-        public int? PaymentStatus { get; init; }
+        public PaymentMethod? PaymentMethod { get; init; }
+        public PaymentStatus? PaymentStatus { get; init; }
         public int? CustomerRating { get; init; }
         public int? DriverRating { get; init; }
         public string? CancellationReason { get; init; }
@@ -38,7 +40,7 @@ namespace DriveOps.Application.DTOs
     public class CreateTripDto
     {
         public Guid CustomerId { get; set; }
-        public int TripType { get; set; } = 1;
+        public TripType TripType { get; set; } = TripType.Standard;
         public decimal PickupLatitude { get; set; }
         public decimal PickupLongitude { get; set; }
         public string PickupAddress { get; set; } = null!;
@@ -46,7 +48,7 @@ namespace DriveOps.Application.DTOs
         public decimal DropoffLongitude { get; set; }
         public string DropoffAddress { get; set; } = null!;
         public DateTime? ScheduledAt { get; set; }
-        public int? PaymentMethod { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
         public string? SpecialInstructions { get; set; }
     }
 

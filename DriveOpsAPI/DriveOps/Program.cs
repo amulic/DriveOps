@@ -10,7 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    options.AddSecurityDefinition("bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
@@ -51,7 +51,7 @@ builder.Services.AddAuthentication("Bearer")
    {
        options.Authority = builder.Configuration["Keycloak:Authority"];
        options.Audience = builder.Configuration["Keycloak:Audience"];
-       options.RequireHttpsMetadata = false;
+       options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
        {
@@ -68,12 +68,20 @@ builder.Services.AddAuthentication("Bearer")
        {
            OnAuthenticationFailed = context =>
            {
-               Console.WriteLine("Authentication failed: " + context.Exception.Message);
+               var logger = context.HttpContext.RequestServices
+                   .GetRequiredService<ILoggerFactory>()
+                   .CreateLogger("Authentication");
+
+               logger.LogWarning("JWT authentication failed: {ExceptionType}", context.Exception.GetType().Name);
                return Task.CompletedTask;
            },
            OnTokenValidated = context =>
            {
-               Console.WriteLine("Token validated for: " + context.Principal.Identity.Name);
+               var logger = context.HttpContext.RequestServices
+                   .GetRequiredService<ILoggerFactory>()
+                   .CreateLogger("Authentication");
+
+               logger.LogDebug("JWT token validated successfully.");
                return Task.CompletedTask;
            }
        };
@@ -92,6 +100,10 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// Logging
+builder.Logging.ClearProviders();   
+builder.Logging.AddConsole();
 
 var app = builder.Build();
 

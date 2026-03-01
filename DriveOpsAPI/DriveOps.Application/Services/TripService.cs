@@ -2,6 +2,7 @@ using DriveOps.Application.DTOs;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
 using DriveOps.Model.Entity;
+using DriveOps.Model.Enums;
 
 namespace DriveOps.Application.Services
 {
@@ -12,19 +13,22 @@ namespace DriveOps.Application.Services
         private readonly IDriverRepository _driverRepository;
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IRoutingService _routingService;
+        private readonly IUnitOfWork _unitOfWork;
 
         public TripService(
             ITripRepository tripRepository,
             ITripRouteRepository tripRouteRepository,
             IDriverRepository driverRepository,
             IVehicleRepository vehicleRepository,
-            IRoutingService routingService)
+            IRoutingService routingService,
+            IUnitOfWork unitOfWork)
         {
             _tripRepository = tripRepository;
             _tripRouteRepository = tripRouteRepository;
             _driverRepository = driverRepository;
             _vehicleRepository = vehicleRepository;
             _routingService = routingService;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<TripDto?> GetTripByIdAsync(Guid tripId)
@@ -73,7 +77,7 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(tripId)
                 ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
 
-            if (trip.TripStatus != 1)
+            if (trip.TripStatus != TripStatus.Requested)
                 throw new InvalidOperationException("Trip is not in a requestable state.");
 
             var driver = await _driverRepository.GetByIdAsync(driverId)
@@ -82,23 +86,22 @@ namespace DriveOps.Application.Services
             var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId)
                 ?? throw new KeyNotFoundException($"Vehicle {vehicleId} not found.");
 
-            trip.DriverId = driverId;
-            trip.VehicleId = vehicleId;
-            trip.TripStatus = 2; // Assigned
-            trip.AssignedAt = DateTime.UtcNow;
-            trip.UpdatedAt = DateTime.UtcNow;
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                trip.DriverId = driverId;
+                trip.VehicleId = vehicleId;
+                trip.TripStatus = TripStatus.Assigned;
+                trip.AssignedAt = DateTime.UtcNow;
+                trip.UpdatedAt = DateTime.UtcNow;
 
-            // Mark driver as on-trip
-            driver.Status = 4; // OnTrip
-            driver.UpdatedAt = DateTime.UtcNow;
-            await _driverRepository.UpdateAsync(driver);
+                driver.Status = DriverStatus.OnTrip;
+                driver.UpdatedAt = DateTime.UtcNow;
 
-            // Mark vehicle as in-use
-            vehicle.Status = 2; // InUse
-            vehicle.UpdatedAt = DateTime.UtcNow;
-            await _vehicleRepository.UpdateAsync(vehicle);
+                vehicle.Status = VehicleStatus.InUse;
+                vehicle.UpdatedAt = DateTime.UtcNow;
 
-            await _tripRepository.UpdateAsync(trip);
+                await _unitOfWork.SaveChangesAsync();
+            });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
             return result!.ToDto();
@@ -109,10 +112,10 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(tripId)
                 ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
 
-            if (trip.TripStatus != 2 && trip.TripStatus != 3) // Assigned or DriverEnRoute
+            if (trip.TripStatus != TripStatus.Assigned && trip.TripStatus != TripStatus.DriverEnRoute)
                 throw new InvalidOperationException("Trip cannot be started in its current state.");
 
-            trip.TripStatus = 4; // InProgress
+            trip.TripStatus = TripStatus.InProgress;
             trip.PickupTime = DateTime.UtcNow;
             trip.UpdatedAt = DateTime.UtcNow;
 
@@ -127,47 +130,46 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(tripId)
                 ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
 
-            if (trip.TripStatus != 4) // Must be InProgress
+            if (trip.TripStatus != TripStatus.InProgress)
                 throw new InvalidOperationException("Trip is not in progress.");
 
-            trip.TripStatus = 5; // Completed
-            trip.DropoffTime = DateTime.UtcNow;
-            trip.ActualDistance = actualDistance;
-            trip.ActualDuration = trip.PickupTime.HasValue
-                ? (int)(DateTime.UtcNow - trip.PickupTime.Value).TotalMinutes
-                : null;
-            trip.ActualFare = trip.EstimatedFare; // Can be recalculated based on actual distance
-            trip.PaymentStatus = 2; // Completed
-            trip.UpdatedAt = DateTime.UtcNow;
-
-            await _tripRepository.UpdateAsync(trip);
-
-            // Free up driver
-            if (trip.DriverId.HasValue)
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                var driver = await _driverRepository.GetByIdAsync(trip.DriverId.Value);
-                if (driver != null)
-                {
-                    driver.Status = 1; // Active
-                    driver.TotalTrips = (driver.TotalTrips ?? 0) + 1;
-                    driver.TotalRevenue = (driver.TotalRevenue ?? 0) + (trip.ActualFare ?? 0);
-                    driver.UpdatedAt = DateTime.UtcNow;
-                    await _driverRepository.UpdateAsync(driver);
-                }
-            }
+                trip.TripStatus = TripStatus.Completed;
+                trip.DropoffTime = DateTime.UtcNow;
+                trip.ActualDistance = actualDistance;
+                trip.ActualDuration = trip.PickupTime.HasValue
+                    ? (int)(DateTime.UtcNow - trip.PickupTime.Value).TotalMinutes
+                    : null;
+                trip.ActualFare = trip.EstimatedFare;
+                trip.PaymentStatus = PaymentStatus.Completed;
+                trip.UpdatedAt = DateTime.UtcNow;
 
-            // Free up vehicle
-            if (trip.VehicleId.HasValue)
-            {
-                var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
-                if (vehicle != null)
+                if (trip.DriverId.HasValue)
                 {
-                    vehicle.Status = 1; // Available
-                    vehicle.Mileage = (vehicle.Mileage ?? 0) + (int)actualDistance;
-                    vehicle.UpdatedAt = DateTime.UtcNow;
-                    await _vehicleRepository.UpdateAsync(vehicle);
+                    var driver = await _driverRepository.GetByIdAsync(trip.DriverId.Value);
+                    if (driver != null)
+                    {
+                        driver.Status = DriverStatus.Active;
+                        driver.TotalTrips = (driver.TotalTrips ?? 0) + 1;
+                        driver.TotalRevenue = (driver.TotalRevenue ?? 0) + (trip.ActualFare ?? 0);
+                        driver.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
-            }
+
+                if (trip.VehicleId.HasValue)
+                {
+                    var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
+                    if (vehicle != null)
+                    {
+                        vehicle.Status = VehicleStatus.Available;
+                        vehicle.Mileage = (vehicle.Mileage ?? 0) + (int)actualDistance;
+                        vehicle.UpdatedAt = DateTime.UtcNow;
+                    }
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+            });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
             return result!.ToDto();
@@ -178,38 +180,37 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(tripId)
                 ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
 
-            if (trip.TripStatus == 5 || trip.TripStatus == 6) // Completed or already Cancelled
+            if (trip.TripStatus == TripStatus.Completed || trip.TripStatus == TripStatus.Cancelled)
                 throw new InvalidOperationException("Trip cannot be cancelled in its current state.");
 
-            trip.TripStatus = 6; // Cancelled
-            trip.CancellationReason = reason;
-            trip.UpdatedAt = DateTime.UtcNow;
-
-            // Free up driver if assigned
-            if (trip.DriverId.HasValue)
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                var driver = await _driverRepository.GetByIdAsync(trip.DriverId.Value);
-                if (driver != null)
-                {
-                    driver.Status = 1; // Active
-                    driver.UpdatedAt = DateTime.UtcNow;
-                    await _driverRepository.UpdateAsync(driver);
-                }
-            }
+                trip.TripStatus = TripStatus.Cancelled;
+                trip.CancellationReason = reason;
+                trip.UpdatedAt = DateTime.UtcNow;
 
-            // Free up vehicle if assigned
-            if (trip.VehicleId.HasValue)
-            {
-                var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
-                if (vehicle != null)
+                if (trip.DriverId.HasValue)
                 {
-                    vehicle.Status = 1; // Available
-                    vehicle.UpdatedAt = DateTime.UtcNow;
-                    await _vehicleRepository.UpdateAsync(vehicle);
+                    var driver = await _driverRepository.GetByIdAsync(trip.DriverId.Value);
+                    if (driver != null)
+                    {
+                        driver.Status = DriverStatus.Active;
+                        driver.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
-            }
 
-            await _tripRepository.UpdateAsync(trip);
+                if (trip.VehicleId.HasValue)
+                {
+                    var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
+                    if (vehicle != null)
+                    {
+                        vehicle.Status = VehicleStatus.Available;
+                        vehicle.UpdatedAt = DateTime.UtcNow;
+                    }
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+            });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
             return result!.ToDto();
@@ -220,7 +221,7 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(dto.TripId)
                 ?? throw new KeyNotFoundException($"Trip {dto.TripId} not found.");
 
-            if (trip.TripStatus != 5) // Must be Completed
+            if (trip.TripStatus != TripStatus.Completed)
                 throw new InvalidOperationException("Only completed trips can be rated.");
 
             if (dto.IsCustomerRating)
@@ -244,7 +245,7 @@ namespace DriveOps.Application.Services
         public async Task<TripEstimateDto> GetTripEstimateAsync(
             decimal pickupLat, decimal pickupLon,
             decimal dropoffLat, decimal dropoffLon,
-            int tripType)
+            TripType tripType)
         {
             return await _routingService.GetTripEstimateAsync(
                 pickupLat, pickupLon,

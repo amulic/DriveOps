@@ -1,3 +1,5 @@
+using DriveOps.Model.Enums;
+
 namespace DriveOps.API.ControllerDtos.Response
 {
     public class DriverResponse
@@ -11,7 +13,7 @@ namespace DriveOps.API.ControllerDtos.Response
         public DateOnly LicenseExpiryDate { get; set; }
         public string? EmergencyContactName { get; set; }
         public string? EmergencyContactPhone { get; set; }
-        public int? Status { get; set; }
+        public DriverStatus? Status { get; set; }
         public decimal? Rating { get; set; }
         public int? TotalTrips { get; set; }
         public decimal? TotalRevenue { get; set; }

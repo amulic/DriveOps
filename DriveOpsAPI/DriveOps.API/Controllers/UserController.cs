@@ -2,11 +2,13 @@
 using DriveOps.API.ControllerDtos.Response;
 using DriveOps.API.Mappings;
 using DriveOps.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DriveOps.API.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {

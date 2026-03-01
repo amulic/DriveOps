@@ -1,9 +1,11 @@
+using DriveOps.Model.Enums;
+
 namespace DriveOps.API.ControllerDtos.Request
 {
     public class CreateTripRequest
     {
         public Guid CustomerId { get; set; }
-        public int TripType { get; set; } = 1;
+        public TripType TripType { get; set; } = TripType.Standard;
         public decimal PickupLatitude { get; set; }
         public decimal PickupLongitude { get; set; }
         public string PickupAddress { get; set; } = null!;
@@ -11,7 +13,7 @@ namespace DriveOps.API.ControllerDtos.Request
         public decimal DropoffLongitude { get; set; }
         public string DropoffAddress { get; set; } = null!;
         public DateTime? ScheduledAt { get; set; }
-        public int? PaymentMethod { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
         public string? SpecialInstructions { get; set; }
     }
 
@@ -44,7 +46,7 @@ namespace DriveOps.API.ControllerDtos.Request
         public decimal PickupLongitude { get; set; }
         public decimal DropoffLatitude { get; set; }
         public decimal DropoffLongitude { get; set; }
-        public int TripType { get; set; } = 1;
+        public TripType TripType { get; set; } = TripType.Standard;
     }
 
     public class AddRoutePointsRequest

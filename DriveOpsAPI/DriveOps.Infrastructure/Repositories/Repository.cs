@@ -48,7 +48,7 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet.Where(predicate).FirstOrDefaultAsync();
         }
 
-        public virtual async Task<T?> FirstAsync(Expression<Func<T, bool>> predicate)
+        public virtual async Task<T> FirstAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbSet.FirstAsync(predicate);
         }

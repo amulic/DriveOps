@@ -1,6 +1,7 @@
 using DriveOps.Application.Interfaces;
 using DriveOps.Infrastructure.Persistence;
 using DriveOps.Model.Entity;
+using DriveOps.Model.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace DriveOps.Infrastructure.Repositories
@@ -15,8 +16,8 @@ namespace DriveOps.Infrastructure.Repositories
                 .Include(t => t.Customer)
                 .Include(t => t.Vehicle)
                 .Where(t => t.DriverId == driverId
-                    && t.TripStatus != 5  // Completed
-                    && t.TripStatus != 6) // Cancelled
+                    && t.TripStatus != TripStatus.Completed
+                    && t.TripStatus != TripStatus.Cancelled)
                 .OrderByDescending(t => t.RequestedAt)
                 .ToListAsync();
         }

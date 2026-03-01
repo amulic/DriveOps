@@ -14,7 +14,7 @@ namespace DriveOps.Application.DTOs
         public string InsurancePolicyNumber { get; init; } = null!;
         public DateOnly InsuranceExpiryDate { get; init; }
         public DateOnly RegistrationExpiryDate { get; init; }
-        public int? Status { get; init; }
+        public VehicleStatus? Status { get; init; }
         public int? Mileage { get; init; }
         public FuelType FuelType { get; init; }
         public int? SeatingCapacity { get; init; }
@@ -45,7 +45,7 @@ namespace DriveOps.Application.DTOs
         public string? InsurancePolicyNumber { get; set; }
         public DateOnly? InsuranceExpiryDate { get; set; }
         public DateOnly? RegistrationExpiryDate { get; set; }
-        public int? Status { get; set; }
+        public VehicleStatus? Status { get; set; }
         public int? Mileage { get; set; }
     }
 }

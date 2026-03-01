@@ -1,5 +1,6 @@
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.DTOs;
+using DriveOps.Model.Enums;
 using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -60,37 +61,36 @@ namespace DriveOps.Infrastructure.Services
         public async Task<TripEstimateDto> GetTripEstimateAsync(
             decimal originLat, decimal originLon,
             decimal destLat, decimal destLon,
-            int tripType)
+            TripType tripType)
         {
             var route = await GetRouteAsync(originLat, originLon, destLat, destLon);
 
-            var distanceKm = route?.DistanceKm ?? 0;
-            var durationMinutes = route?.DurationMinutes ?? 0;
+            if (route == null)
+                throw new InvalidOperationException("Route could not be calculated for the given coordinates.");
 
-            var fare = CalculateFare(distanceKm, durationMinutes, tripType);
+            var fare = CalculateFare(route.DistanceKm, route.DurationMinutes, tripType);
 
             return new TripEstimateDto
             {
-                DistanceKm = distanceKm,
-                DurationMinutes = durationMinutes,
+                DistanceKm = route.DistanceKm,
+                DurationMinutes = route.DurationMinutes,
                 EstimatedFare = fare,
-                RoutePoints = route?.RoutePoints ?? []
+                RoutePoints = route.RoutePoints
             };
         }
 
-        private static decimal CalculateFare(double distanceKm, int durationMinutes, int tripType)
+        private static decimal CalculateFare(double distanceKm, int durationMinutes, TripType tripType)
         {
             // Base fare + per-km rate + per-minute rate
             decimal baseFare = 2.50m;
             decimal perKmRate = 1.50m;
             decimal perMinuteRate = 0.25m;
 
-            // Trip type multiplier
             decimal multiplier = tripType switch
             {
-                2 => 1.5m,  // Premium
-                3 => 0.7m,  // Shared
-                _ => 1.0m   // Standard / Scheduled
+                TripType.Premium  => 1.5m,
+                TripType.Shared   => 0.7m,
+                _                 => 1.0m
             };
 
             var fare = (baseFare + (decimal)distanceKm * perKmRate + durationMinutes * perMinuteRate) * multiplier;

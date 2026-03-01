@@ -1,6 +1,7 @@
 using DriveOps.Application.DTOs;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
+using DriveOps.Model.Enums;
 
 namespace DriveOps.Application.Services
 {
@@ -99,7 +100,7 @@ namespace DriveOps.Application.Services
             var driver = await _driverRepository.GetByIdAsync(driverId)
                 ?? throw new KeyNotFoundException($"Driver {driverId} not found.");
 
-            driver.Status = 3; // Suspended
+            driver.Status = DriverStatus.Suspended;
             driver.IsOnline = false;
             driver.UpdatedAt = DateTime.UtcNow;
 
@@ -111,7 +112,7 @@ namespace DriveOps.Application.Services
             var driver = await _driverRepository.GetByIdAsync(driverId)
                 ?? throw new KeyNotFoundException($"Driver {driverId} not found.");
 
-            driver.Status = 1; // Active
+            driver.Status = DriverStatus.Active;
             driver.UpdatedAt = DateTime.UtcNow;
 
             await _driverRepository.UpdateAsync(driver);

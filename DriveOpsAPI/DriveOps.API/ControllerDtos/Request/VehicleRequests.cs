@@ -23,7 +23,7 @@ namespace DriveOps.API.ControllerDtos.Request
         public string? InsurancePolicyNumber { get; set; }
         public DateOnly? InsuranceExpiryDate { get; set; }
         public DateOnly? RegistrationExpiryDate { get; set; }
-        public int? Status { get; set; }
+        public VehicleStatus? Status { get; set; }
         public int? Mileage { get; set; }
     }
 

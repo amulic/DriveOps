@@ -15,6 +15,7 @@ namespace DriveOps.Infrastructure.DependencyInjection
                 options.UseSqlServer(connectionString));
 
             // Repositories
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IDriverRepository, DriverRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();

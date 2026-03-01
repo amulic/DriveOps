@@ -1,5 +1,6 @@
 using DriveOps.Application.DTOs;
 using DriveOps.Model.Entity;
+using DriveOps.Model.Enums;
 
 namespace DriveOps.Application.Mappings
 {
@@ -147,7 +148,7 @@ namespace DriveOps.Application.Mappings
             RegistrationExpiryDate = dto.RegistrationExpiryDate,
             FuelType = dto.FuelType,
             SeatingCapacity = dto.SeatingCapacity ?? 4,
-            Status = 1, // Available
+            Status = VehicleStatus.Available,
             Mileage = 0,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -196,7 +197,7 @@ namespace DriveOps.Application.Mappings
             Id = Guid.NewGuid(),
             CustomerId = dto.CustomerId,
             TripType = dto.TripType,
-            TripStatus = 1, // Requested
+            TripStatus = TripStatus.Requested,
             PickupLatitude = dto.PickupLatitude,
             PickupLongitude = dto.PickupLongitude,
             PickupAddress = dto.PickupAddress,
@@ -206,7 +207,7 @@ namespace DriveOps.Application.Mappings
             ScheduledAt = dto.ScheduledAt,
             PaymentMethod = dto.PaymentMethod,
             SpecialInstructions = dto.SpecialInstructions,
-            PaymentStatus = 1, // Pending
+            PaymentStatus = PaymentStatus.Pending,
             RequestedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

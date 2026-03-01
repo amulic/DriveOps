@@ -1,6 +1,7 @@
 using DriveOps.Application.Interfaces;
 using DriveOps.Infrastructure.Persistence;
 using DriveOps.Model.Entity;
+using DriveOps.Model.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace DriveOps.Infrastructure.Repositories
@@ -13,7 +14,7 @@ namespace DriveOps.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(d => d.User)
-                .Where(d => d.IsOnline == true && d.Status == 1)
+                .Where(d => d.IsOnline == true && d.Status == DriverStatus.Active)
                 .ToListAsync();
         }
 
@@ -34,14 +35,16 @@ namespace DriveOps.Infrastructure.Repositories
 
         public async Task<IEnumerable<Driver>> GetNearbyDriversAsync(decimal latitude, decimal longitude, decimal radiusKm)
         {
-            const decimal degreesPerKm = 0.009m;
-            var latRange = radiusKm * degreesPerKm;
-            var lonRange = radiusKm * degreesPerKm;
+            const decimal latDegreesPerKm = 0.009m;
+            var latRange = radiusKm * latDegreesPerKm;
+
+            var cosLat = (decimal)Math.Cos((double)latitude * Math.PI / 180.0);
+            var lonRange = cosLat > 0m ? latRange / cosLat : latRange;
 
             return await _dbSet
                 .Include(d => d.User)
                 .Where(d => d.IsOnline == true
-                    && d.Status == 1
+                    && d.Status == DriverStatus.Active
                     && d.CurrentLatitude != null
                     && d.CurrentLongitude != null
                     && d.CurrentLatitude >= latitude - latRange

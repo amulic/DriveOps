@@ -1,4 +1,5 @@
 using DriveOps.Application.DTOs;
+using DriveOps.Model.Enums;
 
 namespace DriveOps.Application.Interfaces
 {
@@ -14,7 +15,7 @@ namespace DriveOps.Application.Interfaces
         Task<TripDto> CompleteTripAsync(Guid tripId, decimal actualDistance);
         Task<TripDto> CancelTripAsync(Guid tripId, string? reason);
         Task<TripDto> RateTripAsync(RateTripDto dto);
-        Task<TripEstimateDto> GetTripEstimateAsync(decimal pickupLat, decimal pickupLon, decimal dropoffLat, decimal dropoffLon, int tripType);
+        Task<TripEstimateDto> GetTripEstimateAsync(decimal pickupLat, decimal pickupLon, decimal dropoffLat, decimal dropoffLon, TripType tripType);
         Task<IEnumerable<RoutePointDto>> GetTripRouteAsync(Guid tripId);
         Task AddRoutePointsAsync(Guid tripId, IEnumerable<RoutePointDto> points);
     }

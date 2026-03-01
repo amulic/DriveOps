@@ -1,3 +1,5 @@
+using DriveOps.Model.Enums;
+
 namespace DriveOps.Application.DTOs
 {
     public record DriverDto
@@ -11,7 +13,7 @@ namespace DriveOps.Application.DTOs
         public DateOnly LicenseExpiryDate { get; init; }
         public string? EmergencyContactName { get; init; }
         public string? EmergencyContactPhone { get; init; }
-        public int? Status { get; init; }
+        public DriverStatus? Status { get; init; }
         public decimal? Rating { get; init; }
         public int? TotalTrips { get; init; }
         public decimal? TotalRevenue { get; init; }

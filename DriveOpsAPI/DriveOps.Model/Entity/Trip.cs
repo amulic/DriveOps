@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DriveOps.Model.Enums;
+using System;
 using System.Collections.Generic;
 
 namespace DriveOps.Model.Entity;
@@ -13,9 +14,9 @@ public partial class Trip
 
     public Guid? VehicleId { get; set; }
 
-    public int TripStatus { get; set; }
+    public TripStatus TripStatus { get; set; }
 
-    public int TripType { get; set; }
+    public TripType TripType { get; set; }
 
     public decimal PickupLatitude { get; set; }
 
@@ -51,9 +52,9 @@ public partial class Trip
 
     public decimal? ActualFare { get; set; }
 
-    public int? PaymentMethod { get; set; }
+    public PaymentMethod? PaymentMethod { get; set; }
 
-    public int? PaymentStatus { get; set; }
+    public PaymentStatus? PaymentStatus { get; set; }
 
     public int? CustomerRating { get; set; }
 
