@@ -1,6 +1,6 @@
-﻿using DriveOps.Model.Entity;
+using DriveOps.Model.Entity;
 
-namespace DriveOps.Infrastructure.Interface
+namespace DriveOps.Application.Interfaces
 {
     public interface IUserRepository : IRepository<User>
     {

@@ -1,7 +1,5 @@
-using DriveOps.Application.Interfaces;
-using DriveOps.Application.Services;
-using DriveOps.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using DriveOps.Application.DependencyInjection;
+using DriveOps.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,11 +36,14 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-// DI
-builder.Services.AddScoped<ICarService, CarService>();
+// DI - Infrastructure (DbContext, Repositories, External Services)
+builder.Services.AddInfrastructure(connectionString);
+
+// DI - Application (Services)
+builder.Services.AddApplication();
 
 // Keycloak
 builder.Services.AddAuthentication("Bearer")

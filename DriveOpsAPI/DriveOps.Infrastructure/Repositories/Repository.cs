@@ -1,4 +1,4 @@
-﻿using DriveOps.Infrastructure.Interface;
+﻿using DriveOps.Application.Interfaces;
 using DriveOps.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;

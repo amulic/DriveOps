@@ -15,12 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DriveOps.Application\DriveOps.Application.csproj" />
-    <ProjectReference Include="..\DriveOps.Infrastructure\DriveOps.Infrastructure.csproj" />
     <ProjectReference Include="..\DriveOps.Model\DriveOps.Model.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="ControllerDtos\Response\" />
   </ItemGroup>
 
 </Project>

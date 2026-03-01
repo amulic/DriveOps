@@ -1,18 +1,14 @@
-﻿using DriveOps.Model.Entity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DriveOps.Application.DTOs;
 
 namespace DriveOps.Application.Interfaces
 {
     public interface IUserService
     {
-        Task<User> GetUserByDbIdAsync(Guid userId);
-        Task<User?> GetUserByKeycloakIdAsync(string keycloakId);
-        Task<User> CreateUserAsync(UserRequestDto keycloakId); // should be DTO of user
-        Task<User> UpdateUserAsync(UserRequestDto userRequestDto);
+        Task<UserDto?> GetUserByIdAsync(Guid userId);
+        Task<UserDto?> GetUserByKeycloakIdAsync(string keycloakId);
+        Task<UserDto> CreateUserAsync(CreateUserDto dto);
+        Task<UserDto> UpdateUserAsync(UpdateUserDto dto);
+        Task<UserDto> CreateOrUpdateFromKeycloakAsync(string keycloakId, string email, string firstName, string lastName);
         Task UpdateLastLoginAsync(Guid userId);
     }
 }

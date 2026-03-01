@@ -1,12 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DriveOps.API.ControllerDtos.Request
+﻿namespace DriveOps.API.ControllerDtos.Request
 {
-    internal class UserRequestDto
+    public class CreateUserRequest
+    {
+        public string Email { get; set; } = null!;
+        public string FirstName { get; set; } = null!;
+        public string LastName { get; set; } = null!;
+        public string PhoneNumber { get; set; } = null!;
+        public int UserType { get; set; }
+        public string? ProfileImageUrl { get; set; }
+        public string? Address { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
+    }
+
+    public class UpdateUserRequest
     {
         public string? Email { get; set; }
         public string? FirstName { get; set; }
@@ -14,5 +20,6 @@ namespace DriveOps.API.ControllerDtos.Request
         public string? PhoneNumber { get; set; }
         public string? ProfileImageUrl { get; set; }
         public string? Address { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
     }
 }

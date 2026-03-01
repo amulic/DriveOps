@@ -1,17 +1,13 @@
 ﻿using DriveOps.API.ControllerDtos.Request;
+using DriveOps.API.ControllerDtos.Response;
+using DriveOps.API.Mappings;
 using DriveOps.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DriveOps.API.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -24,74 +20,57 @@ namespace DriveOps.API.Controllers
         [HttpPost("sync")]
         public async Task<IActionResult> SyncUser()
         {
-            var keycloakId = User.Claims.First(c => c.Type == "sub")?.Value;
-            var email = User.Claims.First(c => c.Type == "email")?.Value;
-            var firstName = User.Claims.First(c => c.Type == "given_name")?.Value;
-            var lastName = User.Claims.First(c => c.Type == "family_name")?.Value;
+            var keycloakId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            var email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+            var firstName = User.Claims.FirstOrDefault(c => c.Type == "given_name")?.Value ?? "";
+            var lastName = User.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value ?? "";
 
-            if(string.IsNullOrEmpty(keycloakId) || string.IsNullOrEmpty(email))
+            if (string.IsNullOrEmpty(keycloakId) || string.IsNullOrEmpty(email))
                 return BadRequest("Invalid user claims.");
 
-            var user = await _userService.CreateOrUpdateUserAsync(keycloakId);
-
+            var user = await _userService.CreateOrUpdateFromKeycloakAsync(keycloakId, email, firstName, lastName);
             await _userService.UpdateLastLoginAsync(user.Id);
 
-            return Ok(new
-            {
-                user.Id,
-                user.KeycloakId,
-                user.Email,
-                user.FirstName,
-                user.LastName,
-                user.UserType,
-                user.IsActive,
-                Message = "User synced successfully"
-            });
+            return Ok(user.ToResponse());
         }
 
         [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser()
         {
-            var keycloakId = User.Claims.First(c => c.Type == "sub")?.Value;
+            var keycloakId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
             if (string.IsNullOrEmpty(keycloakId))
                 return Unauthorized("No user claims.");
 
             var user = await _userService.GetUserByKeycloakIdAsync(keycloakId);
-
             if (user == null)
                 return NotFound("User not found.");
 
-            return Ok(new
-            {
-                user.Id,
-                user.KeycloakId,
-                user.Email,
-                user.FirstName,
-                user.LastName,
-                user.UserType,
-                user.IsActive
-            });
+            return Ok(user.ToResponse());
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetUserById([FromQuery] Guid uuid)
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetUserById(Guid id)
         {
-            return Ok(_userService.GetUserByDbIdAsync(uuid));
+            var user = await _userService.GetUserByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            return Ok(user.ToResponse());
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] UserRequestDto userRequest)
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
         {
-            var newUser = await _userService.CreateUserAsync(userRequest);
-            return Ok(newUser);
-        }   
+            var user = await _userService.CreateUserAsync(request.ToApplicationDto());
+            return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user.ToResponse());
+        }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateProfile([FromBody] UserRequestDto userRequest)
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
         {
-            var updatedUser = await _userService.UpdateUserAsync(user);
-            return Ok(updatedUser);
+            var user = await _userService.UpdateUserAsync(request.ToApplicationDto(id));
+            return Ok(user.ToResponse());
         }
     }
 }

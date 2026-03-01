@@ -1,11 +1,11 @@
-﻿using DriveOps.Infrastructure.Interface;
+﻿using DriveOps.Application.Interfaces;
 using DriveOps.Infrastructure.Persistence;
 using DriveOps.Model.Entity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DriveOps.Infrastructure.Repositories
 {
-    partial class UserRepository : Repository<User>, IUserRepository
+    internal class UserRepository : Repository<User>, IUserRepository
     {
         public UserRepository(ApplicationDbContext context) : base(context) { }
         public async Task<bool> EmailExistsAsync(string email)

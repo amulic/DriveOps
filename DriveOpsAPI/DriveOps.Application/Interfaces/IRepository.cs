@@ -1,6 +1,6 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 
-namespace DriveOps.Infrastructure.Interface
+namespace DriveOps.Application.Interfaces
 {
     public interface IRepository<T> where T : class
     {
@@ -10,8 +10,6 @@ namespace DriveOps.Infrastructure.Interface
         Task UpdateAsync(T entity);
         Task DeleteAsync(Guid id);
         Task<bool> ExistsAsync(Guid id);
-
-        // Query 
         Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
         Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
         Task<T?> FirstAsync(Expression<Func<T, bool>> predicate);
