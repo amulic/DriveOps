@@ -1,3 +1,4 @@
+using DriveOps.Application.Helpers;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.DTOs;
 using DriveOps.Model.Enums;
@@ -80,22 +81,7 @@ namespace DriveOps.Infrastructure.Services
         }
 
         private static decimal CalculateFare(double distanceKm, int durationMinutes, TripType tripType)
-        {
-            // Base fare + per-km rate + per-minute rate
-            decimal baseFare = 2.50m;
-            decimal perKmRate = 1.50m;
-            decimal perMinuteRate = 0.25m;
-
-            decimal multiplier = tripType switch
-            {
-                TripType.Premium  => 1.5m,
-                TripType.Shared   => 0.7m,
-                _                 => 1.0m
-            };
-
-            var fare = (baseFare + (decimal)distanceKm * perKmRate + durationMinutes * perMinuteRate) * multiplier;
-            return Math.Round(fare, 2);
-        }
+            => FareCalculator.Calculate((decimal)distanceKm, durationMinutes, tripType);
 
         private static string FormatCoord(decimal value)
         {

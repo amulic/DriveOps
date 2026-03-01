@@ -9,11 +9,13 @@ namespace DriveOps.Application.Services
     {
         private readonly IDriverRepository _driverRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public DriverService(IDriverRepository driverRepository, IUserRepository userRepository)
+        public DriverService(IDriverRepository driverRepository, IUserRepository userRepository, IUnitOfWork unitOfWork)
         {
             _driverRepository = driverRepository;
             _userRepository = userRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<DriverDto?> GetDriverByIdAsync(Guid driverId)
@@ -51,9 +53,10 @@ namespace DriveOps.Application.Services
                 throw new InvalidOperationException($"User {dto.UserId} is already registered as a driver.");
 
             var driver = dto.ToEntity();
-            var created = await _driverRepository.AddAsync(driver);
+            await _driverRepository.AddAsync(driver);
+            await _unitOfWork.SaveChangesAsync();
 
-            var result = await _driverRepository.GetWithVehiclesAsync(created.Id);
+            var result = await _driverRepository.GetWithVehiclesAsync(driver.Id);
             return result!.ToDto();
         }
 
@@ -69,6 +72,7 @@ namespace DriveOps.Application.Services
             driver.UpdatedAt = DateTime.UtcNow;
 
             await _driverRepository.UpdateAsync(driver);
+            await _unitOfWork.SaveChangesAsync();
             return driver.ToDto();
         }
 
@@ -82,6 +86,7 @@ namespace DriveOps.Application.Services
             driver.LastLocationUpdate = DateTime.UtcNow;
 
             await _driverRepository.UpdateAsync(driver);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task SetDriverOnlineStatusAsync(Guid driverId, bool isOnline)
@@ -93,6 +98,7 @@ namespace DriveOps.Application.Services
             driver.UpdatedAt = DateTime.UtcNow;
 
             await _driverRepository.UpdateAsync(driver);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task SuspendDriverAsync(Guid driverId)
@@ -105,6 +111,7 @@ namespace DriveOps.Application.Services
             driver.UpdatedAt = DateTime.UtcNow;
 
             await _driverRepository.UpdateAsync(driver);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task ActivateDriverAsync(Guid driverId)
@@ -116,6 +123,7 @@ namespace DriveOps.Application.Services
             driver.UpdatedAt = DateTime.UtcNow;
 
             await _driverRepository.UpdateAsync(driver);
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

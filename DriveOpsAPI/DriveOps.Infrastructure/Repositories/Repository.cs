@@ -19,8 +19,7 @@ namespace DriveOps.Infrastructure.Repositories
         public virtual async Task<T> AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;  
+            return entity;
         }
 
         public virtual async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null)
@@ -31,11 +30,8 @@ namespace DriveOps.Infrastructure.Repositories
         public virtual async Task DeleteAsync(Guid id)
         {
             var entity = await GetByIdAsync(id);
-            if(entity != null)
-            {
+            if (entity != null)
                 _dbSet.Remove(entity);
-                await _context.SaveChangesAsync();
-            }   
         }
 
         public virtual async Task<bool> ExistsAsync(Guid id)
@@ -68,10 +64,10 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet.FindAsync(id);
         }
 
-        public virtual async Task UpdateAsync(T entity)
+        public virtual Task UpdateAsync(T entity)
         {
             _dbSet.Update(entity);
-            await _context.SaveChangesAsync();
+            return Task.CompletedTask;
         }
     }
 }

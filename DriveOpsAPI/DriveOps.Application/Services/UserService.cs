@@ -7,10 +7,12 @@ namespace DriveOps.Application.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, IUnitOfWork unitOfWork)
         {
             _userRepository = userRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<UserDto?> GetUserByIdAsync(Guid userId)
@@ -31,8 +33,9 @@ namespace DriveOps.Application.Services
                 throw new InvalidOperationException($"A user with email '{dto.Email}' already exists.");
 
             var user = dto.ToEntity();
-            var created = await _userRepository.AddAsync(user);
-            return created.ToDto();
+            await _userRepository.AddAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+            return user.ToDto();
         }
 
         public async Task<UserDto> UpdateUserAsync(UpdateUserDto dto)
@@ -50,6 +53,7 @@ namespace DriveOps.Application.Services
             user.UpdatedAt = DateTime.UtcNow;
 
             await _userRepository.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
             return user.ToDto();
         }
 
@@ -78,8 +82,9 @@ namespace DriveOps.Application.Services
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
-                var created = await _userRepository.AddAsync(user);
-                return created.ToDto();
+                await _userRepository.AddAsync(user);
+                await _unitOfWork.SaveChangesAsync();
+                return user.ToDto();
             }
 
             // Link the account if reached via the email fallback, then sync Keycloak-authoritative fields.
@@ -89,6 +94,7 @@ namespace DriveOps.Application.Services
             user.LastName = lastName;
             user.UpdatedAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
             return user.ToDto();
         }
 
@@ -99,6 +105,7 @@ namespace DriveOps.Application.Services
             {
                 user.LastLoginAt = DateTime.UtcNow;
                 await _userRepository.UpdateAsync(user);
+                await _unitOfWork.SaveChangesAsync();
             }
         }
     }

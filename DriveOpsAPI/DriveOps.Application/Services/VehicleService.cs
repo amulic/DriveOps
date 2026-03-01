@@ -8,11 +8,13 @@ namespace DriveOps.Application.Services
     {
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IDriverRepository _driverRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public VehicleService(IVehicleRepository vehicleRepository, IDriverRepository driverRepository)
+        public VehicleService(IVehicleRepository vehicleRepository, IDriverRepository driverRepository, IUnitOfWork unitOfWork)
         {
             _vehicleRepository = vehicleRepository;
             _driverRepository = driverRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<VehicleDto?> GetVehicleByIdAsync(Guid vehicleId)
@@ -44,8 +46,9 @@ namespace DriveOps.Application.Services
                 throw new InvalidOperationException($"Vehicle with VIN '{dto.Vin}' already exists.");
 
             var vehicle = dto.ToEntity();
-            var created = await _vehicleRepository.AddAsync(vehicle);
-            return created.ToDto();
+            await _vehicleRepository.AddAsync(vehicle);
+            await _unitOfWork.SaveChangesAsync();
+            return vehicle.ToDto();
         }
 
         public async Task<VehicleDto> UpdateVehicleAsync(UpdateVehicleDto dto)
@@ -62,6 +65,7 @@ namespace DriveOps.Application.Services
             vehicle.UpdatedAt = DateTime.UtcNow;
 
             await _vehicleRepository.UpdateAsync(vehicle);
+            await _unitOfWork.SaveChangesAsync();
             return vehicle.ToDto();
         }
 
@@ -78,6 +82,7 @@ namespace DriveOps.Application.Services
             vehicle.UpdatedAt = DateTime.UtcNow;
 
             await _vehicleRepository.UpdateAsync(vehicle);
+            await _unitOfWork.SaveChangesAsync();
             return vehicle.ToDto();
         }
 
@@ -90,12 +95,14 @@ namespace DriveOps.Application.Services
             vehicle.UpdatedAt = DateTime.UtcNow;
 
             await _vehicleRepository.UpdateAsync(vehicle);
+            await _unitOfWork.SaveChangesAsync();
             return vehicle.ToDto();
         }
 
         public async Task DeleteVehicleAsync(Guid vehicleId)
         {
             await _vehicleRepository.DeleteAsync(vehicleId);
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

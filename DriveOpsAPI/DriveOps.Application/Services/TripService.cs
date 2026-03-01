@@ -1,4 +1,5 @@
 using DriveOps.Application.DTOs;
+using DriveOps.Application.Helpers;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
 using DriveOps.Model.Entity;
@@ -68,8 +69,9 @@ namespace DriveOps.Application.Services
             trip.EstimatedDuration = estimate.DurationMinutes;
             trip.EstimatedFare = estimate.EstimatedFare;
 
-            var created = await _tripRepository.AddAsync(trip);
-            return created.ToDto();
+            await _tripRepository.AddAsync(trip);
+            await _unitOfWork.SaveChangesAsync();
+            return trip.ToDto();
         }
 
         public async Task<TripDto> AssignDriverAsync(Guid tripId, Guid driverId, Guid vehicleId)
@@ -120,6 +122,7 @@ namespace DriveOps.Application.Services
             trip.UpdatedAt = DateTime.UtcNow;
 
             await _tripRepository.UpdateAsync(trip);
+            await _unitOfWork.SaveChangesAsync();
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
             return result!.ToDto();
@@ -141,7 +144,10 @@ namespace DriveOps.Application.Services
                 trip.ActualDuration = trip.PickupTime.HasValue
                     ? (int)(DateTime.UtcNow - trip.PickupTime.Value).TotalMinutes
                     : null;
-                trip.ActualFare = trip.EstimatedFare;
+                trip.ActualFare = FareCalculator.Calculate(
+                    actualDistance,
+                    trip.ActualDuration ?? trip.EstimatedDuration ?? 0,
+                    trip.TripType);
                 trip.PaymentStatus = PaymentStatus.Completed;
                 trip.UpdatedAt = DateTime.UtcNow;
 
@@ -237,6 +243,7 @@ namespace DriveOps.Application.Services
 
             trip.UpdatedAt = DateTime.UtcNow;
             await _tripRepository.UpdateAsync(trip);
+            await _unitOfWork.SaveChangesAsync();
 
             var result = await _tripRepository.GetWithDetailsAsync(dto.TripId);
             return result!.ToDto();
@@ -275,6 +282,7 @@ namespace DriveOps.Application.Services
             });
 
             await _tripRouteRepository.AddBatchAsync(routePoints);
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

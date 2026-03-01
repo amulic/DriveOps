@@ -9,10 +9,10 @@ namespace DriveOps.Infrastructure.Repositories
     {
         public TripRouteRepository(ApplicationDbContext context) : base(context) { }
 
-        public async Task AddBatchAsync(IEnumerable<TripRoute> routePoints)
+        public Task AddBatchAsync(IEnumerable<TripRoute> routePoints)
         {
-            await _dbSet.AddRangeAsync(routePoints);
-            await _context.SaveChangesAsync();
+            _dbSet.AddRange(routePoints);
+            return Task.CompletedTask;
         }
 
         public async Task<IEnumerable<TripRoute>> GetByTripIdAsync(Guid tripId)
