@@ -52,7 +52,12 @@ namespace DriveOps.Application.Services
 
         public async Task<UserDto> CreateOrUpdateFromKeycloakAsync(string keycloakId, string email, string firstName, string lastName)
         {
+            // Primary lookup: returning SSO user already has a KeycloakId on record.
             var user = await _userRepository.GetByKeycloakIdAsync(keycloakId);
+
+            // Fallback: a locally-created account may share this email but have no KeycloakId yet.
+            // Skipping this would cause a DbUpdateException on the unique Users.Email constraint.
+            user ??= await _userRepository.GetByEmailAsync(email);
 
             if (user == null)
             {
@@ -74,6 +79,8 @@ namespace DriveOps.Application.Services
                 return created.ToDto();
             }
 
+            // Link the account if reached via the email fallback, then sync Keycloak-authoritative fields.
+            user.KeycloakId = keycloakId;
             user.Email = email;
             user.FirstName = firstName;
             user.LastName = lastName;

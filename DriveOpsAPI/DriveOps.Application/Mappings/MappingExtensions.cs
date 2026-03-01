@@ -73,7 +73,7 @@ namespace DriveOps.Application.Mappings
             LicenseExpiryDate = dto.LicenseExpiryDate,
             EmergencyContactName = dto.EmergencyContactName,
             EmergencyContactPhone = dto.EmergencyContactPhone,
-            Status = 0, // Pending
+            Status = DriverStatus.Pending,
             IsOnline = false,
             Rating = 5.00m,
             TotalTrips = 0,
