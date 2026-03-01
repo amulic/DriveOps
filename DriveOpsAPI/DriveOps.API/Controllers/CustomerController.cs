@@ -1,0 +1,53 @@
+using DriveOps.API.ControllerDtos.Request;
+using DriveOps.API.Mappings;
+using DriveOps.Application.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+
+namespace DriveOps.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class CustomerController : ControllerBase
+    {
+        private readonly ICustomerService _customerService;
+
+        public CustomerController(ICustomerService customerService)
+        {
+            _customerService = customerService;
+        }
+
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetCustomerById(Guid id)
+        {
+            var customer = await _customerService.GetCustomerByIdAsync(id);
+            if (customer == null)
+                return NotFound();
+
+            return Ok(customer.ToResponse());
+        }
+
+        [HttpGet("user/{userId:guid}")]
+        public async Task<IActionResult> GetCustomerByUserId(Guid userId)
+        {
+            var customer = await _customerService.GetCustomerByUserIdAsync(userId);
+            if (customer == null)
+                return NotFound();
+
+            return Ok(customer.ToResponse());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerRequest request)
+        {
+            var customer = await _customerService.CreateCustomerAsync(request.ToApplicationDto());
+            return CreatedAtAction(nameof(GetCustomerById), new { id = customer.Id }, customer.ToResponse());
+        }
+
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateCustomer(Guid id, [FromBody] UpdateCustomerRequest request)
+        {
+            var customer = await _customerService.UpdateCustomerAsync(request.ToApplicationDto(id));
+            return Ok(customer.ToResponse());
+        }
+    }
+}

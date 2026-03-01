@@ -26,7 +26,7 @@ public partial class Vehicle
 
     public DateOnly RegistrationExpiryDate { get; set; }
 
-    public int? Status { get; set; }
+    public VehicleStatus? Status { get; set; }
 
     public int? Mileage { get; set; }
 

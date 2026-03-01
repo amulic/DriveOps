@@ -1,7 +1,5 @@
-using DriveOps.Application.Interfaces;
-using DriveOps.Application.Services;
-using DriveOps.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using DriveOps.Application.DependencyInjection;
+using DriveOps.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,13 +8,42 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter JWT Authorization from Keycloak"
+    });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
-// DI
-builder.Services.AddScoped<ICarService, CarService>();
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+// DI - Infrastructure (DbContext, Repositories, External Services)
+builder.Services.AddInfrastructure(connectionString);
+
+// DI - Application (Services)
+builder.Services.AddApplication();
 
 // Keycloak
 builder.Services.AddAuthentication("Bearer")
@@ -24,18 +51,59 @@ builder.Services.AddAuthentication("Bearer")
    {
        options.Authority = builder.Configuration["Keycloak:Authority"];
        options.Audience = builder.Configuration["Keycloak:Audience"];
-       options.RequireHttpsMetadata = false;
+       options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+
        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
        {
            ValidateAudience = true,
            ValidateIssuer = true,
            ValidateLifetime = true,
+           ValidateIssuerSigningKey = true,
            ValidAudience = builder.Configuration["Keycloak:Audience"],
-           ValidIssuer = builder.Configuration["Keycloak:Authority"]
+           ValidIssuer = builder.Configuration["Keycloak:Authority"],
+           ClockSkew = TimeSpan.Zero
+       };
+
+       options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+       {
+           OnAuthenticationFailed = context =>
+           {
+               var logger = context.HttpContext.RequestServices
+                   .GetRequiredService<ILoggerFactory>()
+                   .CreateLogger("Authentication");
+
+               logger.LogWarning("JWT authentication failed: {ExceptionType}", context.Exception.GetType().Name);
+               return Task.CompletedTask;
+           },
+           OnTokenValidated = context =>
+           {
+               var logger = context.HttpContext.RequestServices
+                   .GetRequiredService<ILoggerFactory>()
+                   .CreateLogger("Authentication");
+
+               logger.LogDebug("JWT token validated successfully.");
+               return Task.CompletedTask;
+           }
        };
    });
 
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // TODO change to whatever frontend is
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddAuthorization();
+
+// Logging
+builder.Logging.ClearProviders();   
+builder.Logging.AddConsole();
 
 var app = builder.Build();
 
@@ -48,7 +116,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowFrontend");
+
 app.UseHttpsRedirection();
+
 
 app.UseAuthentication();
 app.UseAuthorization();

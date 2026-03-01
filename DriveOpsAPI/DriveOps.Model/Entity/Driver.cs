@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DriveOps.Model.Enums;
+using System;
 using System.Collections.Generic;
 
 namespace DriveOps.Model.Entity;
@@ -17,7 +18,7 @@ public partial class Driver
 
     public string? EmergencyContactPhone { get; set; }
 
-    public int? Status { get; set; }
+    public DriverStatus? Status { get; set; }
 
     public decimal? Rating { get; set; }
 
