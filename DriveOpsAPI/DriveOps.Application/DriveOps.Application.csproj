@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DriveOps.Model\DriveOps.Model.csproj" />
+    <ProjectReference Include="..\..\DriveOpsRealtime\DriveOps.RealTime.Contracts\DriveOps.RealTime.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

@@ -42,6 +42,13 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // DI - Infrastructure (DbContext, Repositories, External Services)
 builder.Services.AddInfrastructure(connectionString);
 
+// DI - RabbitMQ (Event Publishing + Consumers)
+var rabbitHost = builder.Configuration["RabbitMQ:HostName"] ?? "localhost";
+var rabbitPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
+var rabbitUser = builder.Configuration["RabbitMQ:UserName"] ?? "guest";
+var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+builder.Services.AddRabbitMq(rabbitHost, rabbitPort, rabbitUser, rabbitPass);
+
 // DI - Application (Services)
 builder.Services.AddApplication();
 

@@ -81,7 +81,7 @@ namespace DriveOps.API.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id:guid}/suspend")]
+        [HttpPost("{id:guid}/suspend")] // deactivate
         public async Task<IActionResult> SuspendDriver(Guid id)
         {
             await _driverService.SuspendDriverAsync(id);

@@ -2,6 +2,7 @@ using DriveOps.Application.DTOs;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
 using DriveOps.Model.Enums;
+using DriveOps.RealTime.Contracts.Events;
 
 namespace DriveOps.Application.Services
 {
@@ -10,12 +11,14 @@ namespace DriveOps.Application.Services
         private readonly IDriverRepository _driverRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEventPublisher _eventPublisher;
 
-        public DriverService(IDriverRepository driverRepository, IUserRepository userRepository, IUnitOfWork unitOfWork)
+        public DriverService(IDriverRepository driverRepository, IUserRepository userRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
         {
             _driverRepository = driverRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<DriverDto?> GetDriverByIdAsync(Guid driverId)
@@ -87,6 +90,19 @@ namespace DriveOps.Application.Services
 
             await _driverRepository.UpdateAsync(driver);
             await _unitOfWork.SaveChangesAsync();
+
+            // Find active trip for this driver
+            Guid? activeTripId = null;
+            if (driver.Status == DriverStatus.OnTrip && driver.Trips != null)
+            {
+                activeTripId = driver.Trips
+                    .FirstOrDefault(t => t.TripStatus == Model.Enums.TripStatus.InProgress)?.Id;
+            }
+
+            await _eventPublisher.PublishAsync("driveops.location", "driver.location",
+                new DriverLocationUpdatedEvent(
+                    dto.DriverId, dto.Latitude, dto.Longitude,
+                    DateTime.UtcNow, activeTripId));
         }
 
         public async Task SetDriverOnlineStatusAsync(Guid driverId, bool isOnline)
@@ -99,6 +115,9 @@ namespace DriveOps.Application.Services
 
             await _driverRepository.UpdateAsync(driver);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.location", "driver.availability",
+                new DriverAvailabilityChangedEvent(driverId, isOnline, DateTime.UtcNow));
         }
 
         public async Task SuspendDriverAsync(Guid driverId)

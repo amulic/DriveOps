@@ -4,6 +4,7 @@ using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
 using DriveOps.Model.Entity;
 using DriveOps.Model.Enums;
+using DriveOps.RealTime.Contracts.Events;
 
 namespace DriveOps.Application.Services
 {
@@ -15,6 +16,7 @@ namespace DriveOps.Application.Services
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IRoutingService _routingService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEventPublisher _eventPublisher;
 
         public TripService(
             ITripRepository tripRepository,
@@ -22,7 +24,8 @@ namespace DriveOps.Application.Services
             IDriverRepository driverRepository,
             IVehicleRepository vehicleRepository,
             IRoutingService routingService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IEventPublisher eventPublisher)
         {
             _tripRepository = tripRepository;
             _tripRouteRepository = tripRouteRepository;
@@ -30,6 +33,7 @@ namespace DriveOps.Application.Services
             _vehicleRepository = vehicleRepository;
             _routingService = routingService;
             _unitOfWork = unitOfWork;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<TripDto?> GetTripByIdAsync(Guid tripId)
@@ -71,6 +75,16 @@ namespace DriveOps.Application.Services
 
             await _tripRepository.AddAsync(trip);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.requested",
+                new TripRequestedEvent(
+                    trip.Id, trip.CustomerId,
+                    (RealTime.Contracts.Enums.TripStatus)(int)trip.TripStatus,
+                    (RealTime.Contracts.Enums.TripType)(int)trip.TripType,
+                    dto.PickupLatitude, dto.PickupLongitude, dto.PickupAddress ?? "",
+                    dto.DropoffLatitude, dto.DropoffLongitude, dto.DropoffAddress ?? "",
+                    trip.EstimatedFare, trip.EstimatedDuration, trip.RequestedAt ?? DateTime.UtcNow));
+
             return trip.ToDto();
         }
 
@@ -106,6 +120,14 @@ namespace DriveOps.Application.Services
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.assigned",
+                new TripAssignedEvent(
+                    tripId, trip.CustomerId, driverId, vehicleId,
+                    driver.User?.FirstName ?? "",
+                    driver.CurrentLatitude ?? 0, driver.CurrentLongitude ?? 0,
+                    trip.AssignedAt ?? DateTime.UtcNow));
+
             return result!.ToDto();
         }
 
@@ -123,6 +145,9 @@ namespace DriveOps.Application.Services
 
             await _tripRepository.UpdateAsync(trip);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.started",
+                new TripStartedEvent(tripId, trip.CustomerId, trip.DriverId!.Value, trip.PickupTime!.Value));
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
             return result!.ToDto();
@@ -178,6 +203,12 @@ namespace DriveOps.Application.Services
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.completed",
+                new TripCompletedEvent(
+                    tripId, trip.CustomerId, trip.DriverId!.Value,
+                    actualDistance, trip.ActualFare ?? 0, trip.DropoffTime ?? DateTime.UtcNow));
+
             return result!.ToDto();
         }
 
@@ -219,6 +250,11 @@ namespace DriveOps.Application.Services
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.cancelled",
+                new TripCancelledEvent(
+                    tripId, trip.CustomerId, trip.DriverId, reason, DateTime.UtcNow));
+
             return result!.ToDto();
         }
 
@@ -283,6 +319,10 @@ namespace DriveOps.Application.Services
 
             await _tripRouteRepository.AddBatchAsync(routePoints);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.location", "trip.route",
+                new TripRouteUpdatedEvent(tripId,
+                    points.Select(p => new RoutePointEvent(p.Latitude, p.Longitude, p.Timestamp ?? DateTime.UtcNow))));
         }
     }
 }
