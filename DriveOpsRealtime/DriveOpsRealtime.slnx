@@ -1,8 +1,0 @@
-<Solution>
-  <Project Path="../DriveOps.RealTime.Hubs/DriveOps.RealTime.Hubs.csproj" Id="68b0ceda-19c5-489c-87e0-9a60cd907e05" />
-  <Project Path="DriveOps.RealTime.Contracts/DriveOps.RealTime.Contracts.csproj" />
-  <Project Path="DriveOps.RealTime.Infrastructure/DriveOps.RealTime.Infrastructure.csproj" />
-  <Project Path="DriveOps.RealTime.Models/DriveOps.RealTime.Models.csproj" />
-  <Project Path="DriveOps.RealTime.Services/DriveOps.RealTime.Services.csproj" />
-  <Project Path="DriveOpsRealtime.csproj" />
-</Solution>

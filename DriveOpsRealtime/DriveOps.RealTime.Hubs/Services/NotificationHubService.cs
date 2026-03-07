@@ -2,12 +2,7 @@
 using DriveOps.RealTime.Contracts.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static DriveOps.RealTime.Hubs.Services.NotificationHubService;
+
 
 namespace DriveOps.RealTime.Hubs.Services
 {
