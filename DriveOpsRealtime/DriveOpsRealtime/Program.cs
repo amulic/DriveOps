@@ -1,25 +1,105 @@
+using DriveOps.RealTime.Hubs;
+using DriveOps.RealTime.Hubs.DependencyInjection;
+using DriveOps.RealTime.Infrastructure.DependencyInjection;
+using DriveOps.RealTime.Infrastructure.Persistence;
+using DriveOps.RealTime.Services.DependencyInjection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Connection strings and config
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+var rabbitHost = builder.Configuration["RabbitMQ:HostName"] ?? "localhost";
+var rabbitPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
+var rabbitUser = builder.Configuration["RabbitMQ:UserName"] ?? "guest";
+var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+// SignalR
+builder.Services.AddSignalR();
+
+// DI - Infrastructure (DbContext, RabbitMQ, Consumers)
+builder.Services.AddRealTimeInfrastructure(connectionString, rabbitHost, rabbitPort, rabbitUser, rabbitPass);
+
+// DI - Services (ConnectionMapping, Chat)
+builder.Services.AddRealTimeServices();
+
+// DI - Hub services (NotificationHubService, LocationService)
+builder.Services.AddRealTimeHubs();
+
+
+// Keycloak JWT Auth
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.Authority = builder.Configuration["Keycloak:Authority"];
+        options.Audience = builder.Configuration["Keycloak:Audience"];
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateAudience = true,
+            ValidateIssuer = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidAudience = builder.Configuration["Keycloak:Audience"],
+            ValidIssuer = builder.Configuration["Keycloak:Authority"],
+            ClockSkew = TimeSpan.Zero
+        };
+
+        // SignalR sends JWT via query string (WebSocket connections can't use Authorization headers)
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Auto-create database
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var db = scope.ServiceProvider.GetRequiredService<RealTimeDbContext>();
+    await db.Database.EnsureCreatedAsync();
 }
 
-app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+// Map SignalR hubs
+app.MapHub<LocationHub>("/hubs/location");
+app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<NotificationHub>("/hubs/notifications");
+
 
 app.Run();
