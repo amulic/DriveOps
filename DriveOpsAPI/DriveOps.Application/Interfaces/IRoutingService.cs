@@ -1,5 +1,5 @@
 using DriveOps.Application.DTOs;
-using DriveOps.Model.Enums;
+using DriveOps.RealTime.Contracts.Enums;
 
 namespace DriveOps.Application.Interfaces
 {

@@ -1,13 +1,13 @@
 using DriveOps.Application.DTOs;
-using DriveOps.Model.Enums;
+using DriveOps.RealTime.Contracts.Enums;
 
 namespace DriveOps.Application.Interfaces
 {
     public interface ITripService
     {
         Task<TripDto?> GetTripByIdAsync(Guid tripId);
-        Task<IEnumerable<TripDto>> GetTripsByCustomerAsync(Guid customerId);
-        Task<IEnumerable<TripDto>> GetTripsByDriverAsync(Guid driverId);
+        Task<PaginatedResult<TripDto>> GetTripsByCustomerAsync(Guid customerId, int page = 1, int pageSize = 20);
+        Task<PaginatedResult<TripDto>> GetTripsByDriverAsync(Guid driverId, int page = 1, int pageSize = 20);
         Task<IEnumerable<TripDto>> GetActiveTripsForDriverAsync(Guid driverId);
         Task<TripDto> RequestTripAsync(CreateTripDto dto);
         Task<TripDto> AssignDriverAsync(Guid tripId, Guid driverId, Guid vehicleId);

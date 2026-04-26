@@ -1,0 +1,2 @@
+// Validation is handled via FluentValidation validators registered in the Application layer.
+// Call validators manually in service methods or use FluentValidation's built-in ASP.NET Core integration.

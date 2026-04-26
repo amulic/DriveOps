@@ -29,17 +29,23 @@ namespace DriveOps.API.Controllers
         }
 
         [HttpGet("customer/{customerId:guid}")]
-        public async Task<IActionResult> GetTripsByCustomer(Guid customerId)
+        public async Task<IActionResult> GetTripsByCustomer(Guid customerId,
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
-            var trips = await _tripService.GetTripsByCustomerAsync(customerId);
-            return Ok(trips.Select(t => t.ToResponse()));
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _tripService.GetTripsByCustomerAsync(customerId, page, pageSize);
+            return Ok(result);
         }
 
         [HttpGet("driver/{driverId:guid}")]
-        public async Task<IActionResult> GetTripsByDriver(Guid driverId)
+        public async Task<IActionResult> GetTripsByDriver(Guid driverId,
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
-            var trips = await _tripService.GetTripsByDriverAsync(driverId);
-            return Ok(trips.Select(t => t.ToResponse()));
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _tripService.GetTripsByDriverAsync(driverId, page, pageSize);
+            return Ok(result);
         }
 
         [HttpGet("driver/{driverId:guid}/active")]
@@ -62,7 +68,7 @@ namespace DriveOps.API.Controllers
             var estimate = await _tripService.GetTripEstimateAsync(
                 request.PickupLatitude, request.PickupLongitude,
                 request.DropoffLatitude, request.DropoffLongitude,
-                request.TripType);
+                (DriveOps.RealTime.Contracts.Enums.TripType)(int)request.TripType);
 
             return Ok(estimate.ToResponse());
         }

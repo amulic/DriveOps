@@ -11,8 +11,9 @@ public static class InfrastructureServiceExtensions
     public static IServiceCollection AddRealTimeInfrastructure(this IServiceCollection services,
         string connectionString, string rabbitHost, int rabbitPort, string rabbitUser, string rabbitPass)
     {
+        var mysqlServerVersion = new MySqlServerVersion(new Version(8, 0, 36));
         services.AddDbContext<RealTimeDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseMySql(connectionString, mysqlServerVersion));
 
         services.AddSingleton<IConnection>(sp =>
         {
@@ -26,7 +27,11 @@ public static class InfrastructureServiceExtensions
             return factory.CreateConnectionAsync().GetAwaiter().GetResult();
         });
 
-        services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
+        services.AddSingleton<IEventPublisher>(sp =>
+            new RabbitMqEventPublisher(
+                sp.GetRequiredService<IConnection>(),
+                sp.GetRequiredService<ILogger<RabbitMqEventPublisher>>(),
+                poolSize: 5));
 
         services.AddHostedService<TripEventConsumer>();
         services.AddHostedService<LocationEventConsumer>();

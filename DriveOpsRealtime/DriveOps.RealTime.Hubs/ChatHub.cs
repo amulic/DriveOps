@@ -37,7 +37,7 @@ namespace DriveOps.RealTime.Hubs;
             var userId = GetUserId();
             var message = await _chatService.SendMessageAsync(conversationId, userId, content);
 
-            await Clients.Group($"conversation-{conversationId}").SendAsync("ReceiveMessage", message);
+            await Clients.GroupExcept($"conversation-{conversationId}", Context.ConnectionId).SendAsync("ReceiveMessage", message);
             await Clients.Caller.SendAsync("MessageSent", message);
 
             var conversation = await _chatService.GetConversationAsync(conversationId, userId);
@@ -46,6 +46,15 @@ namespace DriveOps.RealTime.Hubs;
                 foreach (var participantId in conversation.ParticipantUserIds)
                     await Clients.Group($"user-inbox-{participantId}").SendAsync("ConversationUpdated", conversation);
             }
+        }
+
+        public async Task SendTripMessage(Guid tripId, string content)
+        {
+            var userId = GetUserId();
+            var message = await _chatService.SendTripMessageAsync(tripId, userId, content);
+
+            await Clients.GroupExcept($"conversation-{message.ConversationId}", Context.ConnectionId).SendAsync("ReceiveMessage", message);
+            await Clients.Caller.SendAsync("MessageSent", message);
         }
 
         public async Task JoinConversation(Guid conversationId)

@@ -6,8 +6,8 @@ namespace DriveOps.Application.Interfaces
     {
         Task<DriverDto?> GetDriverByIdAsync(Guid driverId);
         Task<DriverDto?> GetDriverByUserIdAsync(Guid userId);
-        Task<IEnumerable<DriverDto>> GetAvailableDriversAsync();
-        Task<IEnumerable<DriverDto>> GetNearbyDriversAsync(decimal latitude, decimal longitude, decimal radiusKm);
+        Task<PaginatedResult<DriverDto>> GetAvailableDriversAsync(int page = 1, int pageSize = 50);
+        Task<PaginatedResult<DriverDto>> GetNearbyDriversAsync(decimal latitude, decimal longitude, decimal radiusKm, int page = 1, int pageSize = 50);
         Task<DriverDto> CreateDriverAsync(CreateDriverDto dto);
         Task<DriverDto> UpdateDriverAsync(UpdateDriverDto dto);
         Task UpdateDriverLocationAsync(UpdateDriverLocationDto dto);

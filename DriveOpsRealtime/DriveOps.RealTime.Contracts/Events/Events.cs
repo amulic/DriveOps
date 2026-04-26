@@ -26,10 +26,18 @@ public record TripAssignedEvent(
     string DriverName,
     decimal DriverLatitude,
     decimal DriverLongitude,
-    DateTime AssignedAt
+    DateTime AssignedAt,
+    Guid? CustomerUserId = null,
+    Guid? DriverUserId = null
 );
 
-public record TripStartedEvent(Guid TripId, Guid CustomerId, Guid DriverId, DateTime PickupTime);
+public record TripStartedEvent(
+    Guid TripId,
+    Guid CustomerId,
+    Guid DriverId,
+    DateTime PickupTime,
+    Guid? CustomerUserId = null
+);
 
 public record TripCompletedEvent(
     Guid TripId,
@@ -37,10 +45,18 @@ public record TripCompletedEvent(
     Guid DriverId,
     decimal ActualDistance,
     decimal ActualFare,
-    DateTime DropoffTime
+    DateTime DropoffTime,
+    Guid? CustomerUserId = null
 );
 
-public record TripCancelledEvent(Guid TripId, Guid CustomerId, Guid? DriverId, string? Reason, DateTime CancelledAt);
+public record TripCancelledEvent(
+    Guid TripId,
+    Guid CustomerId,
+    Guid? DriverId,
+    string? Reason,
+    DateTime CancelledAt,
+    Guid? CustomerUserId = null
+);
 
 public record DriverLocationUpdatedEvent(
     Guid DriverId,

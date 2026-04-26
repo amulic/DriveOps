@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using DriveOps.Application.DTOs;
@@ -39,7 +40,10 @@ public class DriverLocationReceivedConsumer : BackgroundService
     {
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
         await _channel.ExchangeDeclareAsync(Exchange, ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
-        await _channel.QueueDeclareAsync(Queue, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
+        await _channel.ExchangeDeclareAsync("driveops.dlx", ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
+        await _channel.QueueDeclareAsync(Queue, durable: true, exclusive: false, autoDelete: false,
+            arguments: new Dictionary<string, object?> { { "x-dead-letter-exchange", "driveops.dlx" } },
+            cancellationToken: stoppingToken);
         await _channel.QueueBindAsync(Queue, Exchange, RoutingKey, cancellationToken: stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(_channel);

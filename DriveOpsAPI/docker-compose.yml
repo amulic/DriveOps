@@ -6,14 +6,15 @@ services:
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: DriveOpsDB
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
+      MYSQL_DATABASE: driveops_api
+      MYSQL_USER: driveops_api
+      MYSQL_PASSWORD: driveops_api
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./keycloak/mysql-init:/docker-entrypoint-initdb.d
     networks:
       - driveops-net
 

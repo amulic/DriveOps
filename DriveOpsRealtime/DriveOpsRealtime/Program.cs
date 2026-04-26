@@ -84,11 +84,21 @@ builder.Logging.AddConsole();
 
 var app = builder.Build();
 
-// Auto-create database
+// Database migrations
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<RealTimeDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<RealTimeDbContext>>();
+    try
+    {
+        await db.Database.MigrateAsync();
+        logger.LogInformation("Realtime database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Migrations not available yet. Run 'dotnet ef database update' or ensure migrations exist. Falling back to EnsureCreated.");
+        await db.Database.EnsureCreatedAsync();
+    }
 }
 
 app.UseCors("AllowFrontend");

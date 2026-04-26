@@ -33,17 +33,25 @@ public class LocationEventConsumer : BackgroundService
     {
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
         await _channel.ExchangeDeclareAsync(Exchange, ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
+        await _channel.ExchangeDeclareAsync("driveops.dlx", ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
 
-        var queues = new Dictionary<string, string>
+        var queueBindings = new (string Queue, string RoutingKey)[]
         {
-            { "realtime.driver.location", "driver.location" },
-            { "realtime.driver.availability", "driver.availability" },
-            { "realtime.trip.route", "trip.route.updated" }
+            ("realtime.driver.location", "driver.location"),
+            ("realtime.driver.availability", "driver.availability"),
+            ("realtime.trip.route", "trip.route"),
+            ("realtime.trip.route", "trip.route.updated")
         };
 
-        foreach (var (queue, routingKey) in queues)
+        foreach (var queue in queueBindings.Select(q => q.Queue).Distinct())
         {
-            await _channel.QueueDeclareAsync(queue, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
+            await _channel.QueueDeclareAsync(queue, durable: true, exclusive: false, autoDelete: false,
+                arguments: new Dictionary<string, object?> { { "x-dead-letter-exchange", "driveops.dlx" } },
+                cancellationToken: stoppingToken);
+        }
+
+        foreach (var (queue, routingKey) in queueBindings)
+        {
             await _channel.QueueBindAsync(queue, Exchange, routingKey, cancellationToken: stoppingToken);
         }
 
@@ -69,6 +77,7 @@ public class LocationEventConsumer : BackgroundService
                             JsonSerializer.Deserialize<DriverAvailabilityChangedEvent>(body)!);
                         break;
 
+                    case "trip.route":
                     case "trip.route.updated":
                         await locationService.HandleTripRouteUpdatedAsync(
                             JsonSerializer.Deserialize<TripRouteUpdatedEvent>(body)!);
@@ -84,7 +93,7 @@ public class LocationEventConsumer : BackgroundService
             }
         };
 
-        foreach (var (queue, _) in queues)
+        foreach (var queue in queueBindings.Select(q => q.Queue).Distinct())
             await _channel.BasicConsumeAsync(queue, autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
 
         await Task.Delay(Timeout.Infinite, stoppingToken);

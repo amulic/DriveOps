@@ -1,7 +1,7 @@
 using DriveOps.Application.Helpers;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.DTOs;
-using DriveOps.Model.Enums;
+using DriveOps.RealTime.Contracts.Enums;
 using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
