@@ -35,8 +35,8 @@ public class RabbitMqEventPublisher : IEventPublisher
             _channelPool.Add(channel);
         else
         {
-            channel.CloseAsync().AsTask().GetAwaiter().GetResult();
-            channel.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            channel.CloseAsync().GetAwaiter().GetResult();
+            channel.DisposeAsync().GetAwaiter().GetResult();
         }
     }
 

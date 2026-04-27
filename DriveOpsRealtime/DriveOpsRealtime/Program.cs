@@ -4,6 +4,7 @@ using DriveOps.RealTime.Infrastructure.DependencyInjection;
 using DriveOps.RealTime.Infrastructure.Persistence;
 using DriveOps.RealTime.Services.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 

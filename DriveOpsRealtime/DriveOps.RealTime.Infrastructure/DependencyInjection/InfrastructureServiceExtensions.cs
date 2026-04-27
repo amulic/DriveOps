@@ -2,6 +2,7 @@ using DriveOps.RealTime.Infrastructure.Persistence;
 using DriveOps.RealTime.Infrastructure.RabbitMQ;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
 namespace DriveOps.RealTime.Infrastructure.DependencyInjection;
