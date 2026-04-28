@@ -1,0 +1,233 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../config/api_config.dart';
+
+class Sidebar extends StatelessWidget {
+  const Sidebar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final currentRoute = GoRouterState.of(context).uri.path;
+
+    return Container(
+      width: AppConstants.sidebarWidth,
+      color: const Color(0xFF1A1A2E),
+      child: Column(
+        children: [
+          const SizedBox(height: 24),
+          _buildLogo(),
+          const SizedBox(height: 24),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              children: [
+                _SidebarTabButton(
+                  icon: Icons.dashboard_rounded,
+                  label: 'Dashboard',
+                  route: '/dashboard',
+                  isSelected: currentRoute == '/dashboard',
+                  onTap: () => context.go('/dashboard'),
+                ),
+                _SidebarTabButton(
+                  icon: Icons.drive_eta_rounded,
+                  label: 'Drivers',
+                  route: '/drivers',
+                  isSelected: currentRoute == '/drivers',
+                  onTap: () => context.go('/drivers'),
+                ),
+                _SidebarTabButton(
+                  icon: Icons.route_rounded,
+                  label: 'Rides',
+                  route: '/rides',
+                  isSelected: currentRoute == '/rides',
+                  onTap: () => context.go('/rides'),
+                ),
+                _SidebarTabButton(
+                  icon: Icons.chat_rounded,
+                  label: 'Messages',
+                  route: '/messages',
+                  isSelected: currentRoute == '/messages',
+                  onTap: () => context.go('/messages'),
+                ),
+                _SidebarTabButton(
+                  icon: Icons.directions_car_rounded,
+                  label: 'Vehicles',
+                  route: '/vehicles',
+                  isSelected: currentRoute == '/vehicles',
+                  onTap: () => context.go('/vehicles'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          _buildProfileSection(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogo() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.local_taxi,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Text(
+            'DriveOps',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: InkWell(
+        onTap: () => context.go('/profile'),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF252538),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Color(0xFF3B82F6),
+                child: Text(
+                  'AM',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Admin Manager',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      'Administrator',
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.white54,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarTabButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String route;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SidebarTabButton({
+    required this.icon,
+    required this.label,
+    required this.route,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          hoverColor: Colors.white10,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF3B82F6).withOpacity(0.15) : null,
+              borderRadius: BorderRadius.circular(8),
+              border: isSelected
+                  ? Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3))
+                  : null,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF3B82F6) : Colors.transparent,
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(4),
+                      bottomRight: Radius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Icon(
+                  icon,
+                  color: isSelected ? const Color(0xFF3B82F6) : Colors.white70,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white70,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
