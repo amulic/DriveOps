@@ -1,46 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/dashboard_repository.dart';
 import '../../../../shared/models/driver.dart';
 import '../../../../shared/models/trip.dart';
 import '../../../../shared/models/vehicle.dart';
+import '../../../../shared/providers/repository_providers.dart';
 
-final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
-  return DashboardRepository();
+final driversProvider = FutureProvider<DriversData>((ref) async {
+  final allDrivers = await ref.watch(allDriversProvider.future);
+  final active = allDrivers.where((d) => d.status == DriverStatus.active).toList();
+  return DriversData(total: allDrivers.length, active: active, all: allDrivers);
 });
 
-final driversProvider = Provider<DriversData>((ref) {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  return DriversData(
-    total: repo.getDrivers().length,
-    active: repo.getActiveDrivers(),
-    all: repo.getDrivers(),
-  );
+final vehiclesProvider = FutureProvider<VehiclesData>((ref) async {
+  final allVehicles = await ref.watch(allVehiclesProvider.future);
+  final needingService = await ref.watch(vehiclesNeedingServiceProvider.future);
+  return VehiclesData(total: allVehicles.length, needingService: needingService);
 });
 
-final vehiclesProvider = Provider<VehiclesData>((ref) {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  return VehiclesData(
-    total: repo.getVehicles().length,
-    needingService: repo.getVehiclesNeedingService(),
-  );
+final recentTripsProvider = FutureProvider<List<Trip>>((ref) async {
+  return ref.watch(allTripsProvider.future);
 });
 
-final tripsProvider = Provider<TripsData>((ref) {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  return TripsData(
-    recent: repo.getRecentTrips(),
-    statistics: repo.getTripStatistics(),
-  );
+final revenueProvider = FutureProvider<double>((ref) async {
+  return ref.watch(totalRevenueProvider.future);
 });
 
-final revenueProvider = Provider<double>((ref) {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  return repo.getTotalRevenue();
-});
-
-final driverScoreboardProvider = Provider<List<Driver>>((ref) {
-  final repo = ref.watch(dashboardRepositoryProvider);
-  return repo.getDriverScoreboard();
+final dashboardDriverScoreboardProvider = FutureProvider<List<Driver>>((ref) async {
+  return ref.watch(driverScoreboardProvider.future);
 });
 
 class DriversData {
@@ -62,15 +47,5 @@ class VehiclesData {
   VehiclesData({
     required this.total,
     required this.needingService,
-  });
-}
-
-class TripsData {
-  final List<Trip> recent;
-  final Map<String, int> statistics;
-
-  TripsData({
-    required this.recent,
-    required this.statistics,
   });
 }

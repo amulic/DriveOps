@@ -1,13 +1,133 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../shared/models/user.dart';
+import '../models/user.dart';
+import '../../services/auth_service.dart';
 
-final authProvider = Provider<User>((ref) {
-  return const User(
-    id: 'admin-001',
-    email: 'admin@driveops.com',
-    firstName: 'Admin',
-    lastName: 'Manager',
-    userType: UserType.admin,
-    isActive: true,
-  );
+class AuthState {
+  final bool isAuthenticated;
+  final User? user;
+  final bool isLoading;
+  final String? error;
+
+  const AuthState({
+    this.isAuthenticated = false,
+    this.user,
+    this.isLoading = false,
+    this.error,
+  });
+
+  AuthState copyWith({
+    bool? isAuthenticated,
+    User? user,
+    bool? isLoading,
+    String? error,
+  }) {
+    return AuthState(
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      user: user ?? this.user,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+class AuthNotifier extends AsyncNotifier<AuthState> {
+  late final AuthService _authService;
+
+  @override
+  Future<AuthState> build() async {
+    _authService = AuthService();
+    return _checkAuthState();
+  }
+
+  Future<AuthState> _checkAuthState() async {
+    try {
+      final isAuth = await _authService.isAuthenticated();
+      if (isAuth) {
+        final token = await _authService.getAccessToken();
+        if (token != null) {
+          return const AuthState(isAuthenticated: true);
+        }
+      }
+      return const AuthState();
+    } catch (_) {
+      return const AuthState();
+    }
+  }
+
+  Future<void> login() async {
+    state = const AsyncValue.loading();
+    try {
+      final result = await _authService.login();
+      if (result.success && result.tokens != null) {
+        final user = await _syncUser();
+        state = AsyncValue.data(AuthState(isAuthenticated: true, user: user));
+      } else {
+        state = AsyncValue.data(AuthState(error: result.error ?? 'Login failed'));
+      }
+    } catch (e) {
+      state = AsyncValue.data(AuthState(error: e.toString()));
+    }
+  }
+
+  Future<void> logout() async {
+    state = const AsyncValue.loading();
+    try {
+      await _authService.logout();
+      state = const AsyncValue.data(AuthState());
+    } catch (_) {
+      state = const AsyncValue.data(AuthState());
+    }
+  }
+
+  Future<User?> _syncUser() async {
+    try {
+      final token = await _authService.getAccessToken();
+      if (token == null) return null;
+
+      final syncResponse = await _makeRequest('POST', '/api/user/sync', token);
+      if (syncResponse == null) return null;
+
+      final userResponse = await _makeRequest('GET', '/api/user/me', token);
+      if (userResponse == null) return null;
+
+      return User.fromJson(userResponse);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _makeRequest(String method, String path, String token) async {
+    final uri = Uri.parse('http://localhost:5032$path');
+    HttpClientRequest request;
+    if (method == 'GET') {
+      request = await HttpClient().getUrl(uri);
+    } else {
+      request = await HttpClient().postUrl(uri);
+      request.headers.contentType = ContentType.json;
+    }
+    request.headers.set('Authorization', 'Bearer $token');
+
+    final response = await request.close();
+    final body = await response.transform(utf8.decoder).join();
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  Future<String?> getAccessToken() => _authService.getAccessToken();
+}
+
+final authProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(() => AuthNotifier());
+
+final isAuthenticatedProvider = Provider<bool>((ref) {
+  final authState = ref.watch(authProvider);
+  return authState.valueOrNull?.isAuthenticated ?? false;
+});
+
+final currentUserProvider = Provider<User?>((ref) {
+  final authState = ref.watch(authProvider);
+  return authState.valueOrNull?.user;
 });

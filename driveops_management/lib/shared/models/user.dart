@@ -24,6 +24,11 @@ class User {
   final UserType userType;
   final bool? isActive;
   final String? profileImageUrl;
+  final String? address;
+  final DateTime? dateOfBirth;
+  final DateTime? hireDate;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const User({
     required this.id,
@@ -35,6 +40,11 @@ class User {
     required this.userType,
     this.isActive,
     this.profileImageUrl,
+    this.address,
+    this.dateOfBirth,
+    this.hireDate,
+    this.createdAt,
+    this.updatedAt,
   });
 
   String get fullName => '$firstName $lastName';
@@ -50,6 +60,19 @@ class User {
       userType: UserType.fromInt(json['userType'] as int),
       isActive: json['isActive'] as bool?,
       profileImageUrl: json['profileImageUrl'] as String?,
+      address: json['address'] as String?,
+      dateOfBirth: json['dateOfBirth'] != null
+          ? DateTime.parse(json['dateOfBirth'] as String)
+          : null,
+      hireDate: json['hireDate'] != null
+          ? DateTime.parse(json['hireDate'] as String)
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : null,
     );
   }
 
@@ -64,6 +87,45 @@ class User {
       'userType': userType.toInt(),
       'isActive': isActive,
       'profileImageUrl': profileImageUrl,
+      'address': address,
+      'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'hireDate': hireDate?.toIso8601String(),
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
+  }
+
+  User copyWith({
+    String? id,
+    String? keycloakId,
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+    UserType? userType,
+    bool? isActive,
+    String? profileImageUrl,
+    String? address,
+    DateTime? dateOfBirth,
+    DateTime? hireDate,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return User(
+      id: id ?? this.id,
+      keycloakId: keycloakId ?? this.keycloakId,
+      email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      userType: userType ?? this.userType,
+      isActive: isActive ?? this.isActive,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      address: address ?? this.address,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      hireDate: hireDate ?? this.hireDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

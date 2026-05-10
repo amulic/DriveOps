@@ -8,7 +8,7 @@ class DriverScoreboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scoreboard = ref.watch(driverScoreboardProvider);
+    final scoreboardAsync = ref.watch(dashboardDriverScoreboardProvider);
 
     return Card(
       color: const Color(0xFF252538),
@@ -26,11 +26,23 @@ class DriverScoreboard extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            ...scoreboard.asMap().entries.map((entry) {
-              final index = entry.key;
-              final driver = entry.value;
-              return _buildDriverRow(index + 1, driver, driver.fullName, driver.rating, driver.totalTrips, driver.totalRevenue);
-            }),
+            scoreboardAsync.when(
+              data: (scoreboard) => Column(
+                children: scoreboard.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final driver = entry.value;
+                  return _buildDriverRow(index + 1, driver, driver.driverName, driver.rating, driver.totalTrips, driver.totalRevenue);
+                }).toList(),
+              ),
+              loading: () => const SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
+              ),
+              error: (_, __) => const SizedBox(
+                height: 200,
+                child: Center(child: Text('Failed to load', style: TextStyle(color: Colors.white54))),
+              ),
+            ),
           ],
         ),
       ),
@@ -53,9 +65,9 @@ class DriverScoreboard extends ConsumerWidget {
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: rankColor.withOpacity(0.2),
+              color: rankColor.withValues(alpha: 0.2),
               shape: BoxShape.circle,
-              border: Border.all(color: rankColor.withOpacity(0.5)),
+              border: Border.all(color: rankColor.withValues(alpha: 0.5)),
             ),
             child: Center(
               child: Text(

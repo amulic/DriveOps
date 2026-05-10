@@ -14,7 +14,7 @@ class MessagesScreen extends StatelessWidget {
             Icon(
               Icons.chat_rounded,
               size: 80,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -30,7 +30,7 @@ class MessagesScreen extends StatelessWidget {
               'Coming Soon',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
               ),
             ),
           ],

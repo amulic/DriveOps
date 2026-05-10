@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/api_config.dart';
+import '../providers/auth_provider.dart';
 
-class Sidebar extends StatelessWidget {
+class Sidebar extends ConsumerWidget {
   const Sidebar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currentRoute = GoRouterState.of(context).uri.path;
+    final authState = ref.watch(authProvider);
+    final user = authState.valueOrNull?.user;
 
     return Container(
       width: AppConstants.sidebarWidth,
@@ -62,7 +66,7 @@ class Sidebar extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          _buildProfileSection(context),
+          _buildProfileSection(context, ref, user),
         ],
       ),
     );
@@ -100,61 +104,85 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileSection(BuildContext context) {
+  Widget _buildProfileSection(BuildContext context, WidgetRef ref, dynamic user) {
+    final name = user?.fullName ?? 'Admin Manager';
+    final initials = name.split(' ').take(2).map((n) => n.isNotEmpty ? n[0] : '').join().toUpperCase();
+    final role = user?.userType.name.toLowerCase() == 'admin' ? 'Administrator' : (user?.userType.name ?? 'Administrator');
+
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: InkWell(
-        onTap: () => context.go('/profile'),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF252538),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => context.go('/profile'),
             borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Color(0xFF3B82F6),
-                child: Text(
-                  'AM',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF252538),
+                borderRadius: BorderRadius.circular(12),
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Admin Manager',
-                      style: TextStyle(
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: const Color(0xFF3B82F6),
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      'Administrator',
-                      style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 12,
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          role,
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Colors.white54,
+                  ),
+                ],
               ),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.white54,
-              ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => ref.read(authProvider.notifier).logout(),
+              icon: const Icon(Icons.logout, size: 18),
+              label: const Text('Sign Out'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white54,
+                side: const BorderSide(color: Colors.white12),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -189,10 +217,10 @@ class _SidebarTabButton extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF3B82F6).withOpacity(0.15) : null,
+              color: isSelected ? const Color(0xFF3B82F6).withValues(alpha: 0.15) : null,
               borderRadius: BorderRadius.circular(8),
               border: isSelected
-                  ? Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3))
+                  ? Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3))
                   : null,
             ),
             child: Row(
