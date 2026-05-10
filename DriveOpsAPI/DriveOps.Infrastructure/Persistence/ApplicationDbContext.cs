@@ -1,4 +1,5 @@
-﻿using DriveOps.Model.Entity;
+using DriveOps.Model.Entity;
+using DriveOps.Model.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -30,7 +31,9 @@ namespace DriveOps.Infrastructure.Persistence
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Server=DESKTOP-MFE7L4J\\mulik;Database=DriveOpsDB;Trusted_Connection=True;TrustServerCertificate=True;");
+                var fallbackConnectionString = "Server=localhost;Port=3306;Database=driveops_api;User=driveops_api;Password=driveops_api;";
+                var mysqlServerVersion = new MySqlServerVersion(new Version(8, 0, 36));
+                optionsBuilder.UseMySql(fallbackConnectionString, mysqlServerVersion);
             }
         }
 
@@ -40,8 +43,8 @@ namespace DriveOps.Infrastructure.Persistence
             {
                 entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC074429FDDF");
 
-                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.Email).HasMaxLength(255);
                 entity.Property(e => e.Name).HasMaxLength(100);
                 entity.Property(e => e.PhoneNumber).HasMaxLength(20);
@@ -49,7 +52,7 @@ namespace DriveOps.Infrastructure.Persistence
                     .HasDefaultValue(5.00m)
                     .HasColumnType("decimal(3, 2)");
                 entity.Property(e => e.TotalTrips).HasDefaultValue(0);
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                 entity.HasOne(d => d.User).WithMany(p => p.Customers)
                     .HasForeignKey(d => d.UserId)
@@ -62,8 +65,8 @@ namespace DriveOps.Infrastructure.Persistence
 
                 entity.HasIndex(e => e.LicenseNumber, "UQ__Drivers__E88901666371942D").IsUnique();
 
-                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.CurrentLatitude).HasColumnType("decimal(10, 8)");
                 entity.Property(e => e.CurrentLongitude).HasColumnType("decimal(11, 8)");
                 entity.Property(e => e.EmergencyContactName).HasMaxLength(100);
@@ -73,12 +76,12 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.Property(e => e.Rating)
                     .HasDefaultValue(5.00m)
                     .HasColumnType("decimal(3, 2)");
-                entity.Property(e => e.Status).HasDefaultValue(1);
+                entity.Property(e => e.Status).HasDefaultValue(DriverStatus.Active);
                 entity.Property(e => e.TotalRevenue)
                     .HasDefaultValue(0m)
                     .HasColumnType("decimal(10, 2)");
                 entity.Property(e => e.TotalTrips).HasDefaultValue(0);
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                 entity.HasOne(d => d.User).WithMany(p => p.Drivers)
                     .HasForeignKey(d => d.UserId)
@@ -90,11 +93,11 @@ namespace DriveOps.Infrastructure.Persistence
             {
                 entity.HasKey(e => e.Id).HasName("PK__Trips__3214EC075F28D6FF");
 
-                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
                 entity.Property(e => e.ActualDistance).HasColumnType("decimal(8, 2)");
                 entity.Property(e => e.ActualFare).HasColumnType("decimal(10, 2)");
                 entity.Property(e => e.CancellationReason).HasMaxLength(500);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.CustomerFeedback).HasMaxLength(1000);
                 entity.Property(e => e.DriverFeedback).HasMaxLength(1000);
                 entity.Property(e => e.DropoffAddress).HasMaxLength(500);
@@ -102,15 +105,15 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.Property(e => e.DropoffLongitude).HasColumnType("decimal(11, 8)");
                 entity.Property(e => e.EstimatedDistance).HasColumnType("decimal(8, 2)");
                 entity.Property(e => e.EstimatedFare).HasColumnType("decimal(10, 2)");
-                entity.Property(e => e.PaymentStatus).HasDefaultValue(1);
+                entity.Property(e => e.PaymentStatus).HasDefaultValue(PaymentStatus.Pending);
                 entity.Property(e => e.PickupAddress).HasMaxLength(500);
                 entity.Property(e => e.PickupLatitude).HasColumnType("decimal(10, 8)");
                 entity.Property(e => e.PickupLongitude).HasColumnType("decimal(11, 8)");
-                entity.Property(e => e.RequestedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.RequestedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.SpecialInstructions).HasMaxLength(500);
-                entity.Property(e => e.TripStatus).HasDefaultValue(1);
-                entity.Property(e => e.TripType).HasDefaultValue(1);
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.TripStatus).HasDefaultValue(TripStatus.Requested);
+                entity.Property(e => e.TripType).HasDefaultValue(TripType.Standard);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                 entity.HasOne(d => d.Customer).WithMany(p => p.Trips)
                     .HasForeignKey(d => d.CustomerId)
@@ -130,10 +133,10 @@ namespace DriveOps.Infrastructure.Persistence
             {
                 entity.HasKey(e => e.Id).HasName("PK__TripRout__3214EC077D385975");
 
-                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
                 entity.Property(e => e.Latitude).HasColumnType("decimal(10, 8)");
                 entity.Property(e => e.Longitude).HasColumnType("decimal(11, 8)");
-                entity.Property(e => e.Timestamp).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Timestamp).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                 entity.HasOne(d => d.Trip).WithMany(p => p.TripRoutes)
                     .HasForeignKey(d => d.TripId)
@@ -147,9 +150,9 @@ namespace DriveOps.Infrastructure.Persistence
 
                 entity.HasIndex(e => e.Email, "UQ__Users__A9D105348F0D93ED").IsUnique();
 
-                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
                 entity.Property(e => e.Address).HasMaxLength(500);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.Email).HasMaxLength(255);
                 entity.Property(e => e.FirstName).HasMaxLength(100);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
@@ -157,7 +160,7 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.Property(e => e.PasswordHash).HasMaxLength(255);
                 entity.Property(e => e.PhoneNumber).HasMaxLength(20);
                 entity.Property(e => e.ProfileImageUrl).HasMaxLength(500);
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
             });
 
             modelBuilder.Entity<Vehicle>(entity =>
@@ -168,17 +171,17 @@ namespace DriveOps.Infrastructure.Persistence
 
                 entity.HasIndex(e => e.Vin, "UQ__Vehicles__C5DF234CE959122A").IsUnique();
 
-                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
                 entity.Property(e => e.Color).HasMaxLength(30);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.InsurancePolicyNumber).HasMaxLength(50);
                 entity.Property(e => e.LicensePlate).HasMaxLength(20);
                 entity.Property(e => e.Make).HasMaxLength(50);
                 entity.Property(e => e.Mileage).HasDefaultValue(0);
                 entity.Property(e => e.Model).HasMaxLength(50);
                 entity.Property(e => e.SeatingCapacity).HasDefaultValue(4);
-                entity.Property(e => e.Status).HasDefaultValue(1);
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Status).HasDefaultValue(VehicleStatus.Available);
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.Vin)
                     .HasMaxLength(50)
                     .HasColumnName("VIN");

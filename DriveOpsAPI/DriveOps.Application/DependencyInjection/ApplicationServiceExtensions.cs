@@ -1,5 +1,7 @@
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Services;
+using DriveOps.Application.Validation;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DriveOps.Application.DependencyInjection
@@ -13,6 +15,8 @@ namespace DriveOps.Application.DependencyInjection
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<IVehicleService, VehicleService>();
             services.AddScoped<ITripService, TripService>();
+
+            services.AddValidatorsFromAssemblyContaining<CreateTripDtoValidator>();
 
             return services;
         }

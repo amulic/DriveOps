@@ -37,20 +37,27 @@ namespace DriveOps.API.Controllers
         }
 
         [HttpGet("available")]
-        public async Task<IActionResult> GetAvailableDrivers()
+        public async Task<IActionResult> GetAvailableDrivers(
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
-            var drivers = await _driverService.GetAvailableDriversAsync();
-            return Ok(drivers.Select(d => d.ToResponse()));
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _driverService.GetAvailableDriversAsync(page, pageSize);
+            return Ok(result);
         }
 
         [HttpGet("nearby")]
         public async Task<IActionResult> GetNearbyDrivers(
             [FromQuery] decimal latitude,
             [FromQuery] decimal longitude,
-            [FromQuery] decimal radiusKm = 5)
+            [FromQuery] decimal radiusKm = 5,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
         {
-            var drivers = await _driverService.GetNearbyDriversAsync(latitude, longitude, radiusKm);
-            return Ok(drivers.Select(d => d.ToResponse()));
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _driverService.GetNearbyDriversAsync(latitude, longitude, radiusKm, page, pageSize);
+            return Ok(result);
         }
 
         [HttpPost]
@@ -81,7 +88,7 @@ namespace DriveOps.API.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id:guid}/suspend")]
+        [HttpPost("{id:guid}/suspend")] // deactivate
         public async Task<IActionResult> SuspendDriver(Guid id)
         {
             await _driverService.SuspendDriverAsync(id);

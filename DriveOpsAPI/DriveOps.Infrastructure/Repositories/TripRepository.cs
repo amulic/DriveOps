@@ -22,24 +22,38 @@ namespace DriveOps.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Trip>> GetByCustomerIdAsync(Guid customerId)
+        public async Task<IEnumerable<Trip>> GetByCustomerIdAsync(Guid customerId, int page = 1, int pageSize = 20)
         {
             return await _dbSet
                 .Include(t => t.Driver)
                 .Include(t => t.Vehicle)
                 .Where(t => t.CustomerId == customerId)
                 .OrderByDescending(t => t.RequestedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Trip>> GetByDriverIdAsync(Guid driverId)
+        public async Task<IEnumerable<Trip>> GetByDriverIdAsync(Guid driverId, int page = 1, int pageSize = 20)
         {
             return await _dbSet
                 .Include(t => t.Customer)
                 .Include(t => t.Vehicle)
                 .Where(t => t.DriverId == driverId)
                 .OrderByDescending(t => t.RequestedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+        }
+
+        public async Task<int> CountByCustomerIdAsync(Guid customerId)
+        {
+            return await _dbSet.CountAsync(t => t.CustomerId == customerId);
+        }
+
+        public async Task<int> CountByDriverIdAsync(Guid driverId)
+        {
+            return await _dbSet.CountAsync(t => t.DriverId == driverId);
         }
 
         public async Task<Trip?> GetWithDetailsAsync(Guid tripId)

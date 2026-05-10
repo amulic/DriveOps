@@ -24,7 +24,7 @@ namespace DriveOps.Infrastructure.Persistence
             }
 
             var config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
+                .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json", optional: true)
                 .AddJsonFile($"appsettings.{environment}.json", optional: true)
                 .AddEnvironmentVariables()
@@ -34,7 +34,8 @@ namespace DriveOps.Infrastructure.Persistence
                                    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseSqlServer(connectionString);
+            var mysqlServerVersion = new MySqlServerVersion(new Version(8, 0, 36));
+            optionsBuilder.UseMySql(connectionString, mysqlServerVersion);
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }

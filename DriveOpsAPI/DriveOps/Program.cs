@@ -1,4 +1,5 @@
 using DriveOps.Application.DependencyInjection;
+using DriveOps.Application.Helpers;
 using DriveOps.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,8 +43,31 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // DI - Infrastructure (DbContext, Repositories, External Services)
 builder.Services.AddInfrastructure(connectionString);
 
+// DI - RabbitMQ (Event Publishing + Consumers)
+var rabbitHost = builder.Configuration["RabbitMQ:HostName"] ?? "localhost";
+var rabbitPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
+var rabbitUser = builder.Configuration["RabbitMQ:UserName"] ?? "guest";
+var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+builder.Services.AddRabbitMq(rabbitHost, rabbitPort, rabbitUser, rabbitPass);
+
 // DI - Application (Services)
 builder.Services.AddApplication();
+
+// Fare Calculator configuration
+builder.Services.Configure<FareCalculatorOptions>(
+    builder.Configuration.GetSection("FareCalculator"));
+var fareSection = builder.Configuration.GetSection("FareCalculator");
+if (fareSection.Exists())
+{
+    FareCalculator.Configure(new FareCalculatorOptions
+    {
+        BaseFare = fareSection.GetValue<decimal>("BaseFare", 2.50m),
+        PerKmRate = fareSection.GetValue<decimal>("PerKmRate", 1.50m),
+        PerMinuteRate = fareSection.GetValue<decimal>("PerMinuteRate", 0.25m),
+        PremiumMultiplier = fareSection.GetValue<decimal>("PremiumMultiplier", 1.5m),
+        SharedMultiplier = fareSection.GetValue<decimal>("SharedMultiplier", 0.7m)
+    });
+}
 
 // Keycloak
 builder.Services.AddAuthentication("Bearer")
@@ -107,9 +131,6 @@ builder.Logging.AddConsole();
 
 var app = builder.Build();
 
-
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
