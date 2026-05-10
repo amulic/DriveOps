@@ -3,7 +3,9 @@ using DriveOps.Application.Helpers;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
 using DriveOps.Model.Entity;
-using DriveOps.Model.Enums;
+using DriveOps.RealTime.Contracts.Enums;
+using DriveOps.RealTime.Contracts.Events;
+using ModelEnums = DriveOps.Model.Enums;
 
 namespace DriveOps.Application.Services
 {
@@ -15,6 +17,7 @@ namespace DriveOps.Application.Services
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IRoutingService _routingService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEventPublisher _eventPublisher;
 
         public TripService(
             ITripRepository tripRepository,
@@ -22,7 +25,8 @@ namespace DriveOps.Application.Services
             IDriverRepository driverRepository,
             IVehicleRepository vehicleRepository,
             IRoutingService routingService,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IEventPublisher eventPublisher)
         {
             _tripRepository = tripRepository;
             _tripRouteRepository = tripRouteRepository;
@@ -30,6 +34,7 @@ namespace DriveOps.Application.Services
             _vehicleRepository = vehicleRepository;
             _routingService = routingService;
             _unitOfWork = unitOfWork;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<TripDto?> GetTripByIdAsync(Guid tripId)
@@ -38,16 +43,30 @@ namespace DriveOps.Application.Services
             return trip?.ToDto();
         }
 
-        public async Task<IEnumerable<TripDto>> GetTripsByCustomerAsync(Guid customerId)
+        public async Task<PaginatedResult<TripDto>> GetTripsByCustomerAsync(Guid customerId, int page = 1, int pageSize = 20)
         {
-            var trips = await _tripRepository.GetByCustomerIdAsync(customerId);
-            return trips.Select(t => t.ToDto());
+            var trips = await _tripRepository.GetByCustomerIdAsync(customerId, page, pageSize);
+            var total = await _tripRepository.CountByCustomerIdAsync(customerId);
+            return new PaginatedResult<TripDto>
+            {
+                Items = trips.Select(t => t.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
-        public async Task<IEnumerable<TripDto>> GetTripsByDriverAsync(Guid driverId)
+        public async Task<PaginatedResult<TripDto>> GetTripsByDriverAsync(Guid driverId, int page = 1, int pageSize = 20)
         {
-            var trips = await _tripRepository.GetByDriverIdAsync(driverId);
-            return trips.Select(t => t.ToDto());
+            var trips = await _tripRepository.GetByDriverIdAsync(driverId, page, pageSize);
+            var total = await _tripRepository.CountByDriverIdAsync(driverId);
+            return new PaginatedResult<TripDto>
+            {
+                Items = trips.Select(t => t.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<IEnumerable<TripDto>> GetActiveTripsForDriverAsync(Guid driverId)
@@ -62,7 +81,7 @@ namespace DriveOps.Application.Services
             var estimate = await _routingService.GetTripEstimateAsync(
                 dto.PickupLatitude, dto.PickupLongitude,
                 dto.DropoffLatitude, dto.DropoffLongitude,
-                dto.TripType);
+                (DriveOps.RealTime.Contracts.Enums.TripType)(int)dto.TripType);
 
             var trip = dto.ToEntity();
             trip.EstimatedDistance = (decimal)estimate.DistanceKm;
@@ -71,6 +90,16 @@ namespace DriveOps.Application.Services
 
             await _tripRepository.AddAsync(trip);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.requested",
+                new TripRequestedEvent(
+                    trip.Id, trip.CustomerId,
+                    (TripStatus)trip.TripStatus,
+                    (TripType)trip.TripType,
+                    dto.PickupLatitude, dto.PickupLongitude, dto.PickupAddress ?? "",
+                    dto.DropoffLatitude, dto.DropoffLongitude, dto.DropoffAddress ?? "",
+                    trip.EstimatedFare, trip.EstimatedDuration, trip.RequestedAt ?? DateTime.UtcNow));
+
             return trip.ToDto();
         }
 
@@ -79,7 +108,7 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(tripId)
                 ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
 
-            if (trip.TripStatus != TripStatus.Requested)
+            if (trip.TripStatus != ModelEnums.TripStatus.Requested)
                 throw new InvalidOperationException("Trip is not in a requestable state.");
 
             var driver = await _driverRepository.GetByIdAsync(driverId)
@@ -92,20 +121,34 @@ namespace DriveOps.Application.Services
             {
                 trip.DriverId = driverId;
                 trip.VehicleId = vehicleId;
-                trip.TripStatus = TripStatus.Assigned;
+                trip.TripStatus = ModelEnums.TripStatus.Assigned;
                 trip.AssignedAt = DateTime.UtcNow;
                 trip.UpdatedAt = DateTime.UtcNow;
 
-                driver.Status = DriverStatus.OnTrip;
+                driver.Status = ModelEnums.DriverStatus.OnTrip;
                 driver.UpdatedAt = DateTime.UtcNow;
 
-                vehicle.Status = VehicleStatus.InUse;
+                vehicle.Status = ModelEnums.VehicleStatus.InUse;
                 vehicle.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.SaveChangesAsync();
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
+            var customerUserId = result?.Customer?.UserId;
+            var driverDisplayName = result?.Driver?.User != null
+                ? $"{result.Driver.User.FirstName} {result.Driver.User.LastName}".Trim()
+                : string.Empty;
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.assigned",
+                new TripAssignedEvent(
+                    tripId, trip.CustomerId, driverId, vehicleId,
+                    driverDisplayName,
+                    driver.CurrentLatitude ?? 0, driver.CurrentLongitude ?? 0,
+                    trip.AssignedAt ?? DateTime.UtcNow,
+                    customerUserId,
+                    driver.UserId));
+
             return result!.ToDto();
         }
 
@@ -114,10 +157,10 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(tripId)
                 ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
 
-            if (trip.TripStatus != TripStatus.Assigned && trip.TripStatus != TripStatus.DriverEnRoute)
+            if (trip.TripStatus != ModelEnums.TripStatus.Assigned && trip.TripStatus != ModelEnums.TripStatus.DriverEnRoute)
                 throw new InvalidOperationException("Trip cannot be started in its current state.");
 
-            trip.TripStatus = TripStatus.InProgress;
+            trip.TripStatus = ModelEnums.TripStatus.InProgress;
             trip.PickupTime = DateTime.UtcNow;
             trip.UpdatedAt = DateTime.UtcNow;
 
@@ -125,6 +168,11 @@ namespace DriveOps.Application.Services
             await _unitOfWork.SaveChangesAsync();
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
+            var customerUserId = result?.Customer?.UserId;
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.started",
+                new TripStartedEvent(tripId, trip.CustomerId, trip.DriverId!.Value, trip.PickupTime!.Value, customerUserId));
+
             return result!.ToDto();
         }
 
@@ -133,12 +181,12 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(tripId)
                 ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
 
-            if (trip.TripStatus != TripStatus.InProgress)
+            if (trip.TripStatus != ModelEnums.TripStatus.InProgress)
                 throw new InvalidOperationException("Trip is not in progress.");
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                trip.TripStatus = TripStatus.Completed;
+                trip.TripStatus = ModelEnums.TripStatus.Completed;
                 trip.DropoffTime = DateTime.UtcNow;
                 trip.ActualDistance = actualDistance;
                 trip.ActualDuration = trip.PickupTime.HasValue
@@ -147,8 +195,8 @@ namespace DriveOps.Application.Services
                 trip.ActualFare = FareCalculator.Calculate(
                     actualDistance,
                     trip.ActualDuration ?? trip.EstimatedDuration ?? 0,
-                    trip.TripType);
-                trip.PaymentStatus = PaymentStatus.Completed;
+                    (DriveOps.RealTime.Contracts.Enums.TripType)(int)trip.TripType);
+                trip.PaymentStatus = ModelEnums.PaymentStatus.Completed;
                 trip.UpdatedAt = DateTime.UtcNow;
 
                 if (trip.DriverId.HasValue)
@@ -156,7 +204,7 @@ namespace DriveOps.Application.Services
                     var driver = await _driverRepository.GetByIdAsync(trip.DriverId.Value);
                     if (driver != null)
                     {
-                        driver.Status = DriverStatus.Active;
+                        driver.Status = ModelEnums.DriverStatus.Active;
                         driver.TotalTrips = (driver.TotalTrips ?? 0) + 1;
                         driver.TotalRevenue = (driver.TotalRevenue ?? 0) + (trip.ActualFare ?? 0);
                         driver.UpdatedAt = DateTime.UtcNow;
@@ -168,7 +216,7 @@ namespace DriveOps.Application.Services
                     var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
                     if (vehicle != null)
                     {
-                        vehicle.Status = VehicleStatus.Available;
+                        vehicle.Status = ModelEnums.VehicleStatus.Available;
                         vehicle.Mileage = (vehicle.Mileage ?? 0) + (int)actualDistance;
                         vehicle.UpdatedAt = DateTime.UtcNow;
                     }
@@ -178,6 +226,13 @@ namespace DriveOps.Application.Services
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
+            var customerUserId = result?.Customer?.UserId;
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.completed",
+                new TripCompletedEvent(
+                    tripId, trip.CustomerId, trip.DriverId!.Value,
+                    actualDistance, trip.ActualFare ?? 0, trip.DropoffTime ?? DateTime.UtcNow, customerUserId));
+
             return result!.ToDto();
         }
 
@@ -186,12 +241,12 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(tripId)
                 ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
 
-            if (trip.TripStatus == TripStatus.Completed || trip.TripStatus == TripStatus.Cancelled)
+            if (trip.TripStatus == ModelEnums.TripStatus.Completed || trip.TripStatus == ModelEnums.TripStatus.Cancelled)
                 throw new InvalidOperationException("Trip cannot be cancelled in its current state.");
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                trip.TripStatus = TripStatus.Cancelled;
+                trip.TripStatus = ModelEnums.TripStatus.Cancelled;
                 trip.CancellationReason = reason;
                 trip.UpdatedAt = DateTime.UtcNow;
 
@@ -200,7 +255,7 @@ namespace DriveOps.Application.Services
                     var driver = await _driverRepository.GetByIdAsync(trip.DriverId.Value);
                     if (driver != null)
                     {
-                        driver.Status = DriverStatus.Active;
+                        driver.Status = ModelEnums.DriverStatus.Active;
                         driver.UpdatedAt = DateTime.UtcNow;
                     }
                 }
@@ -210,7 +265,7 @@ namespace DriveOps.Application.Services
                     var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
                     if (vehicle != null)
                     {
-                        vehicle.Status = VehicleStatus.Available;
+                        vehicle.Status = ModelEnums.VehicleStatus.Available;
                         vehicle.UpdatedAt = DateTime.UtcNow;
                     }
                 }
@@ -219,6 +274,12 @@ namespace DriveOps.Application.Services
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
+            var customerUserId = result?.Customer?.UserId;
+
+            await _eventPublisher.PublishAsync("driveops.trips", "trip.cancelled",
+                new TripCancelledEvent(
+                    tripId, trip.CustomerId, trip.DriverId, reason, DateTime.UtcNow, customerUserId));
+
             return result!.ToDto();
         }
 
@@ -227,7 +288,7 @@ namespace DriveOps.Application.Services
             var trip = await _tripRepository.GetByIdAsync(dto.TripId)
                 ?? throw new KeyNotFoundException($"Trip {dto.TripId} not found.");
 
-            if (trip.TripStatus != TripStatus.Completed)
+            if (trip.TripStatus != ModelEnums.TripStatus.Completed)
                 throw new InvalidOperationException("Only completed trips can be rated.");
 
             if (dto.IsCustomerRating)
@@ -257,7 +318,7 @@ namespace DriveOps.Application.Services
             return await _routingService.GetTripEstimateAsync(
                 pickupLat, pickupLon,
                 dropoffLat, dropoffLon,
-                tripType);
+                (DriveOps.RealTime.Contracts.Enums.TripType)(int)tripType);
         }
 
         public async Task<IEnumerable<RoutePointDto>> GetTripRouteAsync(Guid tripId)
@@ -283,6 +344,10 @@ namespace DriveOps.Application.Services
 
             await _tripRouteRepository.AddBatchAsync(routePoints);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.location", "trip.route",
+                new TripRouteUpdatedEvent(tripId,
+                    points.Select(p => new RoutePointEvent(p.Latitude, p.Longitude, p.Timestamp ?? DateTime.UtcNow))));
         }
     }
 }

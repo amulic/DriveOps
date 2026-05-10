@@ -1,0 +1,300 @@
+{
+  "usage": {
+    "baseUrl": "http://localhost:5032",
+    "notes": [
+      "Use this file as request fixtures/templates for the REST API.",
+      "For IDs marked as {{...}}, replace with values returned by previous API calls.",
+      "DateOnly fields use YYYY-MM-DD. DateTime fields use ISO 8601 UTC."
+    ]
+  },
+  "variables": {
+    "customerUserId": "{{from POST /api/User (customer)}}",
+    "driverUserId": "{{from POST /api/User (driver)}}",
+    "customerId": "{{from POST /api/Customer}}",
+    "driverId": "{{from POST /api/Driver}}",
+    "vehicleId": "{{from POST /api/Vehicle}}",
+    "tripId": "{{from POST /api/Trip}}"
+  },
+  "enums": {
+    "UserType": {
+      "Customer": 0,
+      "Driver": 1,
+      "Admin": 2,
+      "Dispatcher": 3
+    },
+    "FuelType": {
+      "Petrol": 0,
+      "Diesel": 1,
+      "Hybrid": 2,
+      "Electric": 3
+    },
+    "VehicleStatus": {
+      "Available": 1,
+      "InUse": 2,
+      "Maintenance": 3,
+      "Retired": 4
+    },
+    "TripType": {
+      "Standard": 1,
+      "Premium": 2,
+      "Shared": 3,
+      "Scheduled": 4
+    },
+    "PaymentMethod": {
+      "Cash": 1,
+      "CreditCard": 2,
+      "DebitCard": 3,
+      "DigitalWallet": 4
+    }
+  },
+  "workflowOrder": [
+    "Create customer user",
+    "Create driver user",
+    "Create customer profile",
+    "Create driver profile",
+    "Create vehicle",
+    "Assign vehicle to driver",
+    "Create trip",
+    "Assign driver to trip",
+    "Start trip",
+    "Send route points",
+    "Complete trip",
+    "Rate trip"
+  ],
+  "requests": {
+    "User": {
+      "createCustomerUser": {
+        "method": "POST",
+        "path": "/api/User",
+        "body": {
+          "email": "customer.ana@example.com",
+          "firstName": "Ana",
+          "lastName": "Mikic",
+          "phoneNumber": "+38591111222",
+          "userType": 0,
+          "profileImageUrl": "https://example.com/img/customer-ana.jpg",
+          "address": "Savska cesta 1, Zagreb",
+          "dateOfBirth": "1996-04-12"
+        }
+      },
+      "createDriverUser": {
+        "method": "POST",
+        "path": "/api/User",
+        "body": {
+          "email": "driver.luka@example.com",
+          "firstName": "Luka",
+          "lastName": "Horvat",
+          "phoneNumber": "+38598123456",
+          "userType": 1,
+          "profileImageUrl": "https://example.com/img/driver-luka.jpg",
+          "address": "Vukovarska 20, Zagreb",
+          "dateOfBirth": "1992-10-05"
+        }
+      },
+      "updateUser": {
+        "method": "PUT",
+        "path": "/api/User/{{customerUserId}}",
+        "body": {
+          "phoneNumber": "+38591111223",
+          "address": "Ilica 15, Zagreb"
+        }
+      }
+    },
+    "Customer": {
+      "createCustomer": {
+        "method": "POST",
+        "path": "/api/Customer",
+        "body": {
+          "userId": "{{customerUserId}}",
+          "name": "Ana Mikic",
+          "phoneNumber": "+38591111222",
+          "email": "customer.ana@example.com",
+          "preferredPaymentMethod": 2
+        }
+      },
+      "updateCustomer": {
+        "method": "PUT",
+        "path": "/api/Customer/{{customerId}}",
+        "body": {
+          "phoneNumber": "+38591111224",
+          "preferredPaymentMethod": 4
+        }
+      }
+    },
+    "Driver": {
+      "createDriver": {
+        "method": "POST",
+        "path": "/api/Driver",
+        "body": {
+          "userId": "{{driverUserId}}",
+          "licenseNumber": "HR-DRV-2026-0001",
+          "licenseExpiryDate": "2030-12-31",
+          "emergencyContactName": "Petra Horvat",
+          "emergencyContactPhone": "+38599111222"
+        }
+      },
+      "updateDriver": {
+        "method": "PUT",
+        "path": "/api/Driver/{{driverId}}",
+        "body": {
+          "emergencyContactName": "Petra L. Horvat"
+        }
+      },
+      "setOnlineStatus": {
+        "method": "PATCH",
+        "path": "/api/Driver/{{driverId}}/status",
+        "body": {
+          "isOnline": true
+        }
+      },
+      "updateDriverLocation": {
+        "method": "PATCH",
+        "path": "/api/Driver/{{driverId}}/location",
+        "body": {
+          "latitude": 45.8131,
+          "longitude": 15.9775
+        }
+      },
+      "nearbyDriversQuery": {
+        "method": "GET",
+        "path": "/api/Driver/nearby?latitude=45.8131&longitude=15.9775&radiusKm=5"
+      }
+    },
+    "Vehicle": {
+      "createVehicle": {
+        "method": "POST",
+        "path": "/api/Vehicle",
+        "body": {
+          "licensePlate": "ZG-1234-AA",
+          "make": "Toyota",
+          "model": "Corolla",
+          "year": 2022,
+          "color": "White",
+          "vin": "JTDBR32E720123456",
+          "insurancePolicyNumber": "POL-2026-778899",
+          "insuranceExpiryDate": "2027-10-10",
+          "registrationExpiryDate": "2027-09-01",
+          "fuelType": 2,
+          "seatingCapacity": 4
+        }
+      },
+      "updateVehicle": {
+        "method": "PUT",
+        "path": "/api/Vehicle/{{vehicleId}}",
+        "body": {
+          "color": "Black",
+          "status": 1,
+          "mileage": 45210
+        }
+      },
+      "assignVehicleToDriver": {
+        "method": "POST",
+        "path": "/api/Vehicle/{{vehicleId}}/assign",
+        "body": {
+          "driverId": "{{driverId}}"
+        }
+      },
+      "unassignVehicle": {
+        "method": "POST",
+        "path": "/api/Vehicle/{{vehicleId}}/unassign"
+      }
+    },
+    "Trip": {
+      "estimateTrip": {
+        "method": "POST",
+        "path": "/api/Trip/estimate",
+        "body": {
+          "pickupLatitude": 45.8131,
+          "pickupLongitude": 15.9775,
+          "dropoffLatitude": 45.8042,
+          "dropoffLongitude": 15.9601,
+          "tripType": 1
+        }
+      },
+      "requestTrip": {
+        "method": "POST",
+        "path": "/api/Trip",
+        "body": {
+          "customerId": "{{customerId}}",
+          "tripType": 1,
+          "pickupLatitude": 45.8131,
+          "pickupLongitude": 15.9775,
+          "pickupAddress": "Ban Jelacic Square, Zagreb",
+          "dropoffLatitude": 45.8042,
+          "dropoffLongitude": 15.9601,
+          "dropoffAddress": "Jarunska ul. 2, Zagreb",
+          "scheduledAt": null,
+          "paymentMethod": 2,
+          "specialInstructions": "Call when arrived."
+        }
+      },
+      "assignDriverToTrip": {
+        "method": "POST",
+        "path": "/api/Trip/{{tripId}}/assign",
+        "body": {
+          "driverId": "{{driverId}}",
+          "vehicleId": "{{vehicleId}}"
+        }
+      },
+      "startTrip": {
+        "method": "POST",
+        "path": "/api/Trip/{{tripId}}/start"
+      },
+      "addRoutePoints": {
+        "method": "POST",
+        "path": "/api/Trip/{{tripId}}/route",
+        "body": {
+          "points": [
+            {
+              "latitude": 45.8131,
+              "longitude": 15.9775,
+              "timestamp": "2026-04-18T11:00:00Z"
+            },
+            {
+              "latitude": 45.8105,
+              "longitude": 15.9702,
+              "timestamp": "2026-04-18T11:03:30Z"
+            },
+            {
+              "latitude": 45.8042,
+              "longitude": 15.9601,
+              "timestamp": "2026-04-18T11:08:00Z"
+            }
+          ]
+        }
+      },
+      "completeTrip": {
+        "method": "POST",
+        "path": "/api/Trip/{{tripId}}/complete",
+        "body": {
+          "actualDistance": 6.8
+        }
+      },
+      "cancelTrip": {
+        "method": "POST",
+        "path": "/api/Trip/{{tripId}}/cancel",
+        "body": {
+          "reason": "Customer changed destination and chose to cancel."
+        }
+      },
+      "rateTripByCustomer": {
+        "method": "POST",
+        "path": "/api/Trip/{{tripId}}/rate",
+        "body": {
+          "rating": 5,
+          "feedback": "Great ride, very smooth.",
+          "isCustomerRating": true
+        }
+      },
+      "rateTripByDriver": {
+        "method": "POST",
+        "path": "/api/Trip/{{tripId}}/rate",
+        "body": {
+          "rating": 5,
+          "feedback": "Passenger was punctual and polite.",
+          "isCustomerRating": false
+        }
+      }
+    }
+  }
+}

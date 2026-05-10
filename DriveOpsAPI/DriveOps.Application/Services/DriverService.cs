@@ -2,6 +2,7 @@ using DriveOps.Application.DTOs;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
 using DriveOps.Model.Enums;
+using DriveOps.RealTime.Contracts.Events;
 
 namespace DriveOps.Application.Services
 {
@@ -10,12 +11,14 @@ namespace DriveOps.Application.Services
         private readonly IDriverRepository _driverRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEventPublisher _eventPublisher;
 
-        public DriverService(IDriverRepository driverRepository, IUserRepository userRepository, IUnitOfWork unitOfWork)
+        public DriverService(IDriverRepository driverRepository, IUserRepository userRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
         {
             _driverRepository = driverRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<DriverDto?> GetDriverByIdAsync(Guid driverId)
@@ -30,16 +33,30 @@ namespace DriveOps.Application.Services
             return driver?.ToDto();
         }
 
-        public async Task<IEnumerable<DriverDto>> GetAvailableDriversAsync()
+        public async Task<PaginatedResult<DriverDto>> GetAvailableDriversAsync(int page = 1, int pageSize = 50)
         {
-            var drivers = await _driverRepository.GetAvailableDriversAsync();
-            return drivers.Select(d => d.ToDto());
+            var drivers = await _driverRepository.GetAvailableDriversAsync(page, pageSize);
+            var total = await _driverRepository.CountAvailableDriversAsync();
+            return new PaginatedResult<DriverDto>
+            {
+                Items = drivers.Select(d => d.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
-        public async Task<IEnumerable<DriverDto>> GetNearbyDriversAsync(decimal latitude, decimal longitude, decimal radiusKm)
+        public async Task<PaginatedResult<DriverDto>> GetNearbyDriversAsync(decimal latitude, decimal longitude, decimal radiusKm, int page = 1, int pageSize = 50)
         {
-            var drivers = await _driverRepository.GetNearbyDriversAsync(latitude, longitude, radiusKm);
-            return drivers.Select(d => d.ToDto());
+            var drivers = await _driverRepository.GetNearbyDriversAsync(latitude, longitude, radiusKm, page, pageSize);
+            var total = await _driverRepository.CountNearbyDriversAsync(latitude, longitude, radiusKm);
+            return new PaginatedResult<DriverDto>
+            {
+                Items = drivers.Select(d => d.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<DriverDto> CreateDriverAsync(CreateDriverDto dto)
@@ -78,7 +95,7 @@ namespace DriveOps.Application.Services
 
         public async Task UpdateDriverLocationAsync(UpdateDriverLocationDto dto)
         {
-            var driver = await _driverRepository.GetByIdAsync(dto.DriverId)
+            var driver = await _driverRepository.GetByIdWithTripsAsync(dto.DriverId)
                 ?? throw new KeyNotFoundException($"Driver {dto.DriverId} not found.");
 
             driver.CurrentLatitude = dto.Latitude;
@@ -87,6 +104,15 @@ namespace DriveOps.Application.Services
 
             await _driverRepository.UpdateAsync(driver);
             await _unitOfWork.SaveChangesAsync();
+
+            var activeTripId = driver.Trips
+                ?.FirstOrDefault(t => t.TripStatus == TripStatus.InProgress)
+                ?.Id;
+
+            await _eventPublisher.PublishAsync("driveops.location", "driver.location",
+                new DriverLocationUpdatedEvent(
+                    dto.DriverId, dto.Latitude, dto.Longitude,
+                    DateTime.UtcNow, activeTripId));
         }
 
         public async Task SetDriverOnlineStatusAsync(Guid driverId, bool isOnline)
@@ -99,6 +125,9 @@ namespace DriveOps.Application.Services
 
             await _driverRepository.UpdateAsync(driver);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.location", "driver.availability",
+                new DriverAvailabilityChangedEvent(driverId, isOnline, DateTime.UtcNow));
         }
 
         public async Task SuspendDriverAsync(Guid driverId)
@@ -112,6 +141,9 @@ namespace DriveOps.Application.Services
 
             await _driverRepository.UpdateAsync(driver);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.location", "driver.availability",
+                new DriverAvailabilityChangedEvent(driverId, false, DateTime.UtcNow));
         }
 
         public async Task ActivateDriverAsync(Guid driverId)
@@ -124,6 +156,9 @@ namespace DriveOps.Application.Services
 
             await _driverRepository.UpdateAsync(driver);
             await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.location", "driver.availability",
+                new DriverAvailabilityChangedEvent(driverId, driver.IsOnline ?? false, DateTime.UtcNow));
         }
     }
 }
