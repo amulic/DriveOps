@@ -18,6 +18,16 @@ namespace DriveOps.API.Controllers
             _tripService = tripService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllTrips(
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _tripService.GetAllTripsAsync(page, pageSize);
+            return Ok(result);
+        }
+
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetTripById(Guid id)
         {

@@ -24,8 +24,9 @@ class KeycloakConfig {
   static const String authUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/auth';
   static const String endSessionUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/logout';
   static const int redirectPort = 42069;
-  static const String redirectUri = 'http://localhost:$redirectPort/auth/callback';
-  static const String postLogoutRedirectUri = 'http://localhost:$redirectPort';
+  static const String redirectHost = '127.0.0.1';
+  static const String redirectUri = 'http://$redirectHost:$redirectPort/auth/callback';
+  static const String postLogoutRedirectUri = 'http://$redirectHost:$redirectPort';
   static const String scopes = 'openid profile email roles';
 }
 

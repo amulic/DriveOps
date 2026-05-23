@@ -21,6 +21,19 @@ namespace DriveOps.Application.Services
             _eventPublisher = eventPublisher;
         }
 
+        public async Task<PaginatedResult<DriverDto>> GetAllDriversAsync(int page = 1, int pageSize = 50)
+        {
+            var drivers = await _driverRepository.GetAllDriversAsync(page, pageSize);
+            var total = await _driverRepository.CountAllDriversAsync();
+            return new PaginatedResult<DriverDto>
+            {
+                Items = drivers.Select(d => d.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         public async Task<DriverDto?> GetDriverByIdAsync(Guid driverId)
         {
             var driver = await _driverRepository.GetWithVehiclesAsync(driverId);

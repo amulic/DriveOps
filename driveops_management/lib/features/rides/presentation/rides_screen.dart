@@ -28,7 +28,7 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
           const SizedBox(height: 16),
           Expanded(child: tripsAsync.when(
             data: (trips) {
-              final driversMap = driversMapAsync.valueOrNull ?? {};
+              final driversMap = driversMapAsync.value ?? {};
               return _buildTable(trips, driversMap);
             },
             loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
@@ -54,7 +54,7 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
   }
 
   Widget _buildHeader(AsyncValue<List<Trip>> tripsAsync) {
-    final count = tripsAsync.valueOrNull?.length ?? 0;
+    final count = tripsAsync.value?.length ?? 0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Row(
@@ -99,7 +99,7 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
             width: 280,
             child: TextField(
               onChanged: (value) {
-                ref.read(ridesSearchQueryProvider.notifier).state = value;
+                ref.read(ridesSearchQueryProvider.notifier).update(value);
               },
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
@@ -145,8 +145,8 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
               label: Text(entry.key),
               selected: isSelected,
               onSelected: (_) {
-                ref.read(ridesStatusFilterProvider.notifier).state =
-                    isSelected ? null : entry.value;
+                ref.read(ridesStatusFilterProvider.notifier).update(
+                    isSelected ? null : entry.value);
               },
               selectedColor: const Color(0xFF3B82F6).withValues(alpha: 0.2),
               backgroundColor: const Color(0xFF252538),

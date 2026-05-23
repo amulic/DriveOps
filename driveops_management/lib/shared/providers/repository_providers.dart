@@ -15,7 +15,7 @@ import 'auth_provider.dart';
 
 final useDummyDataProvider = Provider<bool>((ref) {
   final authState = ref.watch(authProvider);
-  return !(authState.valueOrNull?.isAuthenticated ?? false);
+  return !(authState.value?.isAuthenticated ?? false);
 });
 
 final cacheServiceProvider = Provider<CacheService>((ref) {

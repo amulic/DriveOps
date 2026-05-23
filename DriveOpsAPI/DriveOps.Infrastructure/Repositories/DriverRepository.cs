@@ -10,6 +10,21 @@ namespace DriveOps.Infrastructure.Repositories
     {
         public DriverRepository(ApplicationDbContext context) : base(context) { }
 
+        public async Task<IEnumerable<Driver>> GetAllDriversAsync(int page = 1, int pageSize = 50)
+        {
+            return await _dbSet
+                .Include(d => d.User)
+                .OrderBy(d => d.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountAllDriversAsync()
+        {
+            return await _dbSet.CountAsync();
+        }
+
         public async Task<IEnumerable<Driver>> GetAvailableDriversAsync(int page = 1, int pageSize = 50)
         {
             return await _dbSet

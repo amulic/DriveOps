@@ -1,0 +1,15 @@
+# Development override — only used with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# This file seeds the driveops-dev realm with test users and clients.
+# Keycloak uses IGNORE_EXISTING strategy: the realm is only created the
+# first time. Subsequent starts will NOT overwrite data that was modified
+# through the admin console or API. To re-seed, delete the mysql_data
+# volume first: docker compose down -v
+
+services:
+  keycloak:
+    command:
+      - start-dev
+      - --import-realm
+    volumes:
+      - ./keycloak/realms:/opt/keycloak/data/import

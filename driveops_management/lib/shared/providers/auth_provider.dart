@@ -57,6 +57,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }
 
   Future<void> login() async {
+    if (_authService.isLoggingIn) return;
     state = const AsyncValue.loading();
     try {
       final result = await _authService.login();
@@ -124,10 +125,10 @@ final authProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(() => AuthNo
 
 final isAuthenticatedProvider = Provider<bool>((ref) {
   final authState = ref.watch(authProvider);
-  return authState.valueOrNull?.isAuthenticated ?? false;
+  return authState.value?.isAuthenticated ?? false;
 });
 
 final currentUserProvider = Provider<User?>((ref) {
   final authState = ref.watch(authProvider);
-  return authState.valueOrNull?.user;
+  return authState.value?.user;
 });

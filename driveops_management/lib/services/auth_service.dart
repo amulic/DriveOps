@@ -45,15 +45,18 @@ class AuthService {
 
   String? _codeVerifier;
   HttpServer? _redirectServer;
+  bool _isLoggingIn = false;
 
   AuthService() : _secureStorage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(),
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
+  bool get isLoggingIn => _isLoggingIn;
+
   String _generateCodeVerifier() {
     final random = Random.secure();
-    final values = List<int>.generate(128, (_) => random.nextInt(256));
+    final values = List<int>.generate(32, (_) => random.nextInt(256));
     return base64Url.encode(values).replaceAll('=', '');
   }
 
@@ -70,10 +73,18 @@ class AuthService {
   }
 
   Future<AuthResult> login() async {
+    if (_isLoggingIn) {
+      return const AuthResult(success: false, error: 'Login already in progress');
+    }
+    _isLoggingIn = true;
+
     try {
+      await _closeRedirectServer();
+
       final state = _generateState();
-      _codeVerifier = _generateCodeVerifier();
-      final codeChallenge = _generateCodeChallenge(_codeVerifier!);
+      final codeVerifier = _generateCodeVerifier();
+      _codeVerifier = codeVerifier;
+      final codeChallenge = _generateCodeChallenge(codeVerifier);
 
       final authUri = Uri.parse(KeycloakConfig.authUrl).replace(
         queryParameters: {
@@ -89,53 +100,81 @@ class AuthService {
 
       await _secureStorage.write(key: _stateKey, value: state);
 
-      _redirectServer = await HttpServer.bind(InternetAddress.loopbackIPv4, KeycloakConfig.redirectPort);
+      try {
+        _redirectServer = await HttpServer.bind(InternetAddress.loopbackIPv4, KeycloakConfig.redirectPort);
+      } catch (e) {
+        return AuthResult.failure('Could not start local server on port ${KeycloakConfig.redirectPort}: $e');
+      }
 
       final completer = Completer<AuthResult>();
 
       _redirectServer!.listen(
         (request) async {
-          if (request.uri.path == '/auth/callback') {
-            final params = request.uri.queryParameters;
-            final returnedState = params['state'] ?? '';
-            final code = params['code'];
-            final error = params['error'];
+          try {
+            if (request.uri.path == '/auth/callback') {
+              final params = request.uri.queryParameters;
+              final returnedState = params['state'] ?? '';
+              final code = params['code'];
+              final error = params['error'];
 
-            if (error != null) {
-              request.response.write('Authentication failed: $error. Close this window.');
+              if (error != null) {
+                request.response.statusCode = HttpStatus.ok;
+                request.response.headers.contentType = ContentType.html;
+                request.response.write('<html><body><h2>Authentication failed</h2><p>$error</p><p>You can close this window.</p></body></html>');
+                await request.response.close();
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.failure('Authentication failed: $error'));
+                }
+                return;
+              }
+
+              if (returnedState != state) {
+                request.response.statusCode = HttpStatus.ok;
+                request.response.headers.contentType = ContentType.html;
+                request.response.write('<html><body><h2>State mismatch</h2><p>You can close this window.</p></body></html>');
+                await request.response.close();
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.failure('State mismatch'));
+                }
+                return;
+              }
+
+              if (code == null) {
+                request.response.statusCode = HttpStatus.ok;
+                request.response.headers.contentType = ContentType.html;
+                request.response.write('<html><body><h2>No authorization code received</h2><p>You can close this window.</p></body></html>');
+                await request.response.close();
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.failure('No authorization code'));
+                }
+                return;
+              }
+
+              request.response.statusCode = HttpStatus.ok;
+              request.response.headers.contentType = ContentType.html;
+              request.response.write('<html><body><h2>Authentication successful!</h2><p>You can close this window and return to the app.</p><script>window.close();</script></body></html>');
               await request.response.close();
-              completer.complete(AuthResult.failure('Authentication failed: $error'));
-              return;
-            }
 
-            if (returnedState != state) {
-              request.response.write('State mismatch. Close this window.');
+              try {
+                final tokens = await _exchangeCodeForTokens(code, codeVerifier);
+                await _storeTokens(tokens);
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.success(tokens));
+                }
+              } catch (e) {
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.failure('Token exchange failed: $e'));
+                }
+              }
+            } else {
+              request.response.statusCode = HttpStatus.notFound;
+              request.response.write('Not found');
               await request.response.close();
-              completer.complete(AuthResult.failure('State mismatch'));
-              return;
             }
-
-            if (code == null) {
-              request.response.write('No authorization code received. Close this window.');
-              await request.response.close();
-              completer.complete(AuthResult.failure('No authorization code'));
-              return;
+          } catch (e) {
+            if (!completer.isCompleted) {
+              completer.complete(AuthResult.failure('Request handler error: $e'));
             }
-
-            request.response.write('Authentication successful! You can close this window.');
-            await request.response.close();
-
-            try {
-              final tokens = await _exchangeCodeForTokens(code);
-              await _storeTokens(tokens);
-              completer.complete(AuthResult.success(tokens));
-            } catch (e) {
-              completer.complete(AuthResult.failure('Token exchange failed: $e'));
-            }
-          } else {
-            request.response.statusCode = 404;
-            request.response.write('Not found');
-            await request.response.close();
           }
         },
         onError: (error) {
@@ -145,9 +184,12 @@ class AuthService {
         },
       );
 
-      await launchUrl(authUri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(authUri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        return AuthResult.failure('Could not open browser');
+      }
 
-      return completer.future.timeout(
+      return await completer.future.timeout(
         const Duration(minutes: 5),
         onTimeout: () => AuthResult.failure('Authentication timed out'),
       );
@@ -157,10 +199,11 @@ class AuthService {
       await _closeRedirectServer();
       await _secureStorage.delete(key: _stateKey);
       _codeVerifier = null;
+      _isLoggingIn = false;
     }
   }
 
-  Future<AuthTokens> _exchangeCodeForTokens(String code) async {
+  Future<AuthTokens> _exchangeCodeForTokens(String code, String codeVerifier) async {
     final response = await HttpClient().postUrl(
       Uri.parse(KeycloakConfig.tokenUrl),
     ).then((request) {
@@ -169,7 +212,7 @@ class AuthService {
         'grant_type=authorization_code'
         '&code=$code'
         '&redirect_uri=${Uri.encodeComponent(KeycloakConfig.redirectUri)}'
-        '&code_verifier=$_codeVerifier'
+        '&code_verifier=$codeVerifier'
         '&client_id=${KeycloakConfig.clientId}',
       );
       return request.close();

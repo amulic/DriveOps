@@ -15,9 +15,10 @@ class TripApiService {
   TripApiService(this._api);
 
   Future<List<Trip>> getAllTrips() async {
-    final response = await _api.get(ApiConfig.tripEndpoint);
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => Trip.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get(ApiConfig.tripEndpoint, queryParameters: {'pageSize': 100});
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => Trip.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<Trip> getTrip(String id) async {
@@ -26,15 +27,17 @@ class TripApiService {
   }
 
   Future<List<Trip>> getTripsByCustomer(String customerId) async {
-    final response = await _api.get('${ApiConfig.tripEndpoint}/customer/$customerId');
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => Trip.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get('${ApiConfig.tripEndpoint}/customer/$customerId', queryParameters: {'pageSize': 100});
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => Trip.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<List<Trip>> getTripsByDriver(String driverId) async {
-    final response = await _api.get('${ApiConfig.tripEndpoint}/driver/$driverId');
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => Trip.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get('${ApiConfig.tripEndpoint}/driver/$driverId', queryParameters: {'pageSize': 100});
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => Trip.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<List<Trip>> getActiveTripsByDriver(String driverId) async {

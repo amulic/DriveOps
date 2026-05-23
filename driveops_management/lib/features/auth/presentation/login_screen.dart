@@ -12,40 +12,18 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authState = ref.read(authProvider);
-      final isAuth = authState.valueOrNull?.isAuthenticated ?? false;
-      if (isAuth) {
-        return;
-      }
-      _attemptAutoLogin();
-    });
-  }
-
-  Future<void> _attemptAutoLogin() async {
-    final authState = ref.read(authProvider);
-    final isAuth = authState.valueOrNull?.isAuthenticated ?? false;
-    if (isAuth) return;
-
-    final error = authState.valueOrNull?.error;
-    if (error == null) {
-      _handleLogin();
-    }
-  }
-
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
     await ref.read(authProvider.notifier).login();
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final error = authState.valueOrNull?.error;
+    final error = authState.value?.error;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),

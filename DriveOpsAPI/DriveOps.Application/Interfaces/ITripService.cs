@@ -5,6 +5,7 @@ namespace DriveOps.Application.Interfaces
 {
     public interface ITripService
     {
+        Task<PaginatedResult<TripDto>> GetAllTripsAsync(int page = 1, int pageSize = 20);
         Task<TripDto?> GetTripByIdAsync(Guid tripId);
         Task<PaginatedResult<TripDto>> GetTripsByCustomerAsync(Guid customerId, int page = 1, int pageSize = 20);
         Task<PaginatedResult<TripDto>> GetTripsByDriverAsync(Guid driverId, int page = 1, int pageSize = 20);

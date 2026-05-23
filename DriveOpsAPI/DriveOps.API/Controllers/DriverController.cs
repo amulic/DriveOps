@@ -16,6 +16,16 @@ namespace DriveOps.API.Controllers
             _driverService = driverService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllDrivers(
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _driverService.GetAllDriversAsync(page, pageSize);
+            return Ok(result);
+        }
+
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetDriverById(Guid id)
         {

@@ -10,6 +10,24 @@ namespace DriveOps.Infrastructure.Repositories
     {
         public TripRepository(ApplicationDbContext context) : base(context) { }
 
+        public async Task<IEnumerable<Trip>> GetAllTripsAsync(int page = 1, int pageSize = 20)
+        {
+            return await _dbSet
+                .Include(t => t.Customer)
+                .Include(t => t.Driver)
+                    .ThenInclude(d => d!.User)
+                .Include(t => t.Vehicle)
+                .OrderByDescending(t => t.RequestedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountAllTripsAsync()
+        {
+            return await _dbSet.CountAsync();
+        }
+
         public async Task<IEnumerable<Trip>> GetActiveTripsByDriverIdAsync(Guid driverId)
         {
             return await _dbSet

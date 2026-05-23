@@ -15,9 +15,10 @@ class DriverApiService {
   DriverApiService(this._api);
 
   Future<List<Driver>> getAllDrivers() async {
-    final response = await _api.get(ApiConfig.driverEndpoint);
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => Driver.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get(ApiConfig.driverEndpoint, queryParameters: {'pageSize': 100});
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => Driver.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<Driver> getDriver(String id) async {
@@ -26,9 +27,10 @@ class DriverApiService {
   }
 
   Future<List<Driver>> getAvailableDrivers() async {
-    final response = await _api.get('${ApiConfig.driverEndpoint}/available');
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => Driver.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get('${ApiConfig.driverEndpoint}/available', queryParameters: {'pageSize': 100});
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => Driver.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<List<Driver>> getNearbyDrivers({
@@ -42,10 +44,12 @@ class DriverApiService {
         'latitude': latitude,
         'longitude': longitude,
         'radiusKm': radiusKm,
+        'pageSize': 100,
       },
     );
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => Driver.fromJson(json as Map<String, dynamic>)).toList();
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => Driver.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<Driver> createDriver(CreateDriverRequest request) async {

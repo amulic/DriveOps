@@ -4,6 +4,8 @@ namespace DriveOps.Application.Interfaces
 {
     public interface IDriverRepository : IRepository<Driver>
     {
+        Task<IEnumerable<Driver>> GetAllDriversAsync(int page = 1, int pageSize = 50);
+        Task<int> CountAllDriversAsync();
         Task<Driver?> GetByUserIdAsync(Guid userId);
         Task<IEnumerable<Driver>> GetAvailableDriversAsync(int page = 1, int pageSize = 50);
         Task<int> CountAvailableDriversAsync();

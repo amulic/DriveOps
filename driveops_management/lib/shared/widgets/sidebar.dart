@@ -11,7 +11,7 @@ class Sidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentRoute = GoRouterState.of(context).uri.path;
     final authState = ref.watch(authProvider);
-    final user = authState.valueOrNull?.user;
+    final user = authState.value?.user;
 
     return Container(
       width: AppConstants.sidebarWidth,

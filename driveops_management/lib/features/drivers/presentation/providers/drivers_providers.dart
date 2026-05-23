@@ -7,8 +7,22 @@ final driversAsyncProvider = FutureProvider<List<Driver>>((ref) async {
   return repo.getAllDrivers();
 });
 
-final driversSearchQueryProvider = StateProvider<String>((ref) => '');
-final driversShowActiveOnlyProvider = StateProvider<bool>((ref) => false);
+class DriversSearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void update(String value) => state = value;
+}
+
+class DriversShowActiveOnlyNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void update(bool value) => state = value;
+}
+
+final driversSearchQueryProvider = NotifierProvider<DriversSearchQueryNotifier, String>(DriversSearchQueryNotifier.new);
+final driversShowActiveOnlyProvider = NotifierProvider<DriversShowActiveOnlyNotifier, bool>(DriversShowActiveOnlyNotifier.new);
 
 final filteredDriversProvider = Provider<AsyncValue<List<Driver>>>((ref) {
   final driversAsync = ref.watch(driversAsyncProvider);

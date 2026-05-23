@@ -37,6 +37,19 @@ namespace DriveOps.Application.Services
             _eventPublisher = eventPublisher;
         }
 
+        public async Task<PaginatedResult<TripDto>> GetAllTripsAsync(int page = 1, int pageSize = 20)
+        {
+            var trips = await _tripRepository.GetAllTripsAsync(page, pageSize);
+            var total = await _tripRepository.CountAllTripsAsync();
+            return new PaginatedResult<TripDto>
+            {
+                Items = trips.Select(t => t.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         public async Task<TripDto?> GetTripByIdAsync(Guid tripId)
         {
             var trip = await _tripRepository.GetWithDetailsAsync(tripId);

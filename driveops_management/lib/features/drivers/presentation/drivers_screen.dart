@@ -49,7 +49,7 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
   }
 
   Widget _buildHeader(AsyncValue<List<Driver>> filteredDrivers) {
-    final count = filteredDrivers.valueOrNull?.length ?? 0;
+    final count = filteredDrivers.value?.length ?? 0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Row(
@@ -92,7 +92,7 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
             width: 280,
             child: TextField(
               onChanged: (value) {
-                ref.read(driversSearchQueryProvider.notifier).state = value;
+                ref.read(driversSearchQueryProvider.notifier).update(value);
               },
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
@@ -115,8 +115,8 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
               Checkbox(
                 value: ref.watch(driversShowActiveOnlyProvider),
                 onChanged: (value) {
-                  ref.read(driversShowActiveOnlyProvider.notifier).state =
-                      value ?? false;
+                  ref.read(driversShowActiveOnlyProvider.notifier).update(
+                      value ?? false);
                 },
                 activeColor: const Color(0xFF3B82F6),
                 checkColor: Colors.white,
