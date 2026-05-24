@@ -1,6 +1,7 @@
 using DriveOps.Application.DependencyInjection;
 using DriveOps.Application.Helpers;
 using DriveOps.Infrastructure.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -130,6 +131,14 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DriveOps.Infrastructure.Persistence.ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    db.Database.Migrate();
+    DriveOps.Infrastructure.Persistence.SeedData.SeedAsync(db, logger).GetAwaiter().GetResult();
+}
 
 if (app.Environment.IsDevelopment())
 {

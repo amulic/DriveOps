@@ -1,8 +1,8 @@
-import '../models/driver.dart';
-import '../models/trip.dart';
-import '../models/vehicle.dart';
-import '../models/user.dart';
-import 'repositories.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/user.dart';
+import 'package:driveops_management/shared/repositories/repositories.dart';
 
 class DummyDriverRepository implements DriverRepository {
   final List<Driver> _drivers = _buildDummyDrivers();

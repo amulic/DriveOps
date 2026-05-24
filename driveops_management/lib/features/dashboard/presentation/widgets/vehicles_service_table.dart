@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/models/vehicle.dart';
-import '../../../../shared/providers/repository_providers.dart';
+import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/providers/repository_providers.dart';
 
 class VehiclesServiceTable extends ConsumerWidget {
   const VehiclesServiceTable({super.key});

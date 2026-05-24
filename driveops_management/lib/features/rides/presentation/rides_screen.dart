@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/models/trip.dart';
-import '../../../../shared/models/driver.dart';
-import 'providers/rides_providers.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/features/rides/presentation/providers/rides_providers.dart';
 
 class RidesScreen extends ConsumerStatefulWidget {
   const RidesScreen({super.key});

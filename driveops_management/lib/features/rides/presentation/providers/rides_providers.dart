@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/models/trip.dart';
-import '../../../../shared/models/driver.dart';
-import '../../../../shared/providers/repository_providers.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/providers/repository_providers.dart';
 
 final tripsAsyncProvider = FutureProvider<List<Trip>>((ref) async {
   final repo = ref.watch(tripRepositoryProvider);

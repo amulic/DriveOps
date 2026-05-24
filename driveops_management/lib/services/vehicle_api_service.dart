@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/api_service.dart';
-import '../shared/models/vehicle.dart';
-import '../shared/dtos/requests/vehicle_requests.dart';
-import '../config/api_config.dart';
+import 'package:driveops_management/services/api_service.dart';
+import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/dtos/requests/vehicle_requests.dart';
+import 'package:driveops_management/config/api_config.dart';
 
 final vehicleApiServiceProvider = Provider<VehicleApiService>((ref) {
   final apiService = ref.watch(apiServiceProvider);

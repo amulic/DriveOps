@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/api_service.dart';
-import '../shared/models/driver.dart';
-import '../shared/dtos/requests/driver_requests.dart';
-import '../config/api_config.dart';
+import 'package:driveops_management/services/api_service.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
+import 'package:driveops_management/config/api_config.dart';
 
 final driverApiServiceProvider = Provider<DriverApiService>((ref) {
   final apiService = ref.watch(apiServiceProvider);

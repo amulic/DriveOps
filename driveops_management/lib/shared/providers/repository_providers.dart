@@ -1,17 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/driver.dart';
-import '../models/trip.dart';
-import '../models/vehicle.dart';
-import '../repositories/repositories.dart';
-import '../repositories/dummy_repositories.dart';
-import '../repositories/api_repositories.dart';
-import '../../services/cache_service.dart';
-import '../../services/api_service.dart';
-import '../../services/driver_api_service.dart';
-import '../../services/trip_api_service.dart';
-import '../../services/vehicle_api_service.dart';
-import '../../services/user_api_service.dart';
-import 'auth_provider.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/repositories/repositories.dart';
+import 'package:driveops_management/shared/repositories/dummy_repositories.dart';
+import 'package:driveops_management/shared/repositories/api_repositories.dart';
+import 'package:driveops_management/services/cache_service.dart';
+import 'package:driveops_management/services/api_service.dart';
+import 'package:driveops_management/services/driver_api_service.dart';
+import 'package:driveops_management/services/trip_api_service.dart';
+import 'package:driveops_management/services/vehicle_api_service.dart';
+import 'package:driveops_management/services/user_api_service.dart';
+import 'package:driveops_management/shared/providers/auth_provider.dart';
 
 final useDummyDataProvider = Provider<bool>((ref) {
   final authState = ref.watch(authProvider);

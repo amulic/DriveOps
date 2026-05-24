@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/models/trip.dart';
-import '../../../../shared/providers/repository_providers.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/providers/repository_providers.dart';
 
 final recentTripsProvider = FutureProvider<List<Trip>>((ref) async {
   final trips = await ref.watch(allTripsProvider.future);

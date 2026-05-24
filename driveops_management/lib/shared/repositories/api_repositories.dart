@@ -1,13 +1,13 @@
-import '../models/driver.dart';
-import '../models/trip.dart';
-import '../models/vehicle.dart';
-import '../models/user.dart';
-import '../../services/driver_api_service.dart';
-import '../../services/trip_api_service.dart';
-import '../../services/vehicle_api_service.dart';
-import '../../services/user_api_service.dart';
-import '../../services/cache_service.dart';
-import 'repositories.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/user.dart';
+import 'package:driveops_management/services/driver_api_service.dart';
+import 'package:driveops_management/services/trip_api_service.dart';
+import 'package:driveops_management/services/vehicle_api_service.dart';
+import 'package:driveops_management/services/user_api_service.dart';
+import 'package:driveops_management/services/cache_service.dart';
+import 'package:driveops_management/shared/repositories/repositories.dart';
 
 class ApiDriverRepository implements DriverRepository {
   final DriverApiService _api;

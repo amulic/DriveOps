@@ -21,6 +21,20 @@ services:
     networks:
       - driveops-net
 
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    ports:
+      - "8089:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - ADMINER_DEFAULT_SERVER=mysql
+      - ADMINER_DESIGN=galkaev
+    networks:
+      - driveops-net
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.1
     container_name: keycloak

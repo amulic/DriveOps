@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/dashboard_providers.dart';
-import 'widgets/stats_card.dart';
-import 'widgets/recent_rides_table.dart';
-import 'widgets/ride_statistics_chart.dart';
-import 'widgets/vehicles_service_table.dart';
-import 'widgets/driver_scoreboard.dart';
+import 'package:driveops_management/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:driveops_management/features/dashboard/presentation/widgets/stats_card.dart';
+import 'package:driveops_management/features/dashboard/presentation/widgets/recent_rides_table.dart';
+import 'package:driveops_management/features/dashboard/presentation/widgets/ride_statistics_chart.dart';
+import 'package:driveops_management/features/dashboard/presentation/widgets/vehicles_service_table.dart';
+import 'package:driveops_management/features/dashboard/presentation/widgets/driver_scoreboard.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});

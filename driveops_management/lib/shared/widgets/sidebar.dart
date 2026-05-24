@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../config/api_config.dart';
-import '../providers/auth_provider.dart';
+import 'package:driveops_management/config/api_config.dart';
+import 'package:driveops_management/shared/providers/auth_provider.dart';
 
 class Sidebar extends ConsumerWidget {
   const Sidebar({super.key});
@@ -172,7 +172,10 @@ class Sidebar extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => ref.read(authProvider.notifier).logout(),
+              onPressed: () async {
+                await ref.read(authProvider.notifier).logout();
+                if (context.mounted) context.go('/login');
+              },
               icon: const Icon(Icons.logout, size: 18),
               label: const Text('Sign Out'),
               style: OutlinedButton.styleFrom(

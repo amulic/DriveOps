@@ -5,7 +5,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../config/api_config.dart';
+import 'package:driveops_management/config/api_config.dart';
 
 class AuthTokens {
   final String accessToken;
@@ -43,7 +43,6 @@ class AuthService {
 
   final FlutterSecureStorage _secureStorage;
 
-  String? _codeVerifier;
   HttpServer? _redirectServer;
   bool _isLoggingIn = false;
 
@@ -83,7 +82,6 @@ class AuthService {
 
       final state = _generateState();
       final codeVerifier = _generateCodeVerifier();
-      _codeVerifier = codeVerifier;
       final codeChallenge = _generateCodeChallenge(codeVerifier);
 
       final authUri = Uri.parse(KeycloakConfig.authUrl).replace(
@@ -198,7 +196,6 @@ class AuthService {
     } finally {
       await _closeRedirectServer();
       await _secureStorage.delete(key: _stateKey);
-      _codeVerifier = null;
       _isLoggingIn = false;
     }
   }

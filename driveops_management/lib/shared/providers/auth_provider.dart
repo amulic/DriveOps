@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/user.dart';
-import '../../services/auth_service.dart';
+import 'package:driveops_management/shared/models/user.dart';
+import 'package:driveops_management/services/auth_service.dart';
+import 'package:driveops_management/services/cache_service.dart';
 
 class AuthState {
   final bool isAuthenticated;
@@ -76,10 +77,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = const AsyncValue.loading();
     try {
       await _authService.logout();
-      state = const AsyncValue.data(AuthState());
-    } catch (_) {
-      state = const AsyncValue.data(AuthState());
-    }
+    } catch (_) {}
+    await CacheService().clear();
+    state = const AsyncValue.data(AuthState());
   }
 
   Future<User?> _syncUser() async {

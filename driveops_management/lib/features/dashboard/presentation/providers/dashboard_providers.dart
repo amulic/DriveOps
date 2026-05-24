@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/models/driver.dart';
-import '../../../../shared/models/trip.dart';
-import '../../../../shared/models/vehicle.dart';
-import '../../../../shared/providers/repository_providers.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/providers/repository_providers.dart';
 
 final driversProvider = FutureProvider<DriversData>((ref) async {
   final allDrivers = await ref.watch(allDriversProvider.future);

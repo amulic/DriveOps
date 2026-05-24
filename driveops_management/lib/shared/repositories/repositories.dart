@@ -1,7 +1,7 @@
-import '../models/driver.dart';
-import '../models/trip.dart';
-import '../models/vehicle.dart';
-import '../models/user.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/user.dart';
 
 abstract class DriverRepository {
   Future<List<Driver>> getAllDrivers();

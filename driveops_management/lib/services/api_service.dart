@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../config/api_config.dart';
-import '../shared/providers/auth_provider.dart';
-import 'auth_service.dart';
+import 'package:driveops_management/config/api_config.dart';
+import 'package:driveops_management/shared/providers/auth_provider.dart';
+import 'package:driveops_management/services/auth_service.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(

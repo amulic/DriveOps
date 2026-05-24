@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'app.dart';
-import 'services/cache_service.dart';
+import 'package:driveops_management/app.dart';
+import 'package:driveops_management/services/cache_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

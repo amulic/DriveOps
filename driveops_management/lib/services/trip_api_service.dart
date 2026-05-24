@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/api_service.dart';
-import '../shared/models/trip.dart';
-import '../shared/dtos/requests/trip_requests.dart';
-import '../config/api_config.dart';
+import 'package:driveops_management/services/api_service.dart';
+import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/dtos/requests/trip_requests.dart';
+import 'package:driveops_management/config/api_config.dart';
 
 final tripApiServiceProvider = Provider<TripApiService>((ref) {
   final apiService = ref.watch(apiServiceProvider);

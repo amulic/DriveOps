@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/models/driver.dart';
-import 'providers/drivers_providers.dart';
+import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/features/drivers/presentation/providers/drivers_providers.dart';
 
 class DriversScreen extends ConsumerStatefulWidget {
   const DriversScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'config/theme.dart';
-import 'config/router.dart';
+import 'package:driveops_management/config/theme.dart';
+import 'package:driveops_management/config/router.dart';
 
 class DriveOpsApp extends ConsumerWidget {
   const DriveOpsApp({super.key});

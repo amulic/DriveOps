@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../features/auth/presentation/login_screen.dart';
-import '../features/dashboard/presentation/dashboard_screen.dart';
-import '../features/drivers/presentation/drivers_screen.dart';
-import '../features/rides/presentation/rides_screen.dart';
-import '../features/messages/presentation/messages_screen.dart';
-import '../features/vehicles/presentation/vehicles_screen.dart';
-import '../features/profile/presentation/profile_screen.dart';
-import '../shared/providers/auth_provider.dart';
-import '../shared/widgets/sidebar.dart';
+import 'package:driveops_management/features/auth/presentation/login_screen.dart';
+import 'package:driveops_management/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:driveops_management/features/drivers/presentation/drivers_screen.dart';
+import 'package:driveops_management/features/rides/presentation/rides_screen.dart';
+import 'package:driveops_management/features/messages/presentation/messages_screen.dart';
+import 'package:driveops_management/features/vehicles/presentation/vehicles_screen.dart';
+import 'package:driveops_management/features/profile/presentation/profile_screen.dart';
+import 'package:driveops_management/shared/providers/auth_provider.dart';
+import 'package:driveops_management/shared/widgets/sidebar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
