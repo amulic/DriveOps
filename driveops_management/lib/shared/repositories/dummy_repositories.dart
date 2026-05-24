@@ -622,6 +622,18 @@ class DummyVehicleRepository implements VehicleRepository {
     );
     return _vehicles[idx];
   }
+
+  @override
+  Future<void> unassignVehicle(String vehicleId) async {
+    final idx = _vehicles.indexWhere((v) => v.id == vehicleId);
+    if (idx != -1) {
+      _vehicles[idx] = _vehicles[idx].copyWith(
+        assignedDriverId: null,
+        assignedDriverName: null,
+        status: VehicleStatus.available,
+      );
+    }
+  }
 }
 
 class DummyUserRepository implements UserRepository {

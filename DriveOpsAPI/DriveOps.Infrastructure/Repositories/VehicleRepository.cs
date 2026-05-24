@@ -10,6 +10,14 @@ namespace DriveOps.Infrastructure.Repositories
     {
         public VehicleRepository(ApplicationDbContext context) : base(context) { }
 
+        public override async Task<IEnumerable<Vehicle>> GetAllAsync()
+        {
+            return await _dbSet
+                .Include(v => v.AssignedDriver)
+                .ThenInclude(d => d!.User)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Vehicle>> GetAvailableVehiclesAsync()
         {
             return await _dbSet
@@ -20,18 +28,26 @@ namespace DriveOps.Infrastructure.Repositories
         public async Task<IEnumerable<Vehicle>> GetByDriverIdAsync(Guid driverId)
         {
             return await _dbSet
+                .Include(v => v.AssignedDriver)
+                .ThenInclude(d => d!.User)
                 .Where(v => v.AssignedDriverId == driverId)
                 .ToListAsync();
         }
 
         public async Task<Vehicle?> GetByLicensePlateAsync(string licensePlate)
         {
-            return await _dbSet.FirstOrDefaultAsync(v => v.LicensePlate == licensePlate);
+            return await _dbSet
+                .Include(v => v.AssignedDriver)
+                .ThenInclude(d => d!.User)
+                .FirstOrDefaultAsync(v => v.LicensePlate == licensePlate);
         }
 
         public async Task<Vehicle?> GetByVinAsync(string vin)
         {
-            return await _dbSet.FirstOrDefaultAsync(v => v.Vin == vin);
+            return await _dbSet
+                .Include(v => v.AssignedDriver)
+                .ThenInclude(d => d!.User)
+                .FirstOrDefaultAsync(v => v.Vin == vin);
         }
     }
 }

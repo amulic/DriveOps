@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
+import 'package:driveops_management/features/vehicles/presentation/widgets/vehicle_detail_dialog.dart';
+import 'package:driveops_management/features/vehicles/presentation/widgets/assign_driver_dialog.dart';
 
 class VehiclesScreen extends ConsumerStatefulWidget {
   const VehiclesScreen({super.key});
@@ -212,7 +215,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                       _formatDate(vehicle.registrationExpiryDate),
                       style: TextStyle(color: _getExpiryColor(vehicle.registrationExpiryDate)),
                     )),
-                    DataCell(_buildMoreActions()),
+                    DataCell(_buildMoreActions(vehicle)),
                   ],
                 );
               }).toList(),
@@ -366,11 +369,27 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     );
   }
 
-  Widget _buildMoreActions() {
+  Widget _buildMoreActions(Vehicle vehicle) {
+    final hasDriver = vehicle.assignedDriverId != null;
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, color: Colors.white54),
       color: const Color(0xFF252538),
-      onSelected: (value) {},
+      onSelected: (value) {
+        switch (value) {
+          case 'view':
+            showDialog(
+              context: context,
+              builder: (context) => VehicleDetailDialog(vehicle: vehicle),
+            );
+          case 'assign':
+            showDialog(
+              context: context,
+              builder: (context) => AssignDriverDialog(vehicle: vehicle),
+            );
+          case 'unassign':
+            _unassignVehicle(vehicle);
+        }
+      },
       itemBuilder: (context) => [
         const PopupMenuItem(
           value: 'view',
@@ -382,28 +401,60 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             ],
           ),
         ),
-        const PopupMenuItem(
-          value: 'assign',
-          child: Row(
-            children: [
-              Icon(Icons.person_add, color: Colors.white54, size: 18),
-              SizedBox(width: 8),
-              Text('Assign Driver', style: TextStyle(color: Colors.white)),
-            ],
+        if (!hasDriver)
+          const PopupMenuItem(
+            value: 'assign',
+            child: Row(
+              children: [
+                Icon(Icons.person_add, color: Colors.white54, size: 18),
+                SizedBox(width: 8),
+                Text('Assign Driver', style: TextStyle(color: Colors.white)),
+              ],
+            ),
           ),
-        ),
-        const PopupMenuItem(
-          value: 'maintenance',
-          child: Row(
-            children: [
-              Icon(Icons.build, color: Color(0xFFF59E0B), size: 18),
-              SizedBox(width: 8),
-              Text('Set Maintenance', style: TextStyle(color: Color(0xFFF59E0B))),
-            ],
+        if (hasDriver)
+          PopupMenuItem(
+            value: 'unassign',
+            child: Row(
+              children: [
+                const Icon(Icons.person_remove, color: Color(0xFFEF4444), size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Unassign ${vehicle.assignedDriverName ?? "Driver"}',
+                  style: const TextStyle(color: Color(0xFFEF4444)),
+                ),
+              ],
+            ),
           ),
-        ),
       ],
     );
+  }
+
+  Future<void> _unassignVehicle(Vehicle vehicle) async {
+    try {
+      await ref.read(vehicleRepositoryProvider).unassignVehicle(vehicle.id);
+      ref.invalidate(vehiclesAsyncProvider);
+      ref.invalidate(filteredVehiclesProvider);
+      ref.invalidate(allVehiclesProvider);
+      ref.invalidate(vehiclesNeedingServiceProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${vehicle.licensePlate} has been unassigned'),
+            backgroundColor: const Color(0xFF22C55E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to unassign: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
   }
 
   Color _getVehicleColor(Vehicle vehicle) {

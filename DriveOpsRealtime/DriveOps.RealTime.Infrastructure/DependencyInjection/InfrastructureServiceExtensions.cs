@@ -36,6 +36,7 @@ public static class InfrastructureServiceExtensions
 
         services.AddHostedService<TripEventConsumer>();
         services.AddHostedService<LocationEventConsumer>();
+        services.AddHostedService<FleetEventConsumer>();
 
         return services;
     }

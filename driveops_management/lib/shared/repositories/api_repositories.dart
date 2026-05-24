@@ -233,6 +233,15 @@ class ApiVehicleRepository implements VehicleRepository {
     await _cache.remove(CacheService.vehiclesNeedingService);
     return vehicle;
   }
+
+  @override
+  Future<void> unassignVehicle(String vehicleId) async {
+    await _api.unassignVehicle(vehicleId);
+    await _cache.remove(CacheService.vehiclesAll);
+    await _cache.remove(CacheService.vehiclesAvailable);
+    await _cache.remove(CacheService.vehicle(vehicleId));
+    await _cache.remove(CacheService.vehiclesNeedingService);
+  }
 }
 
 class ApiUserRepository implements UserRepository {

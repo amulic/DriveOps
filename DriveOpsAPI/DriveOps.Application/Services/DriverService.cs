@@ -141,6 +141,11 @@ namespace DriveOps.Application.Services
 
             await _eventPublisher.PublishAsync("driveops.location", "driver.availability",
                 new DriverAvailabilityChangedEvent(driverId, isOnline, DateTime.UtcNow));
+
+            await _eventPublisher.PublishAsync("driveops.fleet", "driver.status.changed",
+                new DriverStatusChangedEvent(driverId,
+                    driver.User != null ? $"{driver.User.FirstName} {driver.User.LastName}" : string.Empty,
+                    driver.Status?.ToString() ?? "Unknown", isOnline, DateTime.UtcNow));
         }
 
         public async Task SuspendDriverAsync(Guid driverId)
@@ -157,6 +162,11 @@ namespace DriveOps.Application.Services
 
             await _eventPublisher.PublishAsync("driveops.location", "driver.availability",
                 new DriverAvailabilityChangedEvent(driverId, false, DateTime.UtcNow));
+
+            await _eventPublisher.PublishAsync("driveops.fleet", "driver.status.changed",
+                new DriverStatusChangedEvent(driverId,
+                    driver.User != null ? $"{driver.User.FirstName} {driver.User.LastName}" : string.Empty,
+                    "Suspended", false, DateTime.UtcNow));
         }
 
         public async Task ActivateDriverAsync(Guid driverId)
@@ -172,6 +182,11 @@ namespace DriveOps.Application.Services
 
             await _eventPublisher.PublishAsync("driveops.location", "driver.availability",
                 new DriverAvailabilityChangedEvent(driverId, driver.IsOnline ?? false, DateTime.UtcNow));
+
+            await _eventPublisher.PublishAsync("driveops.fleet", "driver.status.changed",
+                new DriverStatusChangedEvent(driverId,
+                    driver.User != null ? $"{driver.User.FirstName} {driver.User.LastName}" : string.Empty,
+                    "Active", driver.IsOnline ?? false, DateTime.UtcNow));
         }
     }
 }

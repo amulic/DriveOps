@@ -67,3 +67,9 @@ public record NotificationDto(
     string Message,
     DateTime Timestamp
 );
+
+public record FleetUpdateDto(
+    string UpdateType,
+    string PayloadJson,
+    DateTime Timestamp
+);

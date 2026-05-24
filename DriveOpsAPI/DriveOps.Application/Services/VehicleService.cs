@@ -1,6 +1,8 @@
 using DriveOps.Application.DTOs;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
+using DriveOps.Model.Enums;
+using DriveOps.RealTime.Contracts.Events;
 
 namespace DriveOps.Application.Services
 {
@@ -9,12 +11,14 @@ namespace DriveOps.Application.Services
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IDriverRepository _driverRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEventPublisher _eventPublisher;
 
-        public VehicleService(IVehicleRepository vehicleRepository, IDriverRepository driverRepository, IUnitOfWork unitOfWork)
+        public VehicleService(IVehicleRepository vehicleRepository, IDriverRepository driverRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
         {
             _vehicleRepository = vehicleRepository;
             _driverRepository = driverRepository;
             _unitOfWork = unitOfWork;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<VehicleDto?> GetVehicleByIdAsync(Guid vehicleId)
@@ -74,15 +78,40 @@ namespace DriveOps.Application.Services
             var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId)
                 ?? throw new KeyNotFoundException($"Vehicle {vehicleId} not found.");
 
+            if (vehicle.Status == VehicleStatus.Retired)
+                throw new InvalidOperationException("Cannot assign a retired vehicle.");
+
             var driverExists = await _driverRepository.ExistsAsync(driverId);
             if (!driverExists)
                 throw new KeyNotFoundException($"Driver {driverId} not found.");
 
+            // Unassign the driver's current vehicle (one vehicle per driver)
+            var currentVehicles = await _vehicleRepository.GetByDriverIdAsync(driverId);
+            foreach (var currentVehicle in currentVehicles)
+            {
+                currentVehicle.AssignedDriverId = null;
+                currentVehicle.Status = VehicleStatus.Available;
+                currentVehicle.UpdatedAt = DateTime.UtcNow;
+                await _vehicleRepository.UpdateAsync(currentVehicle);
+            }
+
             vehicle.AssignedDriverId = driverId;
+            vehicle.Status = VehicleStatus.InUse;
             vehicle.UpdatedAt = DateTime.UtcNow;
 
             await _vehicleRepository.UpdateAsync(vehicle);
             await _unitOfWork.SaveChangesAsync();
+
+            var driver = await _driverRepository.GetByIdAsync(driverId);
+            await _eventPublisher.PublishAsync("driveops.fleet", "vehicle.assigned",
+                new VehicleAssignedEvent(
+                    vehicle.Id, vehicle.LicensePlate, vehicle.Make, vehicle.Model,
+                    currentVehicles.FirstOrDefault()?.AssignedDriverId,
+                    driverId,
+                    driver?.User != null ? $"{driver.User.FirstName} {driver.User.LastName}" : string.Empty,
+                    currentVehicles.FirstOrDefault()?.Id,
+                    DateTime.UtcNow));
+
             return vehicle.ToDto();
         }
 
@@ -91,11 +120,26 @@ namespace DriveOps.Application.Services
             var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId)
                 ?? throw new KeyNotFoundException($"Vehicle {vehicleId} not found.");
 
+            var previousDriverId = vehicle.AssignedDriverId;
+            var previousDriver = previousDriverId.HasValue ? await _driverRepository.GetByIdAsync(previousDriverId.Value) : null;
+
             vehicle.AssignedDriverId = null;
+            vehicle.Status = VehicleStatus.Available;
             vehicle.UpdatedAt = DateTime.UtcNow;
 
             await _vehicleRepository.UpdateAsync(vehicle);
             await _unitOfWork.SaveChangesAsync();
+
+            if (previousDriverId.HasValue)
+            {
+                await _eventPublisher.PublishAsync("driveops.fleet", "vehicle.unassigned",
+                    new VehicleUnassignedEvent(
+                        vehicle.Id, vehicle.LicensePlate, vehicle.Make, vehicle.Model,
+                        previousDriverId.Value,
+                        previousDriver?.User != null ? $"{previousDriver.User.FirstName} {previousDriver.User.LastName}" : string.Empty,
+                        DateTime.UtcNow));
+            }
+
             return vehicle.ToDto();
         }
 

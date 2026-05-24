@@ -9,6 +9,7 @@ import 'package:driveops_management/features/messages/presentation/messages_scre
 import 'package:driveops_management/features/vehicles/presentation/vehicles_screen.dart';
 import 'package:driveops_management/features/profile/presentation/profile_screen.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
+import 'package:driveops_management/shared/providers/fleet_update_provider.dart';
 import 'package:driveops_management/shared/widgets/sidebar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -96,6 +97,10 @@ class ScaffoldWithSidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Wire up SignalR fleet updates when authenticated
+    ref.watch(fleetUpdateConnectionProvider);
+    ref.watch(fleetUpdateListenerProvider);
+
     return Row(
       children: [
         const Sidebar(),

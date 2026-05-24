@@ -32,6 +32,7 @@ abstract class VehicleRepository {
   Future<Vehicle?> getVehicleById(String id);
   Future<List<Vehicle>> getVehiclesNeedingService();
   Future<Vehicle> assignVehicle(String vehicleId, String driverId);
+  Future<void> unassignVehicle(String vehicleId);
 }
 
 abstract class UserRepository {

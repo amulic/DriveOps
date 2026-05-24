@@ -77,3 +77,42 @@ public record DriverLocationReceivedEvent(
     decimal Longitude,
     DateTime Timestamp
 );
+
+public record VehicleAssignedEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    string Make,
+    string Model,
+    Guid? PreviousDriverId,
+    Guid DriverId,
+    string DriverName,
+    Guid? PreviousVehicleId,
+    DateTime AssignedAt
+);
+
+public record VehicleUnassignedEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    string Make,
+    string Model,
+    Guid PreviousDriverId,
+    string PreviousDriverName,
+    DateTime UnassignedAt
+);
+
+public record DriverStatusChangedEvent(
+    Guid DriverId,
+    string DriverName,
+    string NewStatus,
+    bool IsOnline,
+    DateTime ChangedAt
+);
+
+public record VehicleStatusChangedEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    string Make,
+    string Model,
+    string NewStatus,
+    DateTime ChangedAt
+);
