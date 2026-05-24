@@ -8,6 +8,9 @@ import 'package:driveops_management/services/vehicle_api_service.dart';
 import 'package:driveops_management/services/user_api_service.dart';
 import 'package:driveops_management/services/cache_service.dart';
 import 'package:driveops_management/shared/repositories/repositories.dart';
+import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
+import 'package:driveops_management/shared/dtos/requests/user_requests.dart';
+import 'package:driveops_management/shared/dtos/requests/vehicle_requests.dart';
 
 class ApiDriverRepository implements DriverRepository {
   final DriverApiService _api;
@@ -68,6 +71,42 @@ class ApiDriverRepository implements DriverRepository {
       longitude: longitude,
       radiusKm: radiusKm,
     );
+  }
+
+  @override
+  Future<Driver> createDriver(CreateDriverRequest request) async {
+    final driver = await _api.createDriver(request);
+    await _cache.remove(CacheService.driversAll);
+    return driver;
+  }
+
+  @override
+  Future<Driver> updateDriver(String id, UpdateDriverRequest request) async {
+    final driver = await _api.updateDriver(id, request);
+    await _cache.remove(CacheService.driversAll);
+    await _cache.remove(CacheService.driver(id));
+    return driver;
+  }
+
+  @override
+  Future<void> suspendDriver(String id) async {
+    await _api.suspendDriver(id);
+    await _cache.remove(CacheService.driversAll);
+    await _cache.remove(CacheService.driver(id));
+  }
+
+  @override
+  Future<void> activateDriver(String id) async {
+    await _api.activateDriver(id);
+    await _cache.remove(CacheService.driversAll);
+    await _cache.remove(CacheService.driver(id));
+  }
+
+  @override
+  Future<void> setDriverStatus(String id, bool isOnline) async {
+    await _api.setDriverStatus(id, SetDriverStatusRequest(isOnline: isOnline));
+    await _cache.remove(CacheService.driversAll);
+    await _cache.remove(CacheService.driver(id));
   }
 }
 
@@ -184,6 +223,16 @@ class ApiVehicleRepository implements VehicleRepository {
     await _cache.setList(CacheService.vehiclesNeedingService, needingService.map((v) => v.toJson()).toList());
     return needingService;
   }
+
+  @override
+  Future<Vehicle> assignVehicle(String vehicleId, String driverId) async {
+    final vehicle = await _api.assignVehicle(vehicleId, AssignVehicleRequest(driverId: driverId));
+    await _cache.remove(CacheService.vehiclesAll);
+    await _cache.remove(CacheService.vehiclesAvailable);
+    await _cache.remove(CacheService.vehicle(vehicleId));
+    await _cache.remove(CacheService.vehiclesNeedingService);
+    return vehicle;
+  }
 }
 
 class ApiUserRepository implements UserRepository {
@@ -211,6 +260,12 @@ class ApiUserRepository implements UserRepository {
     }
     final user = await _api.getUser(id);
     await _cache.setSingle(CacheService.user(id), user.toJson());
+    return user;
+  }
+
+  @override
+  Future<User> createUser(CreateUserRequest request) async {
+    final user = await _api.createUser(request);
     return user;
   }
 }

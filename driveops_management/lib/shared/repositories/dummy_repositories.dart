@@ -3,6 +3,9 @@ import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/models/user.dart';
 import 'package:driveops_management/shared/repositories/repositories.dart';
+import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
+import 'package:driveops_management/shared/dtos/requests/user_requests.dart';
+import 'package:driveops_management/shared/dtos/requests/vehicle_requests.dart';
 
 class DummyDriverRepository implements DriverRepository {
   final List<Driver> _drivers = _buildDummyDrivers();
@@ -228,6 +231,61 @@ class DummyDriverRepository implements DriverRepository {
   Future<List<Driver>> getNearbyDrivers(
       double latitude, double longitude, double radiusKm) async {
     return getAvailableDrivers();
+  }
+
+  @override
+  Future<Driver> createDriver(CreateDriverRequest request) async {
+    final newDriver = Driver(
+      id: 'd-new-${DateTime.now().millisecondsSinceEpoch}',
+      userId: request.userId,
+      driverName: 'New Driver',
+      email: '',
+      phoneNumber: '',
+      licenseNumber: request.licenseNumber,
+      licenseExpiryDate: request.licenseExpiryDate,
+      status: DriverStatus.pending,
+      rating: 5.0,
+      totalTrips: 0,
+      totalRevenue: 0,
+      isOnline: false,
+      emergencyContactName: request.emergencyContactName,
+      emergencyContactPhone: request.emergencyContactPhone,
+    );
+    _drivers.add(newDriver);
+    return newDriver;
+  }
+
+  @override
+  Future<Driver> updateDriver(String id, UpdateDriverRequest request) async {
+    final idx = _drivers.indexWhere((d) => d.id == id);
+    if (idx == -1) throw Exception('Driver not found');
+    final d = _drivers[idx];
+    final updated = d.copyWith(
+      licenseNumber: request.licenseNumber ?? d.licenseNumber,
+      licenseExpiryDate: request.licenseExpiryDate ?? d.licenseExpiryDate,
+      emergencyContactName: request.emergencyContactName ?? d.emergencyContactName,
+      emergencyContactPhone: request.emergencyContactPhone ?? d.emergencyContactPhone,
+    );
+    _drivers[idx] = updated;
+    return updated;
+  }
+
+  @override
+  Future<void> suspendDriver(String id) async {
+    final idx = _drivers.indexWhere((d) => d.id == id);
+    if (idx != -1) _drivers[idx] = _drivers[idx].copyWith(status: DriverStatus.suspended, isOnline: false);
+  }
+
+  @override
+  Future<void> activateDriver(String id) async {
+    final idx = _drivers.indexWhere((d) => d.id == id);
+    if (idx != -1) _drivers[idx] = _drivers[idx].copyWith(status: DriverStatus.active);
+  }
+
+  @override
+  Future<void> setDriverStatus(String id, bool isOnline) async {
+    final idx = _drivers.indexWhere((d) => d.id == id);
+    if (idx != -1) _drivers[idx] = _drivers[idx].copyWith(isOnline: isOnline);
   }
 }
 
@@ -552,6 +610,18 @@ class DummyVehicleRepository implements VehicleRepository {
       return false;
     }).toList();
   }
+
+  @override
+  Future<Vehicle> assignVehicle(String vehicleId, String driverId) async {
+    final idx = _vehicles.indexWhere((v) => v.id == vehicleId);
+    if (idx == -1) throw Exception('Vehicle not found');
+    _vehicles[idx] = _vehicles[idx].copyWith(
+      status: VehicleStatus.inUse,
+      assignedDriverId: driverId,
+      assignedDriverName: 'Assigned Driver',
+    );
+    return _vehicles[idx];
+  }
 }
 
 class DummyUserRepository implements UserRepository {
@@ -572,5 +642,18 @@ class DummyUserRepository implements UserRepository {
   @override
   Future<User?> getUserById(String id) async {
     return getCurrentUser();
+  }
+
+  @override
+  Future<User> createUser(CreateUserRequest request) async {
+    return User(
+      id: 'u-new-${DateTime.now().millisecondsSinceEpoch}',
+      email: request.email,
+      firstName: request.firstName,
+      lastName: request.lastName,
+      phoneNumber: request.phoneNumber,
+      userType: UserType.driver,
+      isActive: true,
+    );
   }
 }
