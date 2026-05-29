@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:driveops_management/config/api_config.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
+import 'package:driveops_management/features/messages/presentation/providers/total_unread_provider.dart';
 
 class Sidebar extends ConsumerWidget {
   const Sidebar({super.key});
@@ -12,6 +13,7 @@ class Sidebar extends ConsumerWidget {
     final currentRoute = GoRouterState.of(context).uri.path;
     final authState = ref.watch(authProvider);
     final user = authState.value?.user;
+    final unreadCount = ref.watch(totalUnreadProvider);
 
     return Container(
       width: AppConstants.sidebarWidth,
@@ -54,6 +56,7 @@ class Sidebar extends ConsumerWidget {
                   route: '/messages',
                   isSelected: currentRoute == '/messages',
                   onTap: () => context.go('/messages'),
+                  badge: unreadCount > 0 ? '$unreadCount' : null,
                 ),
                 _SidebarTabButton(
                   icon: Icons.directions_car_rounded,
@@ -197,6 +200,7 @@ class _SidebarTabButton extends StatelessWidget {
   final String route;
   final bool isSelected;
   final VoidCallback onTap;
+  final String? badge;
 
   const _SidebarTabButton({
     required this.icon,
@@ -204,6 +208,7 @@ class _SidebarTabButton extends StatelessWidget {
     required this.route,
     required this.isSelected,
     required this.onTap,
+    this.badge,
   });
 
   @override
@@ -254,6 +259,20 @@ class _SidebarTabButton extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
+                if (badge != null) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badge!,
+                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

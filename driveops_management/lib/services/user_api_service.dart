@@ -44,4 +44,13 @@ class UserApiService {
     );
     return User.fromJson(response.data as Map<String, dynamic>);
   }
+
+  Future<List<User>> getUsersByIds(List<String> ids) async {
+    final response = await _api.post(
+      '${ApiConfig.userEndpoint}/batch',
+      data: ids,
+    );
+    final list = response.data as List<dynamic>;
+    return list.map((e) => User.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }

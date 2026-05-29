@@ -73,3 +73,21 @@ public record FleetUpdateDto(
     string PayloadJson,
     DateTime Timestamp
 );
+
+public record ConversationSummaryDto(
+    Guid Id,
+    Guid? TripId,
+    string ConversationType,
+    DateTime LastMessageAt,
+    int UnreadCount,
+    IEnumerable<Guid> ParticipantUserIds
+);
+
+public record PagedMessagesDto(
+    int TotalCount,
+    int Page,
+    int PageSize,
+    IEnumerable<ChatMessageDto> Messages
+);
+
+public record CreateDirectConversationRequest(Guid OtherUserId);

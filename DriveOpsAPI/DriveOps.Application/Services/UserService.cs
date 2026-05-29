@@ -108,5 +108,11 @@ namespace DriveOps.Application.Services
                 await _unitOfWork.SaveChangesAsync();
             }
         }
+
+        public async Task<IEnumerable<UserDto>> GetUsersByIdsAsync(IEnumerable<Guid> userIds)
+        {
+            var users = await _userRepository.GetByIdsAsync(userIds);
+            return users.Select(u => u.ToDto());
+        }
     }
 }

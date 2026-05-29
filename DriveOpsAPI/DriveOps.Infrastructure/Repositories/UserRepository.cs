@@ -27,5 +27,10 @@ namespace DriveOps.Infrastructure.Repositories
         {
             return await base.WhereByExprFirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
         }
+
+        public async Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            return await _dbSet.Where(u => ids.Contains(u.Id)).ToListAsync();
+        }
     }
 }

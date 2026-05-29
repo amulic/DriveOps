@@ -81,5 +81,12 @@ namespace DriveOps.API.Controllers
             var user = await _userService.UpdateUserAsync(request.ToApplicationDto(id));
             return Ok(user.ToResponse());
         }
+
+        [HttpPost("batch")]
+        public async Task<IActionResult> GetUsersByIds([FromBody] Guid[] ids)
+        {
+            var users = await _userService.GetUsersByIdsAsync(ids);
+            return Ok(users.Select(u => u.ToResponse()));
+        }
     }
 }

@@ -145,4 +145,184 @@ public class ChatService : IChatService
             conversation.CreatedAt, conversation.UpdatedAt,
             conversation.Participants.Select(p => p.UserId), 0);
     }
+
+    public async Task<IEnumerable<ConversationSummaryDto>> GetMyConversationsAsync(Guid userId)
+    {
+        var conversationIds = await _dbContext.ConversationParticipants
+            .Where(p => p.UserId == userId)
+            .Select(p => p.ConversationId)
+            .Distinct()
+            .ToListAsync();
+
+        if (!conversationIds.Any())
+            return Enumerable.Empty<ConversationSummaryDto>();
+
+        var conversations = await _dbContext.Conversations
+            .AsNoTracking()
+            .Include(c => c.Participants)
+            .Where(c => conversationIds.Contains(c.Id))
+            .OrderByDescending(c => c.UpdatedAt)
+            .ToListAsync();
+
+        var result = new List<ConversationSummaryDto>();
+        foreach (var c in conversations)
+        {
+            var participant = c.Participants.FirstOrDefault(p => p.UserId == userId);
+            var lastMessage = await _dbContext.ChatMessages
+                .Where(m => m.ConversationId == c.Id)
+                .OrderByDescending(m => m.SentAt)
+                .Select(m => new { m.SentAt, m.SenderUserId })
+                .FirstOrDefaultAsync();
+
+            var unreadCount = 0;
+            if (lastMessage != null && participant?.LastReadAt != null)
+            {
+                unreadCount = await _dbContext.ChatMessages
+                    .CountAsync(m => m.ConversationId == c.Id && m.SentAt > participant.LastReadAt && m.SenderUserId != userId);
+            }
+            else if (lastMessage != null)
+            {
+                unreadCount = await _dbContext.ChatMessages
+                    .CountAsync(m => m.ConversationId == c.Id && m.SenderUserId != userId);
+            }
+
+            result.Add(new ConversationSummaryDto(
+                c.Id,
+                c.TripId,
+                c.TripId == null ? "direct" : "trip",
+                lastMessage?.SentAt ?? c.CreatedAt,
+                unreadCount,
+                c.Participants.Select(p => p.UserId)
+            ));
+        }
+
+        return result;
+    }
+
+    public async Task<PagedMessagesDto> GetMessagesAsync(Guid conversationId, Guid userId, int page, int pageSize)
+    {
+        var conversation = await _dbContext.Conversations
+            .Include(c => c.Participants)
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation == null)
+            throw new KeyNotFoundException($"Conversation {conversationId} not found.");
+
+        if (!conversation.Participants.Any(p => p.UserId == userId))
+            throw new InvalidOperationException("User is not a participant in this conversation.");
+
+        var totalCount = await _dbContext.ChatMessages
+            .CountAsync(m => m.ConversationId == conversationId);
+
+        var messages = await _dbContext.ChatMessages
+            .Where(m => m.ConversationId == conversationId)
+            .OrderByDescending(m => m.SentAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PagedMessagesDto(
+            totalCount,
+            page,
+            pageSize,
+            messages.Select(m => new ChatMessageDto(m.Id, m.ConversationId, m.SenderUserId, m.Content, m.SentAt))
+        );
+    }
+
+    public async Task<ConversationDto> CreateDirectConversationAsync(Guid initiatorUserId, Guid otherUserId)
+    {
+        var existing = await _dbContext.Conversations
+            .Include(c => c.Participants)
+            .FirstOrDefaultAsync(c =>
+                c.TripId == null &&
+                c.Participants.Any(p => p.UserId == initiatorUserId) &&
+                c.Participants.Any(p => p.UserId == otherUserId));
+
+        if (existing != null)
+        {
+            return await GetConversationAsync(existing.Id, initiatorUserId)
+                ?? throw new InvalidOperationException("Failed to retrieve existing conversation.");
+        }
+
+        var conversation = new Conversation
+        {
+            Id = Guid.NewGuid(),
+            TripId = null,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        conversation.Participants = new List<ConversationParticipant>
+        {
+            new() { Id = Guid.NewGuid(), ConversationId = conversation.Id, UserId = initiatorUserId, JoinedAt = DateTime.UtcNow },
+            new() { Id = Guid.NewGuid(), ConversationId = conversation.Id, UserId = otherUserId, JoinedAt = DateTime.UtcNow }
+        };
+
+        _dbContext.Conversations.Add(conversation);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Created direct conversation {ConversationId} between {UserA} and {UserB}", conversation.Id, initiatorUserId, otherUserId);
+
+        return new ConversationDto(conversation.Id, conversation.TripId, conversation.IsActive,
+            conversation.CreatedAt, conversation.UpdatedAt,
+            conversation.Participants.Select(p => p.UserId), 0);
+    }
+
+    public async Task<ConversationDto> JoinConversationAsync(Guid conversationId, Guid userId)
+    {
+        var conversation = await _dbContext.Conversations
+            .Include(c => c.Participants)
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation == null)
+            throw new KeyNotFoundException($"Conversation {conversationId} not found.");
+
+        if (!conversation.IsActive)
+            throw new InvalidOperationException("Cannot join a closed conversation.");
+
+        if (conversation.Participants.Any(p => p.UserId == userId))
+            return await GetConversationAsync(conversationId, userId)
+                ?? throw new InvalidOperationException("Failed to retrieve conversation.");
+
+        conversation.Participants.Add(new ConversationParticipant
+        {
+            Id = Guid.NewGuid(),
+            ConversationId = conversation.Id,
+            UserId = userId,
+            JoinedAt = DateTime.UtcNow
+        });
+
+        conversation.UpdatedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} joined conversation {ConversationId}", userId, conversationId);
+
+        return await GetConversationAsync(conversationId, userId)
+            ?? throw new InvalidOperationException("Failed to retrieve conversation after joining.");
+    }
+
+    public async Task<IEnumerable<ConversationSummaryDto>> GetActiveTripConversationsAsync()
+    {
+        var conversations = await _dbContext.Conversations
+            .Include(c => c.Participants)
+            .Include(c => c.Messages)
+            .Where(c => c.TripId != null && c.IsActive)
+            .OrderByDescending(c => c.UpdatedAt)
+            .ToListAsync();
+
+        return conversations.Select(c =>
+        {
+            var lastMessageAt = c.Messages.Any() ? c.Messages.Max(m => m.SentAt) : c.CreatedAt;
+
+            return new ConversationSummaryDto(
+                c.Id,
+                c.TripId,
+                "trip",
+                lastMessageAt,
+                0,
+                c.Participants.Select(p => p.UserId)
+            );
+        });
+    }
 }
