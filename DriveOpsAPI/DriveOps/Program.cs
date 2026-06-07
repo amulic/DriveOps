@@ -2,6 +2,9 @@ using DriveOps.Application.DependencyInjection;
 using DriveOps.Application.Helpers;
 using DriveOps.Infrastructure.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+
+JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,16 +78,14 @@ builder.Services.AddAuthentication("Bearer")
    .AddJwtBearer("Bearer", options =>
    {
        options.Authority = builder.Configuration["Keycloak:Authority"];
-       options.Audience = builder.Configuration["Keycloak:Audience"];
        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
        {
-           ValidateAudience = true,
+           ValidateAudience = false,
            ValidateIssuer = true,
            ValidateLifetime = true,
            ValidateIssuerSigningKey = true,
-           ValidAudience = builder.Configuration["Keycloak:Audience"],
            ValidIssuer = builder.Configuration["Keycloak:Authority"],
            ClockSkew = TimeSpan.Zero
        };

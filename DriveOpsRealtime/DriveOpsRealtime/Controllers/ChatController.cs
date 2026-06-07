@@ -23,17 +23,19 @@ public class ChatController : ControllerBase
     [HttpGet("conversations")]
     public async Task<IActionResult> GetMyConversations()
     {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
         try
         {
-            var userId = GetUserId();
             _logger.LogInformation("GetMyConversations called for user {UserId}", userId);
-            var conversations = await _chatService.GetMyConversationsAsync(userId);
+            var conversations = await _chatService.GetMyConversationsAsync(userId.Value);
             return Ok(conversations);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in GetMyConversations: {Message}", ex.Message);
-            throw;
+            return StatusCode(500, "An error occurred while retrieving conversations.");
         }
     }
 
@@ -41,37 +43,61 @@ public class ChatController : ControllerBase
     public async Task<IActionResult> GetConversation(Guid id)
     {
         var userId = GetUserId();
-        var conversation = await _chatService.GetConversationAsync(id, userId);
-        if (conversation == null) return NotFound();
-        return Ok(conversation);
+        if (userId == null) return Unauthorized();
+
+        try
+        {
+            var conversation = await _chatService.GetConversationAsync(id, userId.Value);
+            if (conversation == null) return NotFound();
+            return Ok(conversation);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving conversation {ConversationId}: {Message}", id, ex.Message);
+            return StatusCode(500, "An error occurred while retrieving the conversation.");
+        }
     }
 
     [HttpGet("conversations/{id:guid}/messages")]
     public async Task<IActionResult> GetMessages(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
         var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
         try
         {
-            var messages = await _chatService.GetMessagesAsync(id, userId, page, pageSize);
+            var messages = await _chatService.GetMessagesAsync(id, userId.Value, page, pageSize);
             return Ok(messages);
         }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (InvalidOperationException ex) { return Forbid(ex.Message); }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving messages for conversation {ConversationId}: {Message}", id, ex.Message);
+            return StatusCode(500, "An error occurred while retrieving messages.");
+        }
     }
 
     [HttpPost("conversations")]
     public async Task<IActionResult> CreateDirectConversation([FromBody] CreateDirectConversationRequest request)
     {
         var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
         try
         {
-            var conversation = await _chatService.CreateDirectConversationAsync(userId, request.OtherUserId);
+            var conversation = await _chatService.CreateDirectConversationAsync(userId.Value, request.OtherUserId);
             return Ok(conversation);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation creating direct conversation: {Message}", ex.Message);
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create direct conversation");
-            return BadRequest(ex.Message);
+            _logger.LogError(ex, "Failed to create direct conversation for user {UserId}", userId);
+            return StatusCode(500, "An error occurred while creating the conversation.");
         }
     }
 
@@ -79,21 +105,36 @@ public class ChatController : ControllerBase
     public async Task<IActionResult> JoinConversation(Guid id)
     {
         var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
         try
         {
-            var conversation = await _chatService.JoinConversationAsync(id, userId);
+            var conversation = await _chatService.JoinConversationAsync(id, userId.Value);
             return Ok(conversation);
         }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error joining conversation {ConversationId}: {Message}", id, ex.Message);
+            return StatusCode(500, "An error occurred while joining the conversation.");
+        }
     }
 
     [HttpGet("trip-conversations")]
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetActiveTripConversations()
     {
-        var conversations = await _chatService.GetActiveTripConversationsAsync();
-        return Ok(conversations);
+        try
+        {
+            var conversations = await _chatService.GetActiveTripConversationsAsync();
+            return Ok(conversations);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving active trip conversations: {Message}", ex.Message);
+            return StatusCode(500, "An error occurred while retrieving trip conversations.");
+        }
     }
 
     [AllowAnonymous]
@@ -104,7 +145,20 @@ public class ChatController : ControllerBase
         return Ok(new { isAuth = User.Identity?.IsAuthenticated ?? false, claims });
     }
 
-    private Guid GetUserId()
+    [HttpGet("whoami")]
+    public IActionResult WhoAmI()
+    {
+        var userId = GetUserId();
+        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        return Ok(new
+        {
+            userId = userId?.ToString(),
+            isAuth = User.Identity?.IsAuthenticated ?? false,
+            claims
+        });
+    }
+
+    private Guid? GetUserId()
     {
         var sub = User.FindFirstValue("sub");
         if (!string.IsNullOrEmpty(sub))
@@ -118,8 +172,8 @@ public class ChatController : ControllerBase
         if (!string.IsNullOrEmpty(nameId) && Guid.TryParse(nameId, out var nameGuid))
             return nameGuid;
 
-        _logger.LogError("Unable to extract user ID from claims. Available claims: {Claims}", 
+        _logger.LogError("Unable to extract user ID from claims. Available claims: {Claims}",
             string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}")));
-        throw new UnauthorizedAccessException("User ID not found in token.");
+        return null;
     }
 }

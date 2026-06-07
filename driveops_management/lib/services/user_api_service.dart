@@ -53,4 +53,13 @@ class UserApiService {
     final list = response.data as List<dynamic>;
     return list.map((e) => User.fromJson(e as Map<String, dynamic>)).toList();
   }
+
+  Future<List<User>> getUsersByKeycloakIds(List<String> keycloakIds) async {
+    final response = await _api.post(
+      '${ApiConfig.userEndpoint}/by-keycloak-ids',
+      data: keycloakIds,
+    );
+    final list = response.data as List<dynamic>;
+    return list.map((e) => User.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }

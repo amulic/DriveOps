@@ -6,6 +6,7 @@ namespace DriveOps.API.ControllerDtos.Response
     {
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
+        public string? KeycloakId { get; set; }
         public string DriverName { get; set; } = null!;
         public string Email { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;

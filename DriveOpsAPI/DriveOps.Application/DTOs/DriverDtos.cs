@@ -6,6 +6,7 @@ namespace DriveOps.Application.DTOs
     {
         public Guid Id { get; init; }
         public Guid UserId { get; init; }
+        public string? KeycloakId { get; init; }
         public string DriverName { get; init; } = null!;
         public string Email { get; init; } = null!;
         public string PhoneNumber { get; init; } = null!;

@@ -11,5 +11,6 @@ namespace DriveOps.Application.Interfaces
         Task<UserDto> CreateOrUpdateFromKeycloakAsync(string keycloakId, string email, string firstName, string lastName);
         Task UpdateLastLoginAsync(Guid userId);
         Task<IEnumerable<UserDto>> GetUsersByIdsAsync(IEnumerable<Guid> userIds);
+        Task<IEnumerable<UserDto>> GetUsersByKeycloakIdsAsync(IEnumerable<string> keycloakIds);
     }
 }

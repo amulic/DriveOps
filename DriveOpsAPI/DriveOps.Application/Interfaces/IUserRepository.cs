@@ -9,5 +9,6 @@ namespace DriveOps.Application.Interfaces
         Task<bool> EmailExistsAsync(string email);
         Task<IEnumerable<User>> GetActiveUsersAsync();
         Task<IEnumerable<User>> GetByIdsAsync(IEnumerable<Guid> ids);
+        Task<IEnumerable<User>> GetByKeycloakIdsAsync(IEnumerable<string> keycloakIds);
     }
 }

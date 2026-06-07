@@ -39,6 +39,7 @@ class AuthService {
   static const _refreshTokenKey = 'refresh_token';
   static const _idTokenKey = 'id_token';
   static const _expiresAtKey = 'expires_at';
+  static const _keycloakSubKey = 'keycloak_sub';
   static const _stateKey = 'oauth_state';
 
   final FlutterSecureStorage _secureStorage;
@@ -294,18 +295,182 @@ class AuthService {
     return _secureStorage.read(key: _accessTokenKey);
   }
 
+  Future<String?> getKeycloakSub() async {
+    final cached = await _secureStorage.read(key: _keycloakSubKey);
+    if (cached != null) return cached;
+
+    final token = await getAccessToken();
+    if (token == null) return null;
+
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      final sub = data['sub'] as String?;
+      if (sub != null) {
+        await _secureStorage.write(key: _keycloakSubKey, value: sub);
+      }
+      return sub;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<AuthResult> register() async {
+    if (_isLoggingIn) {
+      return const AuthResult(success: false, error: 'Login already in progress');
+    }
+    _isLoggingIn = true;
+
+    try {
+      await _closeRedirectServer();
+
+      final state = _generateState();
+      final codeVerifier = _generateCodeVerifier();
+      final codeChallenge = _generateCodeChallenge(codeVerifier);
+
+      final authUri = Uri.parse(KeycloakConfig.authUrl).replace(
+        queryParameters: {
+          'response_type': 'code',
+          'client_id': KeycloakConfig.clientId,
+          'redirect_uri': KeycloakConfig.redirectUri,
+          'scope': KeycloakConfig.scopes,
+          'state': state,
+          'code_challenge': codeChallenge,
+          'code_challenge_method': 'S256',
+          'kc_action': 'register',
+        },
+      );
+
+      await _secureStorage.write(key: _stateKey, value: state);
+
+      try {
+        _redirectServer = await HttpServer.bind(InternetAddress.loopbackIPv4, KeycloakConfig.redirectPort);
+      } catch (e) {
+        return AuthResult.failure('Could not start local server on port ${KeycloakConfig.redirectPort}: $e');
+      }
+
+      final completer = Completer<AuthResult>();
+
+      _redirectServer!.listen(
+        (request) async {
+          try {
+            if (request.uri.path == '/auth/callback') {
+              final params = request.uri.queryParameters;
+              final returnedState = params['state'] ?? '';
+              final code = params['code'];
+              final error = params['error'];
+
+              if (error != null) {
+                request.response.statusCode = HttpStatus.ok;
+                request.response.headers.contentType = ContentType.html;
+                request.response.write('<html><body><h2>Registration failed</h2><p>$error</p><p>You can close this window.</p></body></html>');
+                await request.response.close();
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.failure('Registration failed: $error'));
+                }
+                return;
+              }
+
+              if (returnedState != state) {
+                request.response.statusCode = HttpStatus.ok;
+                request.response.headers.contentType = ContentType.html;
+                request.response.write('<html><body><h2>State mismatch</h2><p>You can close this window.</p></body></html>');
+                await request.response.close();
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.failure('State mismatch'));
+                }
+                return;
+              }
+
+              if (code == null) {
+                request.response.statusCode = HttpStatus.ok;
+                request.response.headers.contentType = ContentType.html;
+                request.response.write('<html><body><h2>No authorization code received</h2><p>You can close this window.</p></body></html>');
+                await request.response.close();
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.failure('No authorization code'));
+                }
+                return;
+              }
+
+              request.response.statusCode = HttpStatus.ok;
+              request.response.headers.contentType = ContentType.html;
+              request.response.write('<html><body><h2>Registration successful!</h2><p>You can close this window and return to the app.</p><script>window.close();</script></body></html>');
+              await request.response.close();
+
+              try {
+                final tokens = await _exchangeCodeForTokens(code, codeVerifier);
+                await _storeTokens(tokens);
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.success(tokens));
+                }
+              } catch (e) {
+                if (!completer.isCompleted) {
+                  completer.complete(AuthResult.failure('Token exchange failed: $e'));
+                }
+              }
+            } else {
+              request.response.statusCode = HttpStatus.notFound;
+              request.response.write('Not found');
+              await request.response.close();
+            }
+          } catch (e) {
+            if (!completer.isCompleted) {
+              completer.complete(AuthResult.failure('Request handler error: $e'));
+            }
+          }
+        },
+        onError: (error) {
+          if (!completer.isCompleted) {
+            completer.complete(AuthResult.failure('Server error: $error'));
+          }
+        },
+      );
+
+      final launched = await launchUrl(authUri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        return AuthResult.failure('Could not open browser');
+      }
+
+      return await completer.future.timeout(
+        const Duration(minutes: 5),
+        onTimeout: () => AuthResult.failure('Registration timed out'),
+      );
+    } catch (e) {
+      return AuthResult.failure('Registration failed: $e');
+    } finally {
+      await _closeRedirectServer();
+      await _secureStorage.delete(key: _stateKey);
+      _isLoggingIn = false;
+    }
+  }
+
   Future<void> logout() async {
     final idToken = await _secureStorage.read(key: _idTokenKey);
     await clearTokens();
 
+    final queryParams = <String, String>{
+      'post_logout_redirect_uri': KeycloakConfig.postLogoutRedirectUri,
+    };
+    if (idToken != null) {
+      queryParams['id_token_hint'] = idToken;
+    }
+
     final logoutUri = Uri.parse(KeycloakConfig.endSessionUrl).replace(
-      queryParameters: {
-        if (idToken != null) 'id_token_hint': idToken,
-        'post_logout_redirect_uri': KeycloakConfig.postLogoutRedirectUri,
-      },
+      queryParameters: queryParams,
     );
 
-    await launchUrl(logoutUri, mode: LaunchMode.externalApplication);
+    try {
+      final launched = await launchUrl(logoutUri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        // Fallback: try in-app web view
+        await launchUrl(logoutUri, mode: LaunchMode.inAppWebView);
+      }
+    } catch (_) {
+      // If browser launch fails, tokens are already cleared locally
+    }
   }
 
   Future<void> clearTokens() async {
@@ -313,6 +478,7 @@ class AuthService {
     await _secureStorage.delete(key: _refreshTokenKey);
     await _secureStorage.delete(key: _idTokenKey);
     await _secureStorage.delete(key: _expiresAtKey);
+    await _secureStorage.delete(key: _keycloakSubKey);
   }
 
   Future<bool> isAuthenticated() async {

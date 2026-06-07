@@ -15,7 +15,7 @@ class MessagesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversationsAsync = ref.watch(conversationsProvider);
-    final currentUserId = ref.watch(authProvider).value?.user?.id;
+    final currentUserId = ref.watch(keycloakSubProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -132,7 +132,7 @@ class MessagesScreen extends ConsumerWidget {
     final chatApi = ref.read(chatApiServiceProvider);
     final conversation = await chatApi.getConversation(conversationId);
     final currentUserName = ref.read(authProvider).value?.user?.fullName ?? 'Admin';
-    final currentUserId = ref.read(authProvider).value?.user?.id ?? '';
+    final currentUserId = ref.read(keycloakSubProvider) ?? '';
     if (context.mounted) {
       Navigator.of(context).push(
         MaterialPageRoute(

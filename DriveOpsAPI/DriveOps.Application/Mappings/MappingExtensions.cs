@@ -45,6 +45,7 @@ namespace DriveOps.Application.Mappings
         {
             Id = driver.Id,
             UserId = driver.UserId,
+            KeycloakId = driver.User?.KeycloakId,
             DriverName = driver.User != null
                 ? $"{driver.User.FirstName} {driver.User.LastName}"
                 : string.Empty,

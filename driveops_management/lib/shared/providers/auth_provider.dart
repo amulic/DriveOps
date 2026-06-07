@@ -8,12 +8,14 @@ import 'package:driveops_management/services/cache_service.dart';
 class AuthState {
   final bool isAuthenticated;
   final User? user;
+  final String? keycloakSub;
   final bool isLoading;
   final String? error;
 
   const AuthState({
     this.isAuthenticated = false,
     this.user,
+    this.keycloakSub,
     this.isLoading = false,
     this.error,
   });
@@ -21,12 +23,14 @@ class AuthState {
   AuthState copyWith({
     bool? isAuthenticated,
     User? user,
+    String? keycloakSub,
     bool? isLoading,
     String? error,
   }) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       user: user ?? this.user,
+      keycloakSub: keycloakSub ?? this.keycloakSub,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -48,7 +52,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       if (isAuth) {
         final token = await _authService.getAccessToken();
         if (token != null) {
-          return const AuthState(isAuthenticated: true);
+          final sub = await _authService.getKeycloakSub();
+          return AuthState(isAuthenticated: true, keycloakSub: sub);
         }
       }
       return const AuthState();
@@ -63,8 +68,9 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     try {
       final result = await _authService.login();
       if (result.success && result.tokens != null) {
+        final sub = await _authService.getKeycloakSub();
         final user = await _syncUser();
-        state = AsyncValue.data(AuthState(isAuthenticated: true, user: user));
+        state = AsyncValue.data(AuthState(isAuthenticated: true, user: user, keycloakSub: sub));
       } else {
         state = AsyncValue.data(AuthState(error: result.error ?? 'Login failed'));
       }
@@ -80,6 +86,23 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     } catch (_) {}
     await CacheService().clear();
     state = const AsyncValue.data(AuthState());
+  }
+
+  Future<void> register() async {
+    if (_authService.isLoggingIn) return;
+    state = const AsyncValue.loading();
+    try {
+      final result = await _authService.register();
+      if (result.success && result.tokens != null) {
+        final sub = await _authService.getKeycloakSub();
+        final user = await _syncUser();
+        state = AsyncValue.data(AuthState(isAuthenticated: true, user: user, keycloakSub: sub));
+      } else {
+        state = AsyncValue.data(AuthState(error: result.error ?? 'Registration failed'));
+      }
+    } catch (e) {
+      state = AsyncValue.data(AuthState(error: e.toString()));
+    }
   }
 
   Future<User?> _syncUser() async {
@@ -131,4 +154,9 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
 final currentUserProvider = Provider<User?>((ref) {
   final authState = ref.watch(authProvider);
   return authState.value?.user;
+});
+
+final keycloakSubProvider = Provider<String?>((ref) {
+  final authState = ref.watch(authProvider);
+  return authState.value?.keycloakSub;
 });

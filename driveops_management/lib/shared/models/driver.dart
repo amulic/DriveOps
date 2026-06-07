@@ -18,6 +18,7 @@ enum DriverStatus {
 class Driver {
   final String id;
   final String userId;
+  final String? keycloakId;
   final String driverName;
   final String email;
   final String phoneNumber;
@@ -38,6 +39,7 @@ class Driver {
   const Driver({
     required this.id,
     required this.userId,
+    this.keycloakId,
     required this.driverName,
     required this.email,
     required this.phoneNumber,
@@ -62,6 +64,7 @@ class Driver {
     return Driver(
       id: json['id'] as String,
       userId: json['userId'] as String,
+      keycloakId: json['keycloakId'] as String?,
       driverName: json['driverName'] as String,
       email: json['email'] as String? ?? '',
       phoneNumber: json['phoneNumber'] as String? ?? '',
@@ -86,6 +89,7 @@ class Driver {
     return {
       'id': id,
       'userId': userId,
+      'keycloakId': keycloakId,
       'driverName': driverName,
       'email': email,
       'phoneNumber': phoneNumber,
@@ -107,6 +111,7 @@ class Driver {
   Driver copyWith({
     String? id,
     String? userId,
+    String? keycloakId,
     String? driverName,
     String? email,
     String? phoneNumber,
@@ -127,6 +132,7 @@ class Driver {
     return Driver(
       id: id ?? this.id,
       userId: userId ?? this.userId,
+      keycloakId: keycloakId ?? this.keycloakId,
       driverName: driverName ?? this.driverName,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,

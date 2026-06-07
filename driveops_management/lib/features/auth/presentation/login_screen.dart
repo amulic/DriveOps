@@ -20,6 +20,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _handleRegister() async {
+    setState(() => _isLoading = true);
+    await ref.read(authProvider.notifier).register();
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -74,7 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const CircularProgressIndicator(color: Color(0xFF3B82F6)),
                 const SizedBox(height: 16),
                 const Text(
-                  'Signing in...',
+                  'Please wait...',
                   style: TextStyle(color: Colors.white54),
                 ),
               ] else ...[
@@ -120,6 +128,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         SizedBox(width: 8),
                         Text(
                           'Sign in with Keycloak',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _handleRegister,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                      side: const BorderSide(color: Colors.white24),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.person_add, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Create Account',
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                         ),
                       ],

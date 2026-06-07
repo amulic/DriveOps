@@ -114,5 +114,11 @@ namespace DriveOps.Application.Services
             var users = await _userRepository.GetByIdsAsync(userIds);
             return users.Select(u => u.ToDto());
         }
+
+        public async Task<IEnumerable<UserDto>> GetUsersByKeycloakIdsAsync(IEnumerable<string> keycloakIds)
+        {
+            var users = await _userRepository.GetByKeycloakIdsAsync(keycloakIds);
+            return users.Select(u => u.ToDto());
+        }
     }
 }

@@ -82,9 +82,14 @@ namespace DriveOps.RealTime.Hubs;
 
         private Guid GetUserId()
         {
-            var sub = Context.User?.FindFirstValue("sub")
-                ?? Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? throw new HubException("User not authenticated.");
-            return Guid.Parse(sub);
+            var sub = Context.User?.FindFirstValue("sub");
+            if (!string.IsNullOrEmpty(sub) && Guid.TryParse(sub, out var subGuid))
+                return subGuid;
+
+            var nameId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrEmpty(nameId) && Guid.TryParse(nameId, out var nameGuid))
+                return nameGuid;
+
+            throw new HubException("User ID not found in token.");
         }
     }

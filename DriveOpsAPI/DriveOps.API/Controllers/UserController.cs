@@ -88,5 +88,12 @@ namespace DriveOps.API.Controllers
             var users = await _userService.GetUsersByIdsAsync(ids);
             return Ok(users.Select(u => u.ToResponse()));
         }
+
+        [HttpPost("by-keycloak-ids")]
+        public async Task<IActionResult> GetUsersByKeycloakIds([FromBody] string[] keycloakIds)
+        {
+            var users = await _userService.GetUsersByKeycloakIdsAsync(keycloakIds);
+            return Ok(users.Select(u => u.ToResponse()));
+        }
     }
 }

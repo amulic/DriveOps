@@ -77,6 +77,7 @@ namespace DriveOps.API.Mappings
         {
             Id = dto.Id,
             UserId = dto.UserId,
+            KeycloakId = dto.KeycloakId,
             DriverName = dto.DriverName,
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
