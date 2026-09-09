@@ -15,7 +15,6 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet
                 .Include(t => t.Customer)
                 .Include(t => t.Driver)
-                    .ThenInclude(d => d!.User)
                 .Include(t => t.Vehicle)
                 .OrderByDescending(t => t.RequestedAt)
                 .Skip((page - 1) * pageSize)
@@ -79,7 +78,6 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet
                 .Include(t => t.Customer)
                 .Include(t => t.Driver)
-                    .ThenInclude(d => d!.User)
                 .Include(t => t.Vehicle)
                 .Include(t => t.TripRoutes.OrderBy(r => r.Timestamp))
                 .FirstOrDefaultAsync(t => t.Id == tripId);

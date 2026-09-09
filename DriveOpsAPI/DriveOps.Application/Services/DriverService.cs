@@ -9,14 +9,12 @@ namespace DriveOps.Application.Services
     public class DriverService : IDriverService
     {
         private readonly IDriverRepository _driverRepository;
-        private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEventPublisher _eventPublisher;
 
-        public DriverService(IDriverRepository driverRepository, IUserRepository userRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
+        public DriverService(IDriverRepository driverRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
         {
             _driverRepository = driverRepository;
-            _userRepository = userRepository;
             _unitOfWork = unitOfWork;
             _eventPublisher = eventPublisher;
         }
@@ -40,9 +38,9 @@ namespace DriveOps.Application.Services
             return driver?.ToDto();
         }
 
-        public async Task<DriverDto?> GetDriverByUserIdAsync(Guid userId)
+        public async Task<DriverDto?> GetDriverByKeycloakIdAsync(Guid keycloakId)
         {
-            var driver = await _driverRepository.GetByUserIdAsync(userId);
+            var driver = await _driverRepository.GetByKeycloakIdAsync(keycloakId);
             return driver?.ToDto();
         }
 
@@ -74,13 +72,9 @@ namespace DriveOps.Application.Services
 
         public async Task<DriverDto> CreateDriverAsync(CreateDriverDto dto)
         {
-            var userExists = await _userRepository.ExistsAsync(dto.UserId);
-            if (!userExists)
-                throw new KeyNotFoundException($"User {dto.UserId} not found.");
-
-            var existingDriver = await _driverRepository.GetByUserIdAsync(dto.UserId);
+            var existingDriver = await _driverRepository.GetByKeycloakIdAsync(dto.KeycloakId);
             if (existingDriver != null)
-                throw new InvalidOperationException($"User {dto.UserId} is already registered as a driver.");
+                throw new InvalidOperationException($"Driver with KeycloakId {dto.KeycloakId} already exists.");
 
             var driver = dto.ToEntity();
             await _driverRepository.AddAsync(driver);
@@ -95,6 +89,10 @@ namespace DriveOps.Application.Services
             var driver = await _driverRepository.GetWithVehiclesAsync(dto.Id)
                 ?? throw new KeyNotFoundException($"Driver {dto.Id} not found.");
 
+            if (dto.FirstName != null) driver.FirstName = dto.FirstName;
+            if (dto.LastName != null) driver.LastName = dto.LastName;
+            if (dto.Email != null) driver.Email = dto.Email;
+            if (dto.PhoneNumber != null) driver.PhoneNumber = dto.PhoneNumber;
             if (dto.LicenseNumber != null) driver.LicenseNumber = dto.LicenseNumber;
             if (dto.LicenseExpiryDate.HasValue) driver.LicenseExpiryDate = dto.LicenseExpiryDate.Value;
             if (dto.EmergencyContactName != null) driver.EmergencyContactName = dto.EmergencyContactName;
@@ -144,7 +142,7 @@ namespace DriveOps.Application.Services
 
             await _eventPublisher.PublishAsync("driveops.fleet", "driver.status.changed",
                 new DriverStatusChangedEvent(driverId,
-                    driver.User != null ? $"{driver.User.FirstName} {driver.User.LastName}" : string.Empty,
+                    $"{driver.FirstName} {driver.LastName}",
                     driver.Status?.ToString() ?? "Unknown", isOnline, DateTime.UtcNow));
         }
 
@@ -165,7 +163,7 @@ namespace DriveOps.Application.Services
 
             await _eventPublisher.PublishAsync("driveops.fleet", "driver.status.changed",
                 new DriverStatusChangedEvent(driverId,
-                    driver.User != null ? $"{driver.User.FirstName} {driver.User.LastName}" : string.Empty,
+                    $"{driver.FirstName} {driver.LastName}",
                     "Suspended", false, DateTime.UtcNow));
         }
 
@@ -185,7 +183,7 @@ namespace DriveOps.Application.Services
 
             await _eventPublisher.PublishAsync("driveops.fleet", "driver.status.changed",
                 new DriverStatusChangedEvent(driverId,
-                    driver.User != null ? $"{driver.User.FirstName} {driver.User.LastName}" : string.Empty,
+                    $"{driver.FirstName} {driver.LastName}",
                     "Active", driver.IsOnline ?? false, DateTime.UtcNow));
         }
     }

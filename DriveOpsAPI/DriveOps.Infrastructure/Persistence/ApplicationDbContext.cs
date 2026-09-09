@@ -23,8 +23,6 @@ namespace DriveOps.Infrastructure.Persistence
 
         public virtual DbSet<TripRoute> TripRoutes { get; set; }
 
-        public virtual DbSet<User> Users { get; set; }
-
         public virtual DbSet<Vehicle> Vehicles { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -43,6 +41,8 @@ namespace DriveOps.Infrastructure.Persistence
             {
                 entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC074429FDDF");
 
+                entity.HasIndex(e => e.KeycloakId, "UQ__Customer__KeycloakId").IsUnique();
+
                 entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.Email).HasMaxLength(255);
@@ -53,26 +53,27 @@ namespace DriveOps.Infrastructure.Persistence
                     .HasColumnType("decimal(3, 2)");
                 entity.Property(e => e.TotalTrips).HasDefaultValue(0);
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-
-                entity.HasOne(d => d.User).WithMany(p => p.Customers)
-                    .HasForeignKey(d => d.UserId)
-                    .HasConstraintName("FK__Customers__UserI__5535A963");
             });
 
             modelBuilder.Entity<Driver>(entity =>
             {
                 entity.HasKey(e => e.Id).HasName("PK__Drivers__3214EC07B4817E92");
 
+                entity.HasIndex(e => e.KeycloakId, "UQ__Drivers__KeycloakId").IsUnique();
                 entity.HasIndex(e => e.LicenseNumber, "UQ__Drivers__E88901666371942D").IsUnique();
 
                 entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.CurrentLatitude).HasColumnType("decimal(10, 8)");
                 entity.Property(e => e.CurrentLongitude).HasColumnType("decimal(11, 8)");
+                entity.Property(e => e.Email).HasMaxLength(255);
                 entity.Property(e => e.EmergencyContactName).HasMaxLength(100);
                 entity.Property(e => e.EmergencyContactPhone).HasMaxLength(20);
+                entity.Property(e => e.FirstName).HasMaxLength(100);
                 entity.Property(e => e.IsOnline).HasDefaultValue(false);
+                entity.Property(e => e.LastName).HasMaxLength(100);
                 entity.Property(e => e.LicenseNumber).HasMaxLength(50);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(20);
                 entity.Property(e => e.Rating)
                     .HasDefaultValue(5.00m)
                     .HasColumnType("decimal(3, 2)");
@@ -82,11 +83,6 @@ namespace DriveOps.Infrastructure.Persistence
                     .HasColumnType("decimal(10, 2)");
                 entity.Property(e => e.TotalTrips).HasDefaultValue(0);
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-
-                entity.HasOne(d => d.User).WithMany(p => p.Drivers)
-                    .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Drivers__UserId__403A8C7D");
             });
 
             modelBuilder.Entity<Trip>(entity =>
@@ -142,25 +138,6 @@ namespace DriveOps.Infrastructure.Persistence
                     .HasForeignKey(d => d.TripId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__TripRoute__TripI__68487DD7");
-            });
-
-            modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasKey(e => e.Id).HasName("PK__Users__3214EC075B658B41");
-
-                entity.HasIndex(e => e.Email, "UQ__Users__A9D105348F0D93ED").IsUnique();
-
-                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
-                entity.Property(e => e.Address).HasMaxLength(500);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-                entity.Property(e => e.Email).HasMaxLength(255);
-                entity.Property(e => e.FirstName).HasMaxLength(100);
-                entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.LastName).HasMaxLength(100);
-                entity.Property(e => e.PasswordHash).HasMaxLength(255);
-                entity.Property(e => e.PhoneNumber).HasMaxLength(20);
-                entity.Property(e => e.ProfileImageUrl).HasMaxLength(500);
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
             });
 
             modelBuilder.Entity<Vehicle>(entity =>

@@ -17,9 +17,9 @@ enum DriverStatus {
 
 class Driver {
   final String id;
-  final String userId;
-  final String? keycloakId;
-  final String driverName;
+  final String keycloakId;
+  final String firstName;
+  final String lastName;
   final String email;
   final String phoneNumber;
   final String licenseNumber;
@@ -38,9 +38,9 @@ class Driver {
 
   const Driver({
     required this.id,
-    required this.userId,
-    this.keycloakId,
-    required this.driverName,
+    required this.keycloakId,
+    required this.firstName,
+    required this.lastName,
     required this.email,
     required this.phoneNumber,
     required this.licenseNumber,
@@ -58,14 +58,15 @@ class Driver {
     this.activeTimeHours = 0.0,
   });
 
+  String get driverName => '$firstName $lastName';
   String get fullName => driverName;
 
   factory Driver.fromJson(Map<String, dynamic> json) {
     return Driver(
       id: json['id'] as String,
-      userId: json['userId'] as String,
-      keycloakId: json['keycloakId'] as String?,
-      driverName: json['driverName'] as String,
+      keycloakId: (json['keycloakId'] ?? '') as String,
+      firstName: (json['firstName'] ?? '') as String,
+      lastName: (json['lastName'] ?? '') as String,
       email: json['email'] as String? ?? '',
       phoneNumber: json['phoneNumber'] as String? ?? '',
       licenseNumber: json['licenseNumber'] as String,
@@ -88,8 +89,9 @@ class Driver {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'userId': userId,
       'keycloakId': keycloakId,
+      'firstName': firstName,
+      'lastName': lastName,
       'driverName': driverName,
       'email': email,
       'phoneNumber': phoneNumber,
@@ -110,9 +112,9 @@ class Driver {
 
   Driver copyWith({
     String? id,
-    String? userId,
     String? keycloakId,
-    String? driverName,
+    String? firstName,
+    String? lastName,
     String? email,
     String? phoneNumber,
     String? licenseNumber,
@@ -131,9 +133,9 @@ class Driver {
   }) {
     return Driver(
       id: id ?? this.id,
-      userId: userId ?? this.userId,
       keycloakId: keycloakId ?? this.keycloakId,
-      driverName: driverName ?? this.driverName,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       licenseNumber: licenseNumber ?? this.licenseNumber,

@@ -10,7 +10,6 @@ import 'package:driveops_management/services/api_service.dart';
 import 'package:driveops_management/services/driver_api_service.dart';
 import 'package:driveops_management/services/trip_api_service.dart';
 import 'package:driveops_management/services/vehicle_api_service.dart';
-import 'package:driveops_management/services/user_api_service.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
 
 final useDummyDataProvider = Provider<bool>((ref) {
@@ -32,10 +31,6 @@ final tripApiServiceProvider = Provider<TripApiService>((ref) {
 
 final vehicleApiServiceProvider = Provider<VehicleApiService>((ref) {
   return VehicleApiService(ref.watch(apiServiceProvider));
-});
-
-final userApiServiceProvider = Provider<UserApiService>((ref) {
-  return UserApiService(ref.watch(apiServiceProvider));
 });
 
 final driverRepositoryProvider = Provider<DriverRepository>((ref) {
@@ -70,18 +65,6 @@ final vehicleRepositoryProvider = Provider<VehicleRepository>((ref) {
   final cache = ref.watch(cacheServiceProvider);
   return ApiVehicleRepository(
     ref.watch(vehicleApiServiceProvider),
-    cache,
-  );
-});
-
-final userRepositoryProvider = Provider<UserRepository>((ref) {
-  final useDummy = ref.watch(useDummyDataProvider);
-  if (useDummy) {
-    return DummyUserRepository();
-  }
-  final cache = ref.watch(cacheServiceProvider);
-  return ApiUserRepository(
-    ref.watch(userApiServiceProvider),
     cache,
   );
 });

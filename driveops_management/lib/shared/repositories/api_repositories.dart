@@ -1,15 +1,12 @@
 import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
-import 'package:driveops_management/shared/models/user.dart';
 import 'package:driveops_management/services/driver_api_service.dart';
 import 'package:driveops_management/services/trip_api_service.dart';
 import 'package:driveops_management/services/vehicle_api_service.dart';
-import 'package:driveops_management/services/user_api_service.dart';
 import 'package:driveops_management/services/cache_service.dart';
 import 'package:driveops_management/shared/repositories/repositories.dart';
 import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
-import 'package:driveops_management/shared/dtos/requests/user_requests.dart';
 import 'package:driveops_management/shared/dtos/requests/vehicle_requests.dart';
 
 class ApiDriverRepository implements DriverRepository {
@@ -61,6 +58,15 @@ class ApiDriverRepository implements DriverRepository {
     final driver = await _api.getDriver(id);
     await _cache.setSingle(CacheService.driver(id), driver.toJson());
     return driver;
+  }
+
+  @override
+  Future<Driver?> getDriverByKeycloakId(String keycloakId) async {
+    try {
+      return await _api.getDriverByKeycloakId(keycloakId);
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -241,40 +247,5 @@ class ApiVehicleRepository implements VehicleRepository {
     await _cache.remove(CacheService.vehiclesAvailable);
     await _cache.remove(CacheService.vehicle(vehicleId));
     await _cache.remove(CacheService.vehiclesNeedingService);
-  }
-}
-
-class ApiUserRepository implements UserRepository {
-  final UserApiService _api;
-  final CacheService _cache;
-
-  ApiUserRepository(this._api, this._cache);
-
-  @override
-  Future<User?> getCurrentUser() async {
-    final cached = _cache.get(CacheService.userCurrent);
-    if (cached != null) {
-      return User.fromJson(cached as Map<String, dynamic>);
-    }
-    final user = await _api.getCurrentUser();
-    await _cache.setSingle(CacheService.userCurrent, user.toJson());
-    return user;
-  }
-
-  @override
-  Future<User?> getUserById(String id) async {
-    final cached = _cache.get(CacheService.user(id));
-    if (cached != null) {
-      return User.fromJson(cached as Map<String, dynamic>);
-    }
-    final user = await _api.getUser(id);
-    await _cache.setSingle(CacheService.user(id), user.toJson());
-    return user;
-  }
-
-  @override
-  Future<User> createUser(CreateUserRequest request) async {
-    final user = await _api.createUser(request);
-    return user;
   }
 }

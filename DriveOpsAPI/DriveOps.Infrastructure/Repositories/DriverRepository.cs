@@ -13,7 +13,6 @@ namespace DriveOps.Infrastructure.Repositories
         public async Task<IEnumerable<Driver>> GetAllDriversAsync(int page = 1, int pageSize = 50)
         {
             return await _dbSet
-                .Include(d => d.User)
                 .OrderBy(d => d.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -28,7 +27,6 @@ namespace DriveOps.Infrastructure.Repositories
         public async Task<IEnumerable<Driver>> GetAvailableDriversAsync(int page = 1, int pageSize = 50)
         {
             return await _dbSet
-                .Include(d => d.User)
                 .Where(d => d.IsOnline == true && d.Status == DriverStatus.Active)
                 .OrderBy(d => d.Status)
                 .Skip((page - 1) * pageSize)
@@ -42,17 +40,15 @@ namespace DriveOps.Infrastructure.Repositories
                 .CountAsync(d => d.IsOnline == true && d.Status == DriverStatus.Active);
         }
 
-        public async Task<Driver?> GetByUserIdAsync(Guid userId)
+        public async Task<Driver?> GetByKeycloakIdAsync(Guid keycloakId)
         {
             return await _dbSet
-                .Include(d => d.User)
-                .FirstOrDefaultAsync(d => d.UserId == userId);
+                .FirstOrDefaultAsync(d => d.KeycloakId == keycloakId);
         }
 
         public async Task<Driver?> GetWithVehiclesAsync(Guid driverId)
         {
             return await _dbSet
-                .Include(d => d.User)
                 .Include(d => d.Vehicles)
                 .FirstOrDefaultAsync(d => d.Id == driverId);
         }
@@ -60,7 +56,6 @@ namespace DriveOps.Infrastructure.Repositories
         public async Task<Driver?> GetByIdWithTripsAsync(Guid driverId)
         {
             return await _dbSet
-                .Include(d => d.User)
                 .Include(d => d.Trips)
                 .FirstOrDefaultAsync(d => d.Id == driverId);
         }
@@ -74,7 +69,6 @@ namespace DriveOps.Infrastructure.Repositories
             var lonRange = cosLat > 0m ? latRange / cosLat : latRange;
 
             return await _dbSet
-                .Include(d => d.User)
                 .Where(d => d.IsOnline == true
                     && d.Status == DriverStatus.Active
                     && d.CurrentLatitude != null

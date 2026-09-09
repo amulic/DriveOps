@@ -1,17 +1,11 @@
 class ApiConfig {
   static const String apiBaseUrl = 'http://localhost:5032';
-  static const String signalrBaseUrl = 'http://localhost:5033';
   static const String realtimeBaseUrl = 'http://localhost:5033';
 
   static const String driverEndpoint = '/api/driver';
   static const String tripEndpoint = '/api/trip';
   static const String vehicleEndpoint = '/api/vehicle';
-  static const String userEndpoint = '/api/user';
-  static const String customerEndpoint = '/api/customer';
-  static const String chatEndpoint = '/api/chat';
-  static const String testEndpoint = '/api/test';
 
-  static const String locationHubPath = '/hubs/location';
   static const String notificationHubPath = '/hubs/notification';
   static const String chatHubPath = '/hubs/chat';
 }
@@ -23,6 +17,7 @@ class KeycloakConfig {
   static const String audience = 'driveops-desktop';
   static const String tokenUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/token';
   static const String authUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/auth';
+  static const String registerUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/registrations';
   static const String endSessionUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/logout';
   static const int redirectPort = 42069;
   static const String redirectHost = '127.0.0.1';

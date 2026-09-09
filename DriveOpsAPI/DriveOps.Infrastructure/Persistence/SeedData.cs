@@ -9,7 +9,7 @@ public static class SeedData
 {
     public static async Task SeedAsync(ApplicationDbContext context, ILogger logger)
     {
-        if (await context.Users.AnyAsync())
+        if (await context.Drivers.AnyAsync() || await context.Customers.AnyAsync())
         {
             logger.LogInformation("Database already seeded. Skipping.");
             return;
@@ -17,83 +17,12 @@ public static class SeedData
 
         logger.LogInformation("Seeding database...");
 
-        var users = new[]
-        {
-            new User
-            {
-                Id = Guid.Parse("a1b2c3d4-0001-4000-8000-000000000001"),
-                Email = "admin@driveops.com",
-                PasswordHash = "seeded",
-                FirstName = "Admin",
-                LastName = "Manager",
-                PhoneNumber = "+1-555-0001",
-                UserType = (int)UserType.Admin,
-                IsActive = true
-            },
-            new User
-            {
-                Id = Guid.Parse("a1b2c3d4-0002-4000-8000-000000000002"),
-                Email = "marcus.johnson@driveops.com",
-                PasswordHash = "seeded",
-                FirstName = "Marcus",
-                LastName = "Johnson",
-                PhoneNumber = "+1-555-0101",
-                UserType = (int)UserType.Driver,
-                IsActive = true
-            },
-            new User
-            {
-                Id = Guid.Parse("a1b2c3d4-0003-4000-8000-000000000003"),
-                Email = "sarah.williams@driveops.com",
-                PasswordHash = "seeded",
-                FirstName = "Sarah",
-                LastName = "Williams",
-                PhoneNumber = "+1-555-0102",
-                UserType = (int)UserType.Driver,
-                IsActive = true
-            },
-            new User
-            {
-                Id = Guid.Parse("a1b2c3d4-0004-4000-8000-000000000004"),
-                Email = "david.chen@driveops.com",
-                PasswordHash = "seeded",
-                FirstName = "David",
-                LastName = "Chen",
-                PhoneNumber = "+1-555-0103",
-                UserType = (int)UserType.Driver,
-                IsActive = true
-            },
-            new User
-            {
-                Id = Guid.Parse("a1b2c3d4-0005-4000-8000-000000000005"),
-                Email = "emily.rodriguez@driveops.com",
-                PasswordHash = "seeded",
-                FirstName = "Emily",
-                LastName = "Rodriguez",
-                PhoneNumber = "+1-555-0104",
-                UserType = (int)UserType.Driver,
-                IsActive = true
-            },
-            new User
-            {
-                Id = Guid.Parse("a1b2c3d4-0006-4000-8000-000000000006"),
-                Email = "james.brown@driveops.com",
-                PasswordHash = "seeded",
-                FirstName = "James",
-                LastName = "Brown",
-                PhoneNumber = "+1-555-0105",
-                UserType = (int)UserType.Driver,
-                IsActive = true
-            }
-        };
-
-        await context.Users.AddRangeAsync(users);
-
         var customers = new[]
         {
             new Customer
             {
                 Id = Guid.Parse("b1b2c3d4-0001-4000-8000-000000000001"),
+                KeycloakId = Guid.Parse("b1b2c3d4-0001-4000-8000-000000000001"),
                 Name = "John Doe",
                 PhoneNumber = "+1-555-1001",
                 Email = "john.doe@email.com",
@@ -104,6 +33,7 @@ public static class SeedData
             new Customer
             {
                 Id = Guid.Parse("b1b2c3d4-0002-4000-8000-000000000002"),
+                KeycloakId = Guid.Parse("b1b2c3d4-0002-4000-8000-000000000002"),
                 Name = "Jane Smith",
                 PhoneNumber = "+1-555-1002",
                 Email = "jane.smith@email.com",
@@ -114,6 +44,7 @@ public static class SeedData
             new Customer
             {
                 Id = Guid.Parse("b1b2c3d4-0003-4000-8000-000000000003"),
+                KeycloakId = Guid.Parse("b1b2c3d4-0003-4000-8000-000000000003"),
                 Name = "Bob Wilson",
                 PhoneNumber = "+1-555-1003",
                 Email = "bob.wilson@email.com",
@@ -130,7 +61,11 @@ public static class SeedData
             new Driver
             {
                 Id = Guid.Parse("c1b2c3d4-0001-4000-8000-000000000001"),
-                UserId = users[1].Id,
+                KeycloakId = Guid.Parse("a1b2c3d4-0002-4000-8000-000000000002"),
+                FirstName = "Marcus",
+                LastName = "Johnson",
+                Email = "marcus.johnson@driveops.com",
+                PhoneNumber = "+1-555-0101",
                 LicenseNumber = "DL-001234",
                 LicenseExpiryDate = new DateOnly(2027, 6, 15),
                 EmergencyContactName = "Emergency Contact",
@@ -147,7 +82,11 @@ public static class SeedData
             new Driver
             {
                 Id = Guid.Parse("c1b2c3d4-0002-4000-8000-000000000002"),
-                UserId = users[2].Id,
+                KeycloakId = Guid.Parse("a1b2c3d4-0003-4000-8000-000000000003"),
+                FirstName = "Sarah",
+                LastName = "Williams",
+                Email = "sarah.williams@driveops.com",
+                PhoneNumber = "+1-555-0102",
                 LicenseNumber = "DL-005678",
                 LicenseExpiryDate = new DateOnly(2026, 12, 1),
                 EmergencyContactName = "Emergency Contact",
@@ -163,7 +102,11 @@ public static class SeedData
             new Driver
             {
                 Id = Guid.Parse("c1b2c3d4-0003-4000-8000-000000000003"),
-                UserId = users[3].Id,
+                KeycloakId = Guid.Parse("a1b2c3d4-0004-4000-8000-000000000004"),
+                FirstName = "David",
+                LastName = "Chen",
+                Email = "david.chen@driveops.com",
+                PhoneNumber = "+1-555-0103",
                 LicenseNumber = "DL-009012",
                 LicenseExpiryDate = new DateOnly(2027, 3, 20),
                 EmergencyContactName = "Emergency Contact",
@@ -179,7 +122,11 @@ public static class SeedData
             new Driver
             {
                 Id = Guid.Parse("c1b2c3d4-0004-4000-8000-000000000004"),
-                UserId = users[4].Id,
+                KeycloakId = Guid.Parse("a1b2c3d4-0005-4000-8000-000000000005"),
+                FirstName = "Emily",
+                LastName = "Rodriguez",
+                Email = "emily.rodriguez@driveops.com",
+                PhoneNumber = "+1-555-0104",
                 LicenseNumber = "DL-003456",
                 LicenseExpiryDate = new DateOnly(2026, 9, 30),
                 Status = DriverStatus.OnTrip,
@@ -193,7 +140,11 @@ public static class SeedData
             new Driver
             {
                 Id = Guid.Parse("c1b2c3d4-0005-4000-8000-000000000005"),
-                UserId = users[5].Id,
+                KeycloakId = Guid.Parse("a1b2c3d4-0006-4000-8000-000000000006"),
+                FirstName = "James",
+                LastName = "Brown",
+                Email = "james.brown@driveops.com",
+                PhoneNumber = "+1-555-0105",
                 LicenseNumber = "DL-007890",
                 LicenseExpiryDate = new DateOnly(2027, 8, 10),
                 Status = DriverStatus.Suspended,
@@ -424,7 +375,7 @@ public static class SeedData
         await context.Trips.AddRangeAsync(trips);
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Database seeded with {UserCount} users, {CustomerCount} customers, {DriverCount} drivers, {VehicleCount} vehicles, {TripCount} trips.",
-            users.Length, customers.Length, drivers.Length, vehicles.Length, trips.Length);
+        logger.LogInformation("Database seeded with {CustomerCount} customers, {DriverCount} drivers, {VehicleCount} vehicles, {TripCount} trips.",
+            customers.Length, drivers.Length, vehicles.Length, trips.Length);
     }
 }

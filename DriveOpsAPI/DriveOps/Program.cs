@@ -101,15 +101,15 @@ builder.Services.AddAuthentication("Bearer")
                logger.LogWarning("JWT authentication failed: {ExceptionType}", context.Exception.GetType().Name);
                return Task.CompletedTask;
            },
-           OnTokenValidated = context =>
-           {
-               var logger = context.HttpContext.RequestServices
-                   .GetRequiredService<ILoggerFactory>()
-                   .CreateLogger("Authentication");
+OnTokenValidated = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Authentication");
 
-               logger.LogDebug("JWT token validated successfully.");
-               return Task.CompletedTask;
-           }
+                logger.LogDebug("JWT token validated successfully.");
+                return Task.CompletedTask;
+            }
        };
    });
 
@@ -118,7 +118,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // TODO change to whatever frontend is
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:42069", "http://localhost:42069")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

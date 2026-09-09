@@ -2,7 +2,7 @@ namespace DriveOps.API.ControllerDtos.Request
 {
     public class CreateCustomerRequest
     {
-        public Guid? UserId { get; set; }
+        public Guid KeycloakId { get; set; }
         public string Name { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;
         public string? Email { get; set; }

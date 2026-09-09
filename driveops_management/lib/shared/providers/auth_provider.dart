@@ -1,40 +1,18 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/user.dart';
 import 'package:driveops_management/services/auth_service.dart';
 import 'package:driveops_management/services/cache_service.dart';
 
 class AuthState {
-  final bool isAuthenticated;
   final User? user;
-  final String? keycloakSub;
-  final bool isLoading;
   final String? error;
 
-  const AuthState({
-    this.isAuthenticated = false,
-    this.user,
-    this.keycloakSub,
-    this.isLoading = false,
-    this.error,
-  });
+  const AuthState({this.user, this.error});
 
-  AuthState copyWith({
-    bool? isAuthenticated,
-    User? user,
-    String? keycloakSub,
-    bool? isLoading,
-    String? error,
-  }) {
-    return AuthState(
-      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-      user: user ?? this.user,
-      keycloakSub: keycloakSub ?? this.keycloakSub,
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
+  bool get isAuthenticated => user != null;
+
+  String? get keycloakSub => user?.keycloakId;
 }
 
 class AuthNotifier extends AsyncNotifier<AuthState> {
@@ -52,8 +30,10 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       if (isAuth) {
         final token = await _authService.getAccessToken();
         if (token != null) {
-          final sub = await _authService.getKeycloakSub();
-          return AuthState(isAuthenticated: true, keycloakSub: sub);
+          final user = await _buildUserFromToken(token);
+          if (user != null) {
+            return AuthState(user: user);
+          }
         }
       }
       return const AuthState();
@@ -68,9 +48,8 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     try {
       final result = await _authService.login();
       if (result.success && result.tokens != null) {
-        final sub = await _authService.getKeycloakSub();
-        final user = await _syncUser();
-        state = AsyncValue.data(AuthState(isAuthenticated: true, user: user, keycloakSub: sub));
+        final user = await _buildUserFromToken(result.tokens!.accessToken);
+        state = AsyncValue.data(AuthState(user: user));
       } else {
         state = AsyncValue.data(AuthState(error: result.error ?? 'Login failed'));
       }
@@ -88,60 +67,72 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = const AsyncValue.data(AuthState());
   }
 
-  Future<void> register() async {
-    if (_authService.isLoggingIn) return;
-    state = const AsyncValue.loading();
+  Future<User?> _buildUserFromToken(String token) async {
     try {
-      final result = await _authService.register();
-      if (result.success && result.tokens != null) {
-        final sub = await _authService.getKeycloakSub();
-        final user = await _syncUser();
-        state = AsyncValue.data(AuthState(isAuthenticated: true, user: user, keycloakSub: sub));
-      } else {
-        state = AsyncValue.data(AuthState(error: result.error ?? 'Registration failed'));
-      }
-    } catch (e) {
-      state = AsyncValue.data(AuthState(error: e.toString()));
-    }
-  }
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final data = jsonDecode(payload) as Map<String, dynamic>;
 
-  Future<User?> _syncUser() async {
-    try {
-      final token = await _authService.getAccessToken();
-      if (token == null) return null;
+      final sub = data['sub'] as String?;
+      final email = data['email'] as String?;
+      final givenName = data['given_name'] as String? ?? '';
+      final familyName = data['family_name'] as String? ?? '';
+      final preferredUsername = data['preferred_username'] as String?;
 
-      final syncResponse = await _makeRequest('POST', '/api/user/sync', token);
-      if (syncResponse == null) return null;
+      final userType = _resolveUserType(data);
+      final roles = _extractRoles(data);
 
-      final userResponse = await _makeRequest('GET', '/api/user/me', token);
-      if (userResponse == null) return null;
+      if (sub == null) return null;
 
-      return User.fromJson(userResponse);
+      return User(
+        id: sub,
+        keycloakId: sub,
+        email: email ?? '',
+        firstName: givenName,
+        lastName: familyName,
+        userType: userType,
+        roles: roles,
+        username: preferredUsername,
+      );
     } catch (_) {
       return null;
     }
   }
 
-  Future<Map<String, dynamic>?> _makeRequest(String method, String path, String token) async {
-    final uri = Uri.parse('http://localhost:5032$path');
-    HttpClientRequest request;
-    if (method == 'GET') {
-      request = await HttpClient().getUrl(uri);
-    } else {
-      request = await HttpClient().postUrl(uri);
-      request.headers.contentType = ContentType.json;
-    }
-    request.headers.set('Authorization', 'Bearer $token');
-
-    final response = await request.close();
-    final body = await response.transform(utf8.decoder).join();
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(body) as Map<String, dynamic>;
-    }
-    return null;
+  UserType _resolveUserType(Map<String, dynamic> payload) {
+    final roles = _extractRoles(payload);
+    if (roles.contains('admin')) return UserType.admin;
+    if (roles.contains('dispatcher')) return UserType.dispatcher;
+    if (roles.contains('driver')) return UserType.driver;
+    return UserType.customer;
   }
 
-  Future<String?> getAccessToken() => _authService.getAccessToken();
+  List<String> _extractRoles(Map<String, dynamic> payload) {
+    final roles = <String>{};
+    final realmAccess = payload['realm_access'] as Map<String, dynamic>?;
+    if (realmAccess != null) {
+      final realmRoles = realmAccess['roles'] as List<dynamic>?;
+      if (realmRoles != null) {
+        for (final r in realmRoles) {
+          if (r is String) roles.add(r);
+        }
+      }
+    }
+    final resourceAccess = payload['resource_access'] as Map<String, dynamic>?;
+    if (resourceAccess != null) {
+      for (final entry in resourceAccess.entries) {
+        final client = entry.value as Map<String, dynamic>?;
+        final clientRoles = client?['roles'] as List<dynamic>?;
+        if (clientRoles != null) {
+          for (final r in clientRoles) {
+            if (r is String) roles.add(r);
+          }
+        }
+      }
+    }
+    return roles.toList();
+  }
 }
 
 final authProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(() => AuthNotifier());
@@ -159,4 +150,10 @@ final currentUserProvider = Provider<User?>((ref) {
 final keycloakSubProvider = Provider<String?>((ref) {
   final authState = ref.watch(authProvider);
   return authState.value?.keycloakSub;
+});
+
+final isAuthorizedRoleProvider = Provider<bool>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return false;
+  return user.userType == UserType.admin || user.userType == UserType.dispatcher;
 });

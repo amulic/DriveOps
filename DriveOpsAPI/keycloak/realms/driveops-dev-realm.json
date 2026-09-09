@@ -1,0 +1,291 @@
+{
+  "realm": "driveops-dev",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "permanentLockout": false,
+  "failureFactor": 30,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@driveops.dev",
+      "firstName": "Admin",
+      "lastName": "Manager",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"],
+      "requiredActions": []
+    },
+    {
+      "username": "dispatcher",
+      "email": "dispatcher@driveops.dev",
+      "firstName": "Central",
+      "lastName": "Dispatch",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dispatcher",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["dispatcher"],
+      "requiredActions": []
+    },
+    {
+      "username": "testuser",
+      "email": "test@driveops.dev",
+      "firstName": "Test",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testuser",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    },
+    {
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "username": "marcusjohnson",
+      "email": "marcus.johnson@driveops.com",
+      "firstName": "Marcus",
+      "lastName": "Johnson",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "marcusjohnson",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    },
+    {
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "username": "sarahwilliams",
+      "email": "sarah.williams@driveops.com",
+      "firstName": "Sarah",
+      "lastName": "Williams",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "sarahwilliams",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    },
+    {
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "username": "davidchen",
+      "email": "david.chen@driveops.com",
+      "firstName": "David",
+      "lastName": "Chen",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "davidchen",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    },
+    {
+      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "username": "emilyrodriguez",
+      "email": "emily.rodriguez@driveops.com",
+      "firstName": "Emily",
+      "lastName": "Rodriguez",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "emilyrodriguez",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    },
+    {
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "username": "jamesbrown",
+      "email": "james.brown@driveops.com",
+      "firstName": "James",
+      "lastName": "Brown",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "jamesbrown",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    },
+    {
+      "id": "b1b2c3d4-0001-4000-8000-000000000001",
+      "username": "johndoe",
+      "email": "john.doe@email.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "johndoe",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    },
+    {
+      "id": "b1b2c3d4-0002-4000-8000-000000000002",
+      "username": "janesmith",
+      "email": "jane.smith@email.com",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "janesmith",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    },
+    {
+      "id": "b1b2c3d4-0003-4000-8000-000000000003",
+      "username": "bobwilson",
+      "email": "bob.wilson@email.com",
+      "firstName": "Bob",
+      "lastName": "Wilson",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "bobwilson",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["default-roles-driveops-dev"],
+      "requiredActions": []
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Full administrative access"
+      },
+      {
+        "name": "dispatcher",
+        "description": "Dispatcher access for management console"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "driveops-backend",
+      "name": "DriveOps Backend API",
+      "description": "Backend API service client",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "driveops-backend-secret-dev",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "clientId": "driveops-desktop",
+      "name": "DriveOps Desktop App",
+      "description": "Flutter desktop management app (PKCE flow)",
+      "enabled": true,
+      "rootUrl": "http://127.0.0.1:42069",
+      "redirectUris": [
+        "http://127.0.0.1:42069/auth/callback",
+        "http://localhost:42069/auth/callback"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:42069",
+        "http://localhost:42069"
+      ],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "publicClient": true,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "post.logout.redirect.uris": "http://127.0.0.1:42069;http://localhost:42069",
+        "pkce.code.challenge.method": "S256"
+      },
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    }
+  ]
+}

@@ -29,6 +29,8 @@ class User {
   final DateTime? hireDate;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? username;
+  final List<String> roles;
 
   const User({
     required this.id,
@@ -45,19 +47,21 @@ class User {
     this.hireDate,
     this.createdAt,
     this.updatedAt,
+    this.username,
+    this.roles = const [],
   });
 
   String get fullName => '$firstName $lastName';
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as String,
-      keycloakId: json['keycloakId'] as String?,
-      email: json['email'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
+      id: (json['id'] ?? json['keycloakId'] ?? '') as String,
+      keycloakId: (json['keycloakId'] ?? json['id']) as String?,
+      email: (json['email'] ?? '') as String,
+      firstName: (json['firstName'] ?? json['given_name'] ?? '') as String,
+      lastName: (json['lastName'] ?? json['family_name'] ?? '') as String,
       phoneNumber: json['phoneNumber'] as String?,
-      userType: UserType.fromInt(json['userType'] as int),
+      userType: UserType.fromInt(json['userType'] as int? ?? 0),
       isActive: json['isActive'] as bool?,
       profileImageUrl: json['profileImageUrl'] as String?,
       address: json['address'] as String?,
@@ -73,6 +77,8 @@ class User {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'] as String)
           : null,
+      username: json['username'] as String?,
+      roles: (json['roles'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
     );
   }
 
@@ -92,6 +98,8 @@ class User {
       'hireDate': hireDate?.toIso8601String(),
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'username': username,
+      'roles': roles,
     };
   }
 
@@ -110,6 +118,8 @@ class User {
     DateTime? hireDate,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? username,
+    List<String>? roles,
   }) {
     return User(
       id: id ?? this.id,
@@ -126,6 +136,8 @@ class User {
       hireDate: hireDate ?? this.hireDate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      username: username ?? this.username,
+      roles: roles ?? this.roles,
     );
   }
 }

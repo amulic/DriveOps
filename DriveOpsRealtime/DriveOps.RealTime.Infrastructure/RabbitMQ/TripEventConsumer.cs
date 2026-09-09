@@ -81,39 +81,43 @@ public class TripEventConsumer : BackgroundService
 
                     case "trip.assigned":
                         var assigned = JsonSerializer.Deserialize<TripAssignedEvent>(body)!;
-                        var assignedCustomerUserId = assigned.CustomerUserId ?? assigned.CustomerId;
-                        var assignedDriverUserId = assigned.DriverUserId ?? assigned.DriverId;
-
-                        await notifications.SendTripAssignedAsync(assignedCustomerUserId, new TripAssignedDto(
-                            assigned.TripId, assigned.DriverId, assigned.VehicleId,
-                            assigned.DriverName, assigned.DriverLatitude, assigned.DriverLongitude, assigned.AssignedAt));
-                        await chat.GetOrCreateTripConversationAsync(assigned.TripId, assignedCustomerUserId, assignedDriverUserId);
+                        if (assigned.CustomerKeycloakId.HasValue && assigned.DriverKeycloakId.HasValue)
+                        {
+                            await notifications.SendTripAssignedAsync(assigned.CustomerKeycloakId.Value, new TripAssignedDto(
+                                assigned.TripId, assigned.DriverId, assigned.VehicleId,
+                                assigned.DriverName, assigned.DriverLatitude, assigned.DriverLongitude, assigned.AssignedAt));
+                            await chat.GetOrCreateTripConversationAsync(assigned.TripId, assigned.CustomerKeycloakId.Value, assigned.DriverKeycloakId.Value);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Trip {TripId} assigned event missing KeycloakIds, skipping notification", assigned.TripId);
+                        }
                         break;
 
                     case "trip.started":
                         var started = JsonSerializer.Deserialize<TripStartedEvent>(body)!;
-                        var startedCustomerUserId = started.CustomerUserId ?? started.CustomerId;
                         var startedDto = new TripStatusChangedDto(started.TripId, TripStatus.InProgress, started.CustomerId, started.DriverId, started.PickupTime);
-                        await notifications.SendTripStatusChangedAsync(started.DriverId, startedDto);
-                        await notifications.SendTripStatusChangedToUserAsync(startedCustomerUserId, startedDto);
+                        await notifications.SendTripStatusChangedAsync(started.DriverKeycloakId ?? started.DriverId, startedDto);
+                        if (started.CustomerKeycloakId.HasValue)
+                            await notifications.SendTripStatusChangedToUserAsync(started.CustomerKeycloakId.Value, startedDto);
                         break;
 
                     case "trip.completed":
                         var completed = JsonSerializer.Deserialize<TripCompletedEvent>(body)!;
-                        var completedCustomerUserId = completed.CustomerUserId ?? completed.CustomerId;
                         var completedDto = new TripStatusChangedDto(completed.TripId, TripStatus.Completed, completed.CustomerId, completed.DriverId, completed.DropoffTime);
                         await notifications.SendTripStatusChangedAsync(completed.DriverId, completedDto);
-                        await notifications.SendTripStatusChangedToUserAsync(completedCustomerUserId, completedDto);
+                        if (completed.CustomerKeycloakId.HasValue)
+                            await notifications.SendTripStatusChangedToUserAsync(completed.CustomerKeycloakId.Value, completedDto);
                         await chat.CloseConversationByTripIdAsync(completed.TripId);
                         break;
 
                     case "trip.cancelled":
                         var cancelled = JsonSerializer.Deserialize<TripCancelledEvent>(body)!;
-                        var cancelledCustomerUserId = cancelled.CustomerUserId ?? cancelled.CustomerId;
                         var cancelledDto = new TripStatusChangedDto(cancelled.TripId, TripStatus.Cancelled, cancelled.CustomerId, cancelled.DriverId, cancelled.CancelledAt);
-                        await notifications.SendTripStatusChangedToUserAsync(cancelledCustomerUserId, cancelledDto);
-                        if (cancelled.DriverId.HasValue)
-                            await notifications.SendTripStatusChangedAsync(cancelled.DriverId.Value, cancelledDto);
+                        if (cancelled.CustomerKeycloakId.HasValue)
+                            await notifications.SendTripStatusChangedToUserAsync(cancelled.CustomerKeycloakId.Value, cancelledDto);
+                        if (cancelled.DriverKeycloakId.HasValue)
+                            await notifications.SendTripStatusChangedAsync(cancelled.DriverKeycloakId.Value, cancelledDto);
                         await chat.CloseConversationByTripIdAsync(cancelled.TripId);
                         break;
                 }

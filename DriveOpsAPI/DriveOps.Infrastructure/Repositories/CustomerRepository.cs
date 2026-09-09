@@ -14,11 +14,10 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet.FirstOrDefaultAsync(c => c.PhoneNumber == phoneNumber);
         }
 
-        public async Task<Customer?> GetByUserIdAsync(Guid userId)
+        public async Task<Customer?> GetByKeycloakIdAsync(Guid keycloakId)
         {
             return await _dbSet
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.KeycloakId == keycloakId);
         }
     }
 }

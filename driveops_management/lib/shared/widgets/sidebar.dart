@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:driveops_management/config/api_config.dart';
+import 'package:driveops_management/shared/models/user.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
 import 'package:driveops_management/features/messages/presentation/providers/total_unread_provider.dart';
 
@@ -87,11 +88,7 @@ class Sidebar extends ConsumerWidget {
               color: const Color(0xFF3B82F6),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
-              Icons.local_taxi,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: const Icon(Icons.local_taxi, color: Colors.white, size: 24),
           ),
           const SizedBox(width: 12),
           const Text(
@@ -107,10 +104,27 @@ class Sidebar extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileSection(BuildContext context, WidgetRef ref, dynamic user) {
+  Widget _buildProfileSection(BuildContext context, WidgetRef ref, User? user) {
     final name = user?.fullName ?? 'Admin Manager';
-    final initials = name.split(' ').take(2).map((n) => n.isNotEmpty ? n[0] : '').join().toUpperCase();
-    final role = user?.userType.name.toLowerCase() == 'admin' ? 'Administrator' : (user?.userType.name ?? 'Administrator');
+    final initials = name
+        .split(' ')
+        .take(2)
+        .map((n) => n.isNotEmpty ? n[0] : '')
+        .join()
+        .toUpperCase();
+    String role;
+    switch (user?.userType) {
+      case UserType.admin:
+        role = 'Administrator';
+      case UserType.dispatcher:
+        role = 'Dispatcher';
+      case UserType.driver:
+        role = 'Driver';
+      case UserType.customer:
+        role = 'Customer';
+      default:
+        role = 'User';
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -163,10 +177,7 @@ class Sidebar extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Colors.white54,
-                  ),
+                  const Icon(Icons.chevron_right, color: Colors.white54),
                 ],
               ),
             ),
@@ -225,10 +236,14 @@ class _SidebarTabButton extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF3B82F6).withValues(alpha: 0.15) : null,
+              color: isSelected
+                  ? const Color(0xFF3B82F6).withValues(alpha: 0.15)
+                  : null,
               borderRadius: BorderRadius.circular(8),
               border: isSelected
-                  ? Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3))
+                  ? Border.all(
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                    )
                   : null,
             ),
             child: Row(
@@ -237,7 +252,9 @@ class _SidebarTabButton extends StatelessWidget {
                   width: 4,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF3B82F6) : Colors.transparent,
+                    color: isSelected
+                        ? const Color(0xFF3B82F6)
+                        : Colors.transparent,
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(4),
                       bottomRight: Radius.circular(4),
@@ -255,21 +272,30 @@ class _SidebarTabButton extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: isSelected ? Colors.white : Colors.white70,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                     fontSize: 14,
                   ),
                 ),
                 if (badge != null) ...[
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEF4444),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       badge!,
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

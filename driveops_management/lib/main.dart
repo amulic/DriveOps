@@ -6,9 +6,5 @@ import 'package:driveops_management/services/cache_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CacheService().init();
-  runApp(
-    const ProviderScope(
-      child: DriveOpsApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: DriveOpsApp()));
 }

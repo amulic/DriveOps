@@ -26,10 +26,10 @@ namespace DriveOps.API.Controllers
             return Ok(customer.ToResponse());
         }
 
-        [HttpGet("user/{userId:guid}")]
-        public async Task<IActionResult> GetCustomerByUserId(Guid userId)
+        [HttpGet("keycloak/{keycloakId:guid}")]
+        public async Task<IActionResult> GetCustomerByKeycloakId(Guid keycloakId)
         {
-            var customer = await _customerService.GetCustomerByUserIdAsync(userId);
+            var customer = await _customerService.GetCustomerByKeycloakIdAsync(keycloakId);
             if (customer == null)
                 return NotFound();
 

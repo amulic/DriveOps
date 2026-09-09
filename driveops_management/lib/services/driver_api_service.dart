@@ -26,6 +26,15 @@ class DriverApiService {
     return Driver.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<Driver?> getDriverByKeycloakId(String keycloakId) async {
+    try {
+      final response = await _api.get('${ApiConfig.driverEndpoint}/keycloak/$keycloakId');
+      return Driver.fromJson(response.data as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<Driver>> getAvailableDrivers() async {
     final response = await _api.get('${ApiConfig.driverEndpoint}/available', queryParameters: {'pageSize': 100});
     final data = response.data as Map<String, dynamic>;

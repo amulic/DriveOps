@@ -38,6 +38,9 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
+                    b.Property<Guid>("KeycloakId")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -66,13 +69,11 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasColumnType("datetime(6)")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("char(36)");
-
                     b.HasKey("Id")
                         .HasName("PK__Customer__3214EC074429FDDF");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex(new[] { "KeycloakId" }, "UQ__Customer__KeycloakId")
+                        .IsUnique();
 
                     b.ToTable("Customers");
                 });
@@ -95,6 +96,11 @@ namespace DriveOps.Infrastructure.Migrations
                     b.Property<decimal?>("CurrentLongitude")
                         .HasColumnType("decimal(11, 8)");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("EmergencyContactName")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
@@ -103,13 +109,26 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
                     b.Property<bool?>("IsOnline")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
+                    b.Property<Guid>("KeycloakId")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime?>("LastLocationUpdate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<DateOnly>("LicenseExpiryDate")
                         .HasColumnType("date");
@@ -118,6 +137,11 @@ namespace DriveOps.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<decimal?>("Rating")
                         .ValueGeneratedOnAdd()
@@ -144,15 +168,13 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasColumnType("datetime(6)")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
                     b.HasKey("Id")
                         .HasName("PK__Drivers__3214EC07B4817E92");
 
-                    b.HasIndex("UserId");
-
                     b.HasIndex(new[] { "LicenseNumber" }, "UQ__Drivers__E88901666371942D")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "KeycloakId" }, "UQ__Drivers__KeycloakId")
                         .IsUnique();
 
                     b.ToTable("Drivers");
@@ -322,85 +344,6 @@ namespace DriveOps.Infrastructure.Migrations
                     b.ToTable("TripRoutes");
                 });
 
-            modelBuilder.Entity("DriveOps.Model.Entity.User", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)")
-                        .HasDefaultValueSql("(UUID())");
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-
-                    b.Property<DateOnly?>("DateOfBirth")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateOnly?>("HireDate")
-                        .HasColumnType("date");
-
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("KeycloakId")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("ProfileImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-
-                    b.Property<int>("UserType")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Users__3214EC075B658B41");
-
-                    b.HasIndex(new[] { "Email" }, "UQ__Users__A9D105348F0D93ED")
-                        .IsUnique();
-
-                    b.ToTable("Users");
-                });
-
             modelBuilder.Entity("DriveOps.Model.Entity.Vehicle", b =>
                 {
                     b.Property<Guid>("Id")
@@ -493,27 +436,6 @@ namespace DriveOps.Infrastructure.Migrations
                     b.ToTable("Vehicles");
                 });
 
-            modelBuilder.Entity("DriveOps.Model.Entity.Customer", b =>
-                {
-                    b.HasOne("DriveOps.Model.Entity.User", "User")
-                        .WithMany("Customers")
-                        .HasForeignKey("UserId")
-                        .HasConstraintName("FK__Customers__UserI__5535A963");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("DriveOps.Model.Entity.Driver", b =>
-                {
-                    b.HasOne("DriveOps.Model.Entity.User", "User")
-                        .WithMany("Drivers")
-                        .HasForeignKey("UserId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Drivers__UserId__403A8C7D");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("DriveOps.Model.Entity.Trip", b =>
                 {
                     b.HasOne("DriveOps.Model.Entity.Customer", "Customer")
@@ -575,13 +497,6 @@ namespace DriveOps.Infrastructure.Migrations
             modelBuilder.Entity("DriveOps.Model.Entity.Trip", b =>
                 {
                     b.Navigation("TripRoutes");
-                });
-
-            modelBuilder.Entity("DriveOps.Model.Entity.User", b =>
-                {
-                    b.Navigation("Customers");
-
-                    b.Navigation("Drivers");
                 });
 
             modelBuilder.Entity("DriveOps.Model.Entity.Vehicle", b =>

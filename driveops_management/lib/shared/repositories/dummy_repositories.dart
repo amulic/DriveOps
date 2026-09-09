@@ -1,10 +1,8 @@
 import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
-import 'package:driveops_management/shared/models/user.dart';
 import 'package:driveops_management/shared/repositories/repositories.dart';
 import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
-import 'package:driveops_management/shared/dtos/requests/user_requests.dart';
 import 'package:driveops_management/shared/dtos/requests/vehicle_requests.dart';
 
 class DummyDriverRepository implements DriverRepository {
@@ -14,9 +12,10 @@ class DummyDriverRepository implements DriverRepository {
     return [
       Driver(
         id: 'd1',
-        userId: 'u1',
-        driverName: 'Marcus Johnson',
-        email: 'marcus.johnson@email.com',
+        keycloakId: 'a1b2c3d4-0002-4000-8000-000000000002',
+        firstName: 'Marcus',
+        lastName: 'Johnson',
+        email: 'marcus.johnson@driveops.com',
         phoneNumber: '+1-555-0101',
         licenseNumber: 'DL-001234',
         licenseExpiryDate: DateTime(2027, 6, 15),
@@ -30,9 +29,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd2',
-        userId: 'u2',
-        driverName: 'Sarah Williams',
-        email: 'sarah.williams@email.com',
+        keycloakId: 'a1b2c3d4-0003-4000-8000-000000000003',
+        firstName: 'Sarah',
+        lastName: 'Williams',
+        email: 'sarah.williams@driveops.com',
         phoneNumber: '+1-555-0102',
         licenseNumber: 'DL-005678',
         licenseExpiryDate: DateTime(2026, 9, 20),
@@ -46,9 +46,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd3',
-        userId: 'u3',
-        driverName: 'David Chen',
-        email: 'david.chen@email.com',
+        keycloakId: 'a1b2c3d4-0004-4000-8000-000000000004',
+        firstName: 'David',
+        lastName: 'Chen',
+        email: 'david.chen@driveops.com',
         phoneNumber: '+1-555-0103',
         licenseNumber: 'DL-009012',
         licenseExpiryDate: DateTime(2027, 3, 10),
@@ -62,9 +63,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd4',
-        userId: 'u4',
-        driverName: 'Emily Rodriguez',
-        email: 'emily.rodriguez@email.com',
+        keycloakId: 'a1b2c3d4-0005-4000-8000-000000000005',
+        firstName: 'Emily',
+        lastName: 'Rodriguez',
+        email: 'emily.rodriguez@driveops.com',
         phoneNumber: '+1-555-0104',
         licenseNumber: 'DL-003456',
         licenseExpiryDate: DateTime(2026, 11, 5),
@@ -78,9 +80,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd5',
-        userId: 'u5',
-        driverName: 'James Brown',
-        email: 'james.brown@email.com',
+        keycloakId: 'a1b2c3d4-0006-4000-8000-000000000006',
+        firstName: 'James',
+        lastName: 'Brown',
+        email: 'james.brown@driveops.com',
         phoneNumber: '+1-555-0105',
         licenseNumber: 'DL-007890',
         licenseExpiryDate: DateTime(2027, 1, 25),
@@ -94,9 +97,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd6',
-        userId: 'u6',
-        driverName: 'Aisha Patel',
-        email: 'aisha.patel@email.com',
+        keycloakId: 'a1b2c3d4-0007-4000-8000-000000000007',
+        firstName: 'Aisha',
+        lastName: 'Patel',
+        email: 'aisha.patel@driveops.com',
         phoneNumber: '+1-555-0106',
         licenseNumber: 'DL-002345',
         licenseExpiryDate: DateTime(2026, 8, 30),
@@ -110,9 +114,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd7',
-        userId: 'u7',
-        driverName: "Michael O'Brien",
-        email: 'michael.obrien@email.com',
+        keycloakId: 'a1b2c3d4-0008-4000-8000-000000000008',
+        firstName: 'Michael',
+        lastName: "O'Brien",
+        email: 'michael.obrien@driveops.com',
         phoneNumber: '+1-555-0107',
         licenseNumber: 'DL-006789',
         licenseExpiryDate: DateTime(2027, 4, 12),
@@ -126,9 +131,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd8',
-        userId: 'u8',
-        driverName: 'Lisa Kim',
-        email: 'lisa.kim@email.com',
+        keycloakId: 'a1b2c3d4-0009-4000-8000-000000000009',
+        firstName: 'Lisa',
+        lastName: 'Kim',
+        email: 'lisa.kim@driveops.com',
         phoneNumber: '+1-555-0108',
         licenseNumber: 'DL-00123',
         licenseExpiryDate: DateTime(2026, 7, 18),
@@ -142,9 +148,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd9',
-        userId: 'u9',
-        driverName: 'Robert Garcia',
-        email: 'robert.garcia@email.com',
+        keycloakId: 'a1b2c3d4-000a-4000-8000-000000000010',
+        firstName: 'Robert',
+        lastName: 'Garcia',
+        email: 'robert.garcia@driveops.com',
         phoneNumber: '+1-555-0109',
         licenseNumber: 'DL-00678',
         licenseExpiryDate: DateTime(2026, 5, 22),
@@ -158,9 +165,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd10',
-        userId: 'u10',
-        driverName: 'Fatima Al-Hassan',
-        email: 'fatima.alhassan@email.com',
+        keycloakId: 'a1b2c3d4-000b-4000-8000-000000000011',
+        firstName: 'Fatima',
+        lastName: 'Al-Hassan',
+        email: 'fatima.alhassan@driveops.com',
         phoneNumber: '+1-555-0110',
         licenseNumber: 'DL-00901',
         licenseExpiryDate: DateTime(2027, 2, 14),
@@ -174,9 +182,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd11',
-        userId: 'u11',
-        driverName: 'Thomas Wright',
-        email: 'thomas.wright@email.com',
+        keycloakId: 'a1b2c3d4-000c-4000-8000-000000000012',
+        firstName: 'Thomas',
+        lastName: 'Wright',
+        email: 'thomas.wright@driveops.com',
         phoneNumber: '+1-555-0111',
         licenseNumber: 'DL-00345',
         licenseExpiryDate: DateTime(2026, 12, 3),
@@ -190,9 +199,10 @@ class DummyDriverRepository implements DriverRepository {
       ),
       Driver(
         id: 'd12',
-        userId: 'u12',
-        driverName: 'Maria Santos',
-        email: 'maria.santos@email.com',
+        keycloakId: 'a1b2c3d4-000d-4000-8000-000000000013',
+        firstName: 'Maria',
+        lastName: 'Santos',
+        email: 'maria.santos@driveops.com',
         phoneNumber: '+1-555-0112',
         licenseNumber: 'DL-00789',
         licenseExpiryDate: DateTime(2027, 8, 9),
@@ -228,6 +238,15 @@ class DummyDriverRepository implements DriverRepository {
   }
 
   @override
+  Future<Driver?> getDriverByKeycloakId(String keycloakId) async {
+    try {
+      return _drivers.firstWhere((d) => d.keycloakId == keycloakId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
   Future<List<Driver>> getNearbyDrivers(
       double latitude, double longitude, double radiusKm) async {
     return getAvailableDrivers();
@@ -237,10 +256,11 @@ class DummyDriverRepository implements DriverRepository {
   Future<Driver> createDriver(CreateDriverRequest request) async {
     final newDriver = Driver(
       id: 'd-new-${DateTime.now().millisecondsSinceEpoch}',
-      userId: request.userId,
-      driverName: 'New Driver',
-      email: '',
-      phoneNumber: '',
+      keycloakId: request.keycloakId,
+      firstName: request.firstName,
+      lastName: request.lastName,
+      email: request.email,
+      phoneNumber: request.phoneNumber,
       licenseNumber: request.licenseNumber,
       licenseExpiryDate: request.licenseExpiryDate,
       status: DriverStatus.pending,
@@ -261,6 +281,10 @@ class DummyDriverRepository implements DriverRepository {
     if (idx == -1) throw Exception('Driver not found');
     final d = _drivers[idx];
     final updated = d.copyWith(
+      firstName: request.firstName ?? d.firstName,
+      lastName: request.lastName ?? d.lastName,
+      email: request.email ?? d.email,
+      phoneNumber: request.phoneNumber ?? d.phoneNumber,
       licenseNumber: request.licenseNumber ?? d.licenseNumber,
       licenseExpiryDate: request.licenseExpiryDate ?? d.licenseExpiryDate,
       emergencyContactName: request.emergencyContactName ?? d.emergencyContactName,
@@ -633,39 +657,5 @@ class DummyVehicleRepository implements VehicleRepository {
         status: VehicleStatus.available,
       );
     }
-  }
-}
-
-class DummyUserRepository implements UserRepository {
-  @override
-  Future<User?> getCurrentUser() async {
-    return const User(
-      id: 'admin-001',
-      email: 'admin@driveops.com',
-      firstName: 'Admin',
-      lastName: 'Manager',
-      phoneNumber: '+1-555-0001',
-      userType: UserType.admin,
-      isActive: true,
-      createdAt: null,
-    );
-  }
-
-  @override
-  Future<User?> getUserById(String id) async {
-    return getCurrentUser();
-  }
-
-  @override
-  Future<User> createUser(CreateUserRequest request) async {
-    return User(
-      id: 'u-new-${DateTime.now().millisecondsSinceEpoch}',
-      email: request.email,
-      firstName: request.firstName,
-      lastName: request.lastName,
-      phoneNumber: request.phoneNumber,
-      userType: UserType.driver,
-      isActive: true,
-    );
   }
 }

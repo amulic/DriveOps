@@ -36,10 +36,10 @@ namespace DriveOps.API.Controllers
             return Ok(driver.ToResponse());
         }
 
-        [HttpGet("user/{userId:guid}")]
-        public async Task<IActionResult> GetDriverByUserId(Guid userId)
+        [HttpGet("keycloak/{keycloakId:guid}")]
+        public async Task<IActionResult> GetDriverByKeycloakId(Guid keycloakId)
         {
-            var driver = await _driverService.GetDriverByUserIdAsync(userId);
+            var driver = await _driverService.GetDriverByKeycloakIdAsync(keycloakId);
             if (driver == null)
                 return NotFound();
 
@@ -98,7 +98,7 @@ namespace DriveOps.API.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id:guid}/suspend")] // deactivate
+        [HttpPost("{id:guid}/suspend")]
         public async Task<IActionResult> SuspendDriver(Guid id)
         {
             await _driverService.SuspendDriverAsync(id);

@@ -8,7 +8,15 @@ public partial class Driver
 {
     public Guid Id { get; set; }
 
-    public Guid UserId { get; set; }
+    public Guid KeycloakId { get; set; }
+
+    public string FirstName { get; set; } = null!;
+
+    public string LastName { get; set; } = null!;
+
+    public string Email { get; set; } = null!;
+
+    public string PhoneNumber { get; set; } = null!;
 
     public string LicenseNumber { get; set; } = null!;
 
@@ -39,8 +47,6 @@ public partial class Driver
     public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Trip> Trips { get; set; } = new List<Trip>();
-
-    public virtual User User { get; set; } = null!;
 
     public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
 }

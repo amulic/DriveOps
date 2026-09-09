@@ -6,7 +6,7 @@ namespace DriveOps.Application.Interfaces
     {
         Task<IEnumerable<Driver>> GetAllDriversAsync(int page = 1, int pageSize = 50);
         Task<int> CountAllDriversAsync();
-        Task<Driver?> GetByUserIdAsync(Guid userId);
+        Task<Driver?> GetByKeycloakIdAsync(Guid keycloakId);
         Task<IEnumerable<Driver>> GetAvailableDriversAsync(int page = 1, int pageSize = 50);
         Task<int> CountAvailableDriversAsync();
         Task<IEnumerable<Driver>> GetNearbyDriversAsync(decimal latitude, decimal longitude, decimal radiusKm, int page = 1, int pageSize = 50);

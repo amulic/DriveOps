@@ -330,7 +330,7 @@ class AuthService {
       final codeVerifier = _generateCodeVerifier();
       final codeChallenge = _generateCodeChallenge(codeVerifier);
 
-      final authUri = Uri.parse(KeycloakConfig.authUrl).replace(
+      final authUri = Uri.parse(KeycloakConfig.registerUrl).replace(
         queryParameters: {
           'response_type': 'code',
           'client_id': KeycloakConfig.clientId,
@@ -339,7 +339,6 @@ class AuthService {
           'state': state,
           'code_challenge': codeChallenge,
           'code_challenge_method': 'S256',
-          'kc_action': 'register',
         },
       );
 

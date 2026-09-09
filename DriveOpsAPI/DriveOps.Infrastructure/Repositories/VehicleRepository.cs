@@ -14,7 +14,6 @@ namespace DriveOps.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(v => v.AssignedDriver)
-                .ThenInclude(d => d!.User)
                 .ToListAsync();
         }
 
@@ -29,7 +28,6 @@ namespace DriveOps.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(v => v.AssignedDriver)
-                .ThenInclude(d => d!.User)
                 .Where(v => v.AssignedDriverId == driverId)
                 .ToListAsync();
         }
@@ -38,7 +36,6 @@ namespace DriveOps.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(v => v.AssignedDriver)
-                .ThenInclude(d => d!.User)
                 .FirstOrDefaultAsync(v => v.LicensePlate == licensePlate);
         }
 
@@ -46,7 +43,6 @@ namespace DriveOps.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(v => v.AssignedDriver)
-                .ThenInclude(d => d!.User)
                 .FirstOrDefaultAsync(v => v.Vin == vin);
         }
     }

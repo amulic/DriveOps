@@ -7,7 +7,7 @@ public partial class Customer
 {
     public Guid Id { get; set; }
 
-    public Guid? UserId { get; set; }
+    public Guid KeycloakId { get; set; }
 
     public string Name { get; set; } = null!;
 
@@ -26,6 +26,4 @@ public partial class Customer
     public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Trip> Trips { get; set; } = new List<Trip>();
-
-    public virtual User? User { get; set; }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:driveops_management/features/auth/presentation/login_screen.dart';
+import 'package:driveops_management/features/auth/presentation/unauthorized_screen.dart';
 import 'package:driveops_management/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:driveops_management/features/drivers/presentation/drivers_screen.dart';
 import 'package:driveops_management/features/rides/presentation/rides_screen.dart';
@@ -22,9 +23,16 @@ GoRouter createAppRouter(WidgetRef ref) {
     initialLocation: '/dashboard',
     redirect: (context, state) {
       final isAuth = ref.watch(isAuthenticatedProvider);
+      final isAuthorizedRole = ref.watch(isAuthorizedRoleProvider);
       final loggingIn = state.matchedLocation == '/login';
+      final onUnauthorized = state.matchedLocation == '/unauthorized';
       if (!isAuth && !loggingIn) return '/login';
-      if (isAuth && loggingIn) return '/dashboard';
+      if (isAuth && loggingIn) {
+        if (!isAuthorizedRole) return '/unauthorized';
+        return '/dashboard';
+      }
+      if (isAuth && !isAuthorizedRole && !onUnauthorized) return '/unauthorized';
+      if (isAuth && isAuthorizedRole && onUnauthorized) return '/dashboard';
       return null;
     },
     refreshListenable: _RouterRefreshNotifier(ref),
@@ -32,6 +40,13 @@ GoRouter createAppRouter(WidgetRef ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/unauthorized',
+        builder: (context, state) {
+          final user = ref.read(currentUserProvider);
+          return UnauthorizedScreen(role: user?.userType.name);
+        },
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,

@@ -108,7 +108,7 @@ namespace DriveOps.Application.Services
                     vehicle.Id, vehicle.LicensePlate, vehicle.Make, vehicle.Model,
                     currentVehicles.FirstOrDefault()?.AssignedDriverId,
                     driverId,
-                    driver?.User != null ? $"{driver.User.FirstName} {driver.User.LastName}" : string.Empty,
+                    driver != null ? $"{driver.FirstName} {driver.LastName}" : string.Empty,
                     currentVehicles.FirstOrDefault()?.Id,
                     DateTime.UtcNow));
 
@@ -136,7 +136,7 @@ namespace DriveOps.Application.Services
                     new VehicleUnassignedEvent(
                         vehicle.Id, vehicle.LicensePlate, vehicle.Make, vehicle.Model,
                         previousDriverId.Value,
-                        previousDriver?.User != null ? $"{previousDriver.User.FirstName} {previousDriver.User.LastName}" : string.Empty,
+                        previousDriver != null ? $"{previousDriver.FirstName} {previousDriver.LastName}" : string.Empty,
                         DateTime.UtcNow));
             }
 

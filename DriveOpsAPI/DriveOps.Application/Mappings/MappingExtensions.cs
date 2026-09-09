@@ -6,51 +6,16 @@ namespace DriveOps.Application.Mappings
 {
     public static class MappingExtensions
     {
-        // ── User ──
-        public static UserDto ToDto(this User user) => new()
-        {
-            Id = user.Id,
-            KeycloakId = user.KeycloakId,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            PhoneNumber = user.PhoneNumber,
-            UserType = user.UserType,
-            IsActive = user.IsActive,
-            ProfileImageUrl = user.ProfileImageUrl,
-            Address = user.Address,
-            DateOfBirth = user.DateOfBirth,
-            CreatedAt = user.CreatedAt
-        };
-
-        public static User ToEntity(this CreateUserDto dto) => new()
-        {
-            Id = Guid.NewGuid(),
-            Email = dto.Email,
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            PhoneNumber = dto.PhoneNumber,
-            UserType = dto.UserType,
-            PasswordHash = "KEYCLOAK_MANAGED",
-            ProfileImageUrl = dto.ProfileImageUrl,
-            Address = dto.Address,
-            DateOfBirth = dto.DateOfBirth,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
         // ── Driver ──
         public static DriverDto ToDto(this Driver driver) => new()
         {
             Id = driver.Id,
-            UserId = driver.UserId,
-            KeycloakId = driver.User?.KeycloakId,
-            DriverName = driver.User != null
-                ? $"{driver.User.FirstName} {driver.User.LastName}"
-                : string.Empty,
-            Email = driver.User?.Email ?? string.Empty,
-            PhoneNumber = driver.User?.PhoneNumber ?? string.Empty,
+            KeycloakId = driver.KeycloakId,
+            DriverName = $"{driver.FirstName} {driver.LastName}",
+            FirstName = driver.FirstName,
+            LastName = driver.LastName,
+            Email = driver.Email,
+            PhoneNumber = driver.PhoneNumber,
             LicenseNumber = driver.LicenseNumber,
             LicenseExpiryDate = driver.LicenseExpiryDate,
             EmergencyContactName = driver.EmergencyContactName,
@@ -69,7 +34,11 @@ namespace DriveOps.Application.Mappings
         public static Driver ToEntity(this CreateDriverDto dto) => new()
         {
             Id = Guid.NewGuid(),
-            UserId = dto.UserId,
+            KeycloakId = dto.KeycloakId,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Email = dto.Email,
+            PhoneNumber = dto.PhoneNumber,
             LicenseNumber = dto.LicenseNumber,
             LicenseExpiryDate = dto.LicenseExpiryDate,
             EmergencyContactName = dto.EmergencyContactName,
@@ -87,7 +56,7 @@ namespace DriveOps.Application.Mappings
         public static CustomerDto ToDto(this Customer customer) => new()
         {
             Id = customer.Id,
-            UserId = customer.UserId,
+            KeycloakId = customer.KeycloakId,
             Name = customer.Name,
             PhoneNumber = customer.PhoneNumber,
             Email = customer.Email,
@@ -100,7 +69,7 @@ namespace DriveOps.Application.Mappings
         public static Customer ToEntity(this CreateCustomerDto dto) => new()
         {
             Id = Guid.NewGuid(),
-            UserId = dto.UserId,
+            KeycloakId = dto.KeycloakId,
             Name = dto.Name,
             PhoneNumber = dto.PhoneNumber,
             Email = dto.Email,
@@ -129,8 +98,8 @@ namespace DriveOps.Application.Mappings
             FuelType = vehicle.FuelType,
             SeatingCapacity = vehicle.SeatingCapacity,
             AssignedDriverId = vehicle.AssignedDriverId,
-            AssignedDriverName = vehicle.AssignedDriver?.User != null
-                ? $"{vehicle.AssignedDriver.User.FirstName} {vehicle.AssignedDriver.User.LastName}"
+            AssignedDriverName = vehicle.AssignedDriver != null
+                ? $"{vehicle.AssignedDriver.FirstName} {vehicle.AssignedDriver.LastName}"
                 : null,
             CreatedAt = vehicle.CreatedAt
         };
@@ -162,8 +131,8 @@ namespace DriveOps.Application.Mappings
             CustomerId = trip.CustomerId,
             CustomerName = trip.Customer?.Name,
             DriverId = trip.DriverId,
-            DriverName = trip.Driver?.User != null
-                ? $"{trip.Driver.User.FirstName} {trip.Driver.User.LastName}"
+            DriverName = trip.Driver != null
+                ? $"{trip.Driver.FirstName} {trip.Driver.LastName}"
                 : null,
             VehicleId = trip.VehicleId,
             VehiclePlate = trip.Vehicle?.LicensePlate,

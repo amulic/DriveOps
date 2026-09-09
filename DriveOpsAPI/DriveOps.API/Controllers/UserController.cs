@@ -1,9 +1,6 @@
-﻿using DriveOps.API.ControllerDtos.Request;
-using DriveOps.API.ControllerDtos.Response;
-using DriveOps.API.Mappings;
-using DriveOps.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DriveOps.API.Controllers
 {
@@ -12,88 +9,61 @@ namespace DriveOps.API.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly IUserService _userService;
-
-        public UserController(IUserService userService)
-        {
-            _userService = userService;
-        }
-
-        [HttpPost("sync")]
-        public async Task<IActionResult> SyncUser()
-        {
-            var keycloakId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-            var email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-            var firstName = User.Claims.FirstOrDefault(c => c.Type == "given_name")?.Value ?? "";
-            var lastName = User.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value ?? "";
-
-            if (string.IsNullOrEmpty(keycloakId) || string.IsNullOrEmpty(email))
-                return BadRequest("Invalid user claims.");
-
-            var user = await _userService.CreateOrUpdateFromKeycloakAsync(keycloakId, email, firstName, lastName);
-            await _userService.UpdateLastLoginAsync(user.Id);
-
-            return Ok(user.ToResponse());
-        }
+        public UserController() { }
 
         [HttpGet("me")]
-        public async Task<IActionResult> GetCurrentUser()
+        public IActionResult GetCurrentUser()
         {
-            var keycloakId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            var keycloakId = GetClaimValue("sub")
+                ?? GetClaimValue(ClaimTypes.NameIdentifier)
+                ?? GetClaimValue("preferred_username");
 
             if (string.IsNullOrEmpty(keycloakId))
                 return Unauthorized("No user claims.");
 
-            var user = await _userService.GetUserByKeycloakIdAsync(keycloakId);
-            if (user == null)
-                return NotFound("User not found.");
+            var email = GetClaimValue("email") ?? GetClaimValue(ClaimTypes.Email);
+            var firstName = GetClaimValue("given_name") ?? "";
+            var lastName = GetClaimValue("family_name") ?? "";
+            var username = GetClaimValue("preferred_username") ?? "";
 
-            return Ok(user.ToResponse());
-        }
+            var roles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role || c.Type == "role" || c.Type == "roles")
+                .Select(c => c.Value)
+                .Distinct()
+                .ToList();
 
-        [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetUserById(Guid id)
-        {
-            var user = await _userService.GetUserByIdAsync(id);
-            if (user == null)
-                return NotFound();
-
-            return Ok(user.ToResponse());
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
-        {
-            try
+            var realmRoles = new List<string>();
+            var realmAccessJson = GetClaimValue("realm_access");
+            if (!string.IsNullOrEmpty(realmAccessJson))
             {
-                var user = await _userService.CreateUserAsync(request.ToApplicationDto());
-                return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user.ToResponse());
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(realmAccessJson);
+                    if (doc.RootElement.TryGetProperty("roles", out var r) && r.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    {
+                        foreach (var role in r.EnumerateArray())
+                        {
+                            var roleStr = role.GetString();
+                            if (!string.IsNullOrEmpty(roleStr))
+                                realmRoles.Add(roleStr);
+                        }
+                    }
+                }
+                catch { }
             }
-            catch (InvalidOperationException ex)
+
+            return Ok(new
             {
-                return Conflict(ex.Message);
-            }
+                keycloakId,
+                email,
+                firstName,
+                lastName,
+                username,
+                roles = roles.Any() ? roles : realmRoles
+            });
         }
 
-        [HttpPut("{id:guid}")]
-        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
-        {
-            var user = await _userService.UpdateUserAsync(request.ToApplicationDto(id));
-            return Ok(user.ToResponse());
-        }
-
-        [HttpPost("batch")]
-        public async Task<IActionResult> GetUsersByIds([FromBody] Guid[] ids)
-        {
-            var users = await _userService.GetUsersByIdsAsync(ids);
-            return Ok(users.Select(u => u.ToResponse()));
-        }
-
-        [HttpPost("by-keycloak-ids")]
-        public async Task<IActionResult> GetUsersByKeycloakIds([FromBody] string[] keycloakIds)
-        {
-            var users = await _userService.GetUsersByKeycloakIdsAsync(keycloakIds);
-            return Ok(users.Select(u => u.ToResponse()));
-        }
+        private string? GetClaimValue(string claimType)
+            => User.Claims.FirstOrDefault(c => c.Type == claimType)?.Value;
     }
 }
