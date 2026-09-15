@@ -4,6 +4,7 @@ import 'package:driveops_management/services/chat_api_service.dart';
 import 'package:driveops_management/shared/models/conversation_summary.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
+import 'package:driveops_management/shared/utils/id_display.dart';
 import 'package:driveops_management/features/messages/presentation/providers/conversations_provider.dart';
 
 class TripChatSearchDialog extends ConsumerStatefulWidget {
@@ -163,7 +164,7 @@ class _TripListState extends ConsumerState<_TripList> {
             ),
             title: Row(
               children: [
-                Text('Trip ${trip.id.substring(0, 8)}',
+                Text('Trip ${shortId(trip.id, take: 8)}',
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
                 const SizedBox(width: 8),
                 Container(

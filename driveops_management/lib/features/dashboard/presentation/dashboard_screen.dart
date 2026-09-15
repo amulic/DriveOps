@@ -6,6 +6,7 @@ import 'package:driveops_management/features/dashboard/presentation/widgets/rece
 import 'package:driveops_management/features/dashboard/presentation/widgets/ride_statistics_chart.dart';
 import 'package:driveops_management/features/dashboard/presentation/widgets/vehicles_service_table.dart';
 import 'package:driveops_management/features/dashboard/presentation/widgets/driver_scoreboard.dart';
+import 'package:driveops_management/shared/providers/repository_providers.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -14,7 +15,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final driversAsync = ref.watch(driversProvider);
     final vehiclesAsync = ref.watch(vehiclesProvider);
-    final revenueAsync = ref.watch(revenueProvider);
+    final revenueAsync = ref.watch(totalRevenueProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -23,7 +24,7 @@ class DashboardScreen extends ConsumerWidget {
           data: (vehiclesData) => revenueAsync.when(
             data: (revenue) => _buildContent(context, driversData, vehiclesData, revenue),
             loading: () => _buildLoading(),
-            error: (error, _) => _buildError('Revenue', error, () => ref.invalidate(revenueProvider)),
+            error: (error, _) => _buildError('Revenue', error, () => ref.invalidate(totalRevenueProvider)),
           ),
           loading: () => _buildLoading(),
           error: (error, _) => _buildError('Vehicles', error, () => ref.invalidate(vehiclesProvider)),

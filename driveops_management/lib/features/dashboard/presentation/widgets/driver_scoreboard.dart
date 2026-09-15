@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/driver.dart';
-import 'package:driveops_management/features/dashboard/presentation/providers/dashboard_providers.dart';
+import 'package:driveops_management/shared/providers/repository_providers.dart';
 
 class DriverScoreboard extends ConsumerWidget {
   const DriverScoreboard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scoreboardAsync = ref.watch(dashboardDriverScoreboardProvider);
+    final scoreboardAsync = ref.watch(driverScoreboardProvider);
 
     return Card(
       color: const Color(0xFF252538),

@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 
-final userNamesProvider = FutureProvider.family<Map<String, String>, List<String>>((ref, keycloakIds) async {
-  if (keycloakIds.isEmpty) return {};
+final userNamesProvider = FutureProvider.family<Map<String, String>, String>((ref, idsKey) async {
+  if (idsKey.isEmpty) return {};
+  final keycloakIds = idsKey.split(',');
   final driverRepo = ref.watch(driverRepositoryProvider);
   final result = <String, String>{};
   for (final kcId in keycloakIds) {

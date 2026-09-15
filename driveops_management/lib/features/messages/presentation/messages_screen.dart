@@ -8,6 +8,7 @@ import 'package:driveops_management/features/messages/presentation/widgets/new_c
 import 'package:driveops_management/features/messages/presentation/widgets/trip_chat_search_dialog.dart';
 import 'package:driveops_management/features/messages/presentation/widgets/chat_thread_screen.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
+import 'package:driveops_management/shared/utils/id_display.dart';
 
 class MessagesScreen extends ConsumerWidget {
   const MessagesScreen({super.key});
@@ -162,10 +163,10 @@ class _ConversationTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isTrip = conversation.conversationType == 'trip';
     final otherIds = conversation.participantUserIds.where((id) => id != currentUserId).toList();
-    final userNamesAsync = ref.watch(userNamesProvider(otherIds));
+    final userNamesAsync = ref.watch(userNamesProvider(otherIds.join(',')));
 
     final displayName = isTrip
-        ? 'Trip ${conversation.tripId?.substring(0, 8) ?? ""}...'
+        ? 'Trip ${conversation.tripId == null ? "" : shortId(conversation.tripId!, take: 8)}...'
         : userNamesAsync.when(
             data: (names) => names.values.isEmpty ? 'Unknown' : names.values.join(', '),
             loading: () => 'Loading...',

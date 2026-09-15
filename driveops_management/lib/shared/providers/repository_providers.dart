@@ -3,41 +3,17 @@ import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/repositories/repositories.dart';
-import 'package:driveops_management/shared/repositories/dummy_repositories.dart';
 import 'package:driveops_management/shared/repositories/api_repositories.dart';
 import 'package:driveops_management/services/cache_service.dart';
-import 'package:driveops_management/services/api_service.dart';
 import 'package:driveops_management/services/driver_api_service.dart';
 import 'package:driveops_management/services/trip_api_service.dart';
 import 'package:driveops_management/services/vehicle_api_service.dart';
-import 'package:driveops_management/shared/providers/auth_provider.dart';
-
-final useDummyDataProvider = Provider<bool>((ref) {
-  final authState = ref.watch(authProvider);
-  return !(authState.value?.isAuthenticated ?? false);
-});
 
 final cacheServiceProvider = Provider<CacheService>((ref) {
   return CacheService();
 });
 
-final driverApiServiceProvider = Provider<DriverApiService>((ref) {
-  return DriverApiService(ref.watch(apiServiceProvider));
-});
-
-final tripApiServiceProvider = Provider<TripApiService>((ref) {
-  return TripApiService(ref.watch(apiServiceProvider));
-});
-
-final vehicleApiServiceProvider = Provider<VehicleApiService>((ref) {
-  return VehicleApiService(ref.watch(apiServiceProvider));
-});
-
 final driverRepositoryProvider = Provider<DriverRepository>((ref) {
-  final useDummy = ref.watch(useDummyDataProvider);
-  if (useDummy) {
-    return DummyDriverRepository();
-  }
   final cache = ref.watch(cacheServiceProvider);
   return ApiDriverRepository(
     ref.watch(driverApiServiceProvider),
@@ -46,10 +22,6 @@ final driverRepositoryProvider = Provider<DriverRepository>((ref) {
 });
 
 final tripRepositoryProvider = Provider<TripRepository>((ref) {
-  final useDummy = ref.watch(useDummyDataProvider);
-  if (useDummy) {
-    return DummyTripRepository();
-  }
   final cache = ref.watch(cacheServiceProvider);
   return ApiTripRepository(
     ref.watch(tripApiServiceProvider),
@@ -58,10 +30,6 @@ final tripRepositoryProvider = Provider<TripRepository>((ref) {
 });
 
 final vehicleRepositoryProvider = Provider<VehicleRepository>((ref) {
-  final useDummy = ref.watch(useDummyDataProvider);
-  if (useDummy) {
-    return DummyVehicleRepository();
-  }
   final cache = ref.watch(cacheServiceProvider);
   return ApiVehicleRepository(
     ref.watch(vehicleApiServiceProvider),

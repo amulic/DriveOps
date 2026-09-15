@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/driver.dart';
-import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 
@@ -14,18 +13,6 @@ final vehiclesProvider = FutureProvider<VehiclesData>((ref) async {
   final allVehicles = await ref.watch(allVehiclesProvider.future);
   final needingService = await ref.watch(vehiclesNeedingServiceProvider.future);
   return VehiclesData(total: allVehicles.length, needingService: needingService);
-});
-
-final recentTripsProvider = FutureProvider<List<Trip>>((ref) async {
-  return ref.watch(allTripsProvider.future);
-});
-
-final revenueProvider = FutureProvider<double>((ref) async {
-  return ref.watch(totalRevenueProvider.future);
-});
-
-final dashboardDriverScoreboardProvider = FutureProvider<List<Driver>>((ref) async {
-  return ref.watch(driverScoreboardProvider.future);
 });
 
 class DriversData {

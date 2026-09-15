@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
+import 'package:driveops_management/shared/utils/id_display.dart';
 
 final recentTripsProvider = FutureProvider<List<Trip>>((ref) async {
   final trips = await ref.watch(allTripsProvider.future);
@@ -67,7 +68,7 @@ class RecentRidesTable extends ConsumerWidget {
             cells: [
               DataCell(
                 Text(
-                  '#${trip.id.substring(trip.id.length - 4)}',
+                  '#${shortId(trip.id, take: 4, fromEnd: true)}',
                   style: const TextStyle(color: Colors.white70),
                 ),
               ),

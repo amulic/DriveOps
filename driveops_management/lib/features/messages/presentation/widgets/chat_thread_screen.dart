@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/chat_message.dart';
 import 'package:driveops_management/shared/models/conversation.dart';
 import 'package:driveops_management/features/messages/presentation/providers/messages_provider.dart';
-import 'package:driveops_management/features/messages/presentation/providers/active_conversation_provider.dart';
 import 'package:driveops_management/features/messages/presentation/providers/chat_signalr_provider.dart';
 import 'package:driveops_management/features/messages/presentation/providers/user_names_provider.dart';
 import 'package:driveops_management/services/chat_signalr_service.dart';
+import 'package:driveops_management/shared/utils/id_display.dart';
 
 class ChatThreadScreen extends ConsumerStatefulWidget {
   final Conversation conversation;
@@ -28,7 +28,6 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   late final ChatSignalrService _chatSignalr;
-  late final ActiveConversationIdNotifier _activeConversationNotifier;
   late List<ChatMessage> _messages;
   bool _initialized = false;
 
@@ -36,10 +35,8 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   void initState() {
     super.initState();
     _chatSignalr = ref.read(chatSignalrServiceProvider);
-    _activeConversationNotifier = ref.read(activeConversationIdProvider.notifier);
     _chatSignalr.joinConversationGroup(widget.conversation.id);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _activeConversationNotifier.set(widget.conversation.id);
       _chatSignalr.markAsRead(widget.conversation.id);
     });
   }
@@ -47,7 +44,6 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   @override
   void dispose() {
     _chatSignalr.leaveConversationGroup(widget.conversation.id);
-    _activeConversationNotifier.set(null);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -118,7 +114,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   @override
   Widget build(BuildContext context) {
     final otherUserIds = _getOtherUserIds();
-    final userNamesAsync = ref.watch(userNamesProvider(otherUserIds));
+    final userNamesAsync = ref.watch(userNamesProvider(otherUserIds.join(',')));
     final messagesAsync = ref.watch(messagesProvider(widget.conversation.id));
 
     if (!_initialized) {
@@ -130,7 +126,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
     }
 
     final title = widget.conversation.tripId != null
-        ? 'Trip ${widget.conversation.tripId!.substring(0, 8)}...'
+        ? 'Trip ${shortId(widget.conversation.tripId!, take: 8)}...'
         : userNamesAsync.when(
             data: (names) => names.values.join(', '),
             loading: () => 'Direct Message',
