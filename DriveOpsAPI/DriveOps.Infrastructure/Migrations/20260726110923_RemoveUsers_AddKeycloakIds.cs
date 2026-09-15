@@ -31,34 +31,6 @@ namespace DriveOps.Infrastructure.Migrations
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
             ");
 
-            // Backfill duplicate zero-Guid KeycloakId values so the unique index can be re-applied
-            // (one keeper row is left as-is, the rest get fresh unique UUIDs).
-            migrationBuilder.Sql(@"
-                UPDATE `Customers`
-                SET `KeycloakId` = UUID()
-                WHERE `KeycloakId` = '00000000-0000-0000-0000-000000000000'
-                  AND `Id` <> (
-                      SELECT * FROM (
-                          SELECT MIN(`Id`)
-                          FROM `Customers`
-                          WHERE `KeycloakId` = '00000000-0000-0000-0000-000000000000'
-                      ) AS keeper
-                  );
-            ");
-
-            migrationBuilder.Sql(@"
-                UPDATE `Drivers`
-                SET `KeycloakId` = UUID()
-                WHERE `KeycloakId` = '00000000-0000-0000-0000-000000000000'
-                  AND `Id` <> (
-                      SELECT * FROM (
-                          SELECT MIN(`Id`)
-                          FROM `Drivers`
-                          WHERE `KeycloakId` = '00000000-0000-0000-0000-000000000000'
-                      ) AS keeper
-                  );
-            ");
-
             // Drop FKs if they exist (guarded for MySQL where dropping a non-existent FK throws)
             migrationBuilder.Sql(@"
                 SET @fk_exists = (
@@ -222,6 +194,34 @@ namespace DriveOps.Infrastructure.Migrations
                     'ALTER TABLE `Customers` ADD COLUMN `KeycloakId` char(36) NOT NULL DEFAULT ""00000000-0000-0000-0000-000000000000""',
                     'SELECT 1');
                 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+            ");
+
+            // Backfill duplicate zero-Guid KeycloakId values so the unique index can be re-applied
+            // (one keeper row is left as-is, the rest get fresh unique UUIDs).
+            migrationBuilder.Sql(@"
+                UPDATE `Customers`
+                SET `KeycloakId` = UUID()
+                WHERE `KeycloakId` = '00000000-0000-0000-0000-000000000000'
+                  AND `Id` <> (
+                      SELECT * FROM (
+                          SELECT MIN(`Id`)
+                          FROM `Customers`
+                          WHERE `KeycloakId` = '00000000-0000-0000-0000-000000000000'
+                      ) AS keeper
+                  );
+            ");
+
+            migrationBuilder.Sql(@"
+                UPDATE `Drivers`
+                SET `KeycloakId` = UUID()
+                WHERE `KeycloakId` = '00000000-0000-0000-0000-000000000000'
+                  AND `Id` <> (
+                      SELECT * FROM (
+                          SELECT MIN(`Id`)
+                          FROM `Drivers`
+                          WHERE `KeycloakId` = '00000000-0000-0000-0000-000000000000'
+                      ) AS keeper
+                  );
             ");
 
             // Create unique indexes

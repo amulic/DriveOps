@@ -236,13 +236,14 @@
       "publicClient": false,
       "frontchannelLogout": true,
       "protocol": "openid-connect",
-      "fullScopeAllowed": true,
-      "defaultClientScopes": [
-        "web-origins",
-        "profile",
-        "roles",
-        "email"
-      ],
+    "fullScopeAllowed": true,
+    "defaultClientScopes": [
+      "web-origins",
+      "profile",
+      "roles",
+      "email",
+      "basic"
+    ],
       "optionalClientScopes": [
         "address",
         "phone",
@@ -270,16 +271,17 @@
       "frontchannelLogout": true,
       "protocol": "openid-connect",
       "attributes": {
-        "post.logout.redirect.uris": "http://127.0.0.1:42069;http://localhost:42069",
+        "post.logout.redirect.uris": "http://127.0.0.1:42069##http://localhost:42069",
         "pkce.code.challenge.method": "S256"
       },
-      "fullScopeAllowed": true,
-      "defaultClientScopes": [
-        "web-origins",
-        "profile",
-        "roles",
-        "email"
-      ],
+    "fullScopeAllowed": true,
+    "defaultClientScopes": [
+      "web-origins",
+      "profile",
+      "roles",
+      "email",
+      "basic"
+    ],
       "optionalClientScopes": [
         "address",
         "phone",

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/chat_message.dart';
@@ -7,6 +6,7 @@ import 'package:driveops_management/features/messages/presentation/providers/mes
 import 'package:driveops_management/features/messages/presentation/providers/active_conversation_provider.dart';
 import 'package:driveops_management/features/messages/presentation/providers/chat_signalr_provider.dart';
 import 'package:driveops_management/features/messages/presentation/providers/user_names_provider.dart';
+import 'package:driveops_management/services/chat_signalr_service.dart';
 
 class ChatThreadScreen extends ConsumerStatefulWidget {
   final Conversation conversation;
@@ -27,31 +27,29 @@ class ChatThreadScreen extends ConsumerStatefulWidget {
 class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  late final ChatSignalrService _chatSignalr;
+  late final ActiveConversationIdNotifier _activeConversationNotifier;
   late List<ChatMessage> _messages;
   bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _joinConversation();
+    _chatSignalr = ref.read(chatSignalrServiceProvider);
+    _activeConversationNotifier = ref.read(activeConversationIdProvider.notifier);
+    _chatSignalr.joinConversationGroup(widget.conversation.id);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(activeConversationIdProvider.notifier).set(widget.conversation.id);
-      ref.read(chatSignalrServiceProvider).markAsRead(widget.conversation.id);
+      _activeConversationNotifier.set(widget.conversation.id);
+      _chatSignalr.markAsRead(widget.conversation.id);
     });
-  }
-
-  Future<void> _joinConversation() async {
-    final chatSignalr = ref.read(chatSignalrServiceProvider);
-    await chatSignalr.joinConversationGroup(widget.conversation.id);
   }
 
   @override
   void dispose() {
+    _chatSignalr.leaveConversationGroup(widget.conversation.id);
+    _activeConversationNotifier.set(null);
     _messageController.dispose();
     _scrollController.dispose();
-    final chatSignalr = ref.read(chatSignalrServiceProvider);
-    chatSignalr.leaveConversationGroup(widget.conversation.id);
-    ref.read(activeConversationIdProvider.notifier).set(null);
     super.dispose();
   }
 
@@ -59,8 +57,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
     _messageController.clear();
-    final chatSignalr = ref.read(chatSignalrServiceProvider);
-    chatSignalr.sendMessage(widget.conversation.id, content);
+    _chatSignalr.sendMessage(widget.conversation.id, content);
 
     final optimisticMsg = ChatMessage(
       id: '_${DateTime.now().millisecondsSinceEpoch}',
@@ -90,8 +87,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   }
 
   void _listenForMessages() {
-    final chatSignalr = ref.read(chatSignalrServiceProvider);
-    chatSignalr.on('ReceiveMessage', (args) {
+    _chatSignalr.on('ReceiveMessage', (args) {
       if (args != null && args.isNotEmpty) {
         final data = args.first as Map<String, dynamic>;
         final msg = ChatMessage.fromJson(data);
@@ -106,7 +102,7 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
       }
     });
 
-    chatSignalr.on('MessageSent', (args) {
+    _chatSignalr.on('MessageSent', (args) {
       if (args != null && args.isNotEmpty) {
         final data = args.first as Map<String, dynamic>;
         final msg = ChatMessage.fromJson(data);
