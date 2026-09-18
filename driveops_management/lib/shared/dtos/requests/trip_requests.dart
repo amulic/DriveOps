@@ -1,3 +1,5 @@
+import 'package:driveops_management/shared/models/route_point.dart';
+
 class CreateTripRequest {
   final String customerId;
   final int tripType;
@@ -72,11 +74,13 @@ class TripEstimateResponse {
   final double distanceKm;
   final int durationMinutes;
   final double estimatedFare;
+  final List<RoutePoint> routePoints;
 
   TripEstimateResponse({
     required this.distanceKm,
     required this.durationMinutes,
     required this.estimatedFare,
+    this.routePoints = const [],
   });
 
   factory TripEstimateResponse.fromJson(Map<String, dynamic> json) {
@@ -84,6 +88,10 @@ class TripEstimateResponse {
       distanceKm: (json['distanceKm'] as num).toDouble(),
       durationMinutes: json['durationMinutes'] as int,
       estimatedFare: (json['estimatedFare'] as num).toDouble(),
+      routePoints: (json['routePoints'] as List<dynamic>?)
+              ?.map((e) => RoutePoint.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 }

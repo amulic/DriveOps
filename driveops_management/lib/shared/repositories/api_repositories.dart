@@ -1,6 +1,8 @@
 import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/route_point.dart';
+import 'package:driveops_management/shared/models/recommended_driver.dart';
 import 'package:driveops_management/services/driver_api_service.dart';
 import 'package:driveops_management/services/trip_api_service.dart';
 import 'package:driveops_management/services/vehicle_api_service.dart';
@@ -8,6 +10,7 @@ import 'package:driveops_management/services/cache_service.dart';
 import 'package:driveops_management/shared/repositories/repositories.dart';
 import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
 import 'package:driveops_management/shared/dtos/requests/vehicle_requests.dart';
+import 'package:driveops_management/shared/dtos/requests/trip_requests.dart';
 
 class ApiDriverRepository implements DriverRepository {
   final DriverApiService _api;
@@ -169,6 +172,36 @@ class ApiTripRepository implements TripRepository {
   @override
   Future<List<Trip>> getActiveTripsByDriver(String driverId) async {
     return _api.getActiveTripsByDriver(driverId);
+  }
+
+  @override
+  Future<Trip> assignDriver(String tripId, String driverId, String vehicleId) async {
+    final trip = await _api.assignDriver(
+      tripId,
+      AssignDriverRequest(driverId: driverId, vehicleId: vehicleId),
+    );
+    await _cache.remove(CacheService.tripsAll);
+    await _cache.remove(CacheService.trip(tripId));
+    return trip;
+  }
+
+  @override
+  Future<Trip> cancelTrip(String tripId, {String? reason}) async {
+    final trip = await _api.cancelTrip(tripId, CancelTripRequest(reason: reason));
+    await _cache.remove(CacheService.tripsAll);
+    await _cache.remove(CacheService.trip(tripId));
+    return trip;
+  }
+
+  // Route breadcrumbs and recommendations are live data — not cached.
+  @override
+  Future<List<RoutePoint>> getTripRoute(String tripId) {
+    return _api.getTripRoute(tripId);
+  }
+
+  @override
+  Future<List<RecommendedDriver>> getRecommendedDrivers(String tripId, {int count = 5}) {
+    return _api.getRecommendedDrivers(tripId, count: count);
   }
 }
 

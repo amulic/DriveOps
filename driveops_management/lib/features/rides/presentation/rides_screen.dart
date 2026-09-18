@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/rides/presentation/providers/rides_providers.dart';
+import 'package:driveops_management/features/rides/presentation/widgets/trip_details_panel.dart';
+import 'package:driveops_management/features/rides/presentation/widgets/cancel_trip_dialog.dart';
 
 class RidesScreen extends ConsumerStatefulWidget {
   const RidesScreen({super.key});
@@ -16,38 +19,47 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
   Widget build(BuildContext context) {
     final tripsAsync = ref.watch(filteredTripsProvider);
     final driversMapAsync = ref.watch(driversMapProvider);
+    final selectedTrip = ref.watch(selectedTripProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildHeader(tripsAsync),
-          const SizedBox(height: 16),
-          _buildToolbar(),
-          const SizedBox(height: 16),
-          Expanded(child: tripsAsync.when(
-            data: (trips) {
-              final driversMap = driversMapAsync.value ?? {};
-              return _buildTable(trips, driversMap);
-            },
-            loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
-            error: (error, _) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 48),
-                  const SizedBox(height: 16),
-                  Text('Failed to load rides: $error', style: const TextStyle(color: Colors.white54)),
-                  const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: () => ref.invalidate(tripsAsyncProvider),
-                    child: const Text('Retry'),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(tripsAsync),
+                const SizedBox(height: 16),
+                _buildToolbar(),
+                const SizedBox(height: 16),
+                Expanded(child: tripsAsync.when(
+                  data: (trips) {
+                    final driversMap = driversMapAsync.value ?? {};
+                    return _buildTable(trips, driversMap);
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
+                  error: (error, _) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 48),
+                        const SizedBox(height: 16),
+                        Text('Failed to load rides: $error', style: const TextStyle(color: Colors.white54)),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          onPressed: () => ref.invalidate(tripsAsyncProvider),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                )),
+              ],
             ),
-          )),
+          ),
+          if (selectedTrip != null) const TripDetailsPanel(),
         ],
       ),
     );
@@ -168,6 +180,8 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
   }
 
   Widget _buildTable(List<Trip> trips, Map<String, Driver> driversMap) {
+    final selectedTripId = ref.watch(selectedTripIdProvider);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Card(
@@ -177,6 +191,7 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
           child: DataTable(
             columnSpacing: 24,
             horizontalMargin: 20,
+            showCheckboxColumn: false,
             columns: const [
               DataColumn(label: Text('Route')),
               DataColumn(label: Text('Date & Time')),
@@ -186,7 +201,13 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
               DataColumn(label: Text('')),
             ],
             rows: trips.map((trip) {
+              final isSelected = trip.id == selectedTripId;
               return DataRow(
+                selected: isSelected,
+                onSelectChanged: (_) {
+                  ref.read(selectedTripIdProvider.notifier).select(
+                      isSelected ? null : trip.id);
+                },
                 cells: [
                   DataCell(_buildRouteCell(trip)),
                   DataCell(_buildDateTimeCell(trip.requestedAt)),
@@ -372,7 +393,15 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, color: Colors.white54),
       color: const Color(0xFF252538),
-      onSelected: (value) {},
+      onSelected: (value) {
+        switch (value) {
+          case 'view':
+          case 'assign':
+            ref.read(selectedTripIdProvider.notifier).select(trip.id);
+          case 'cancel':
+            _cancelTrip(trip);
+        }
+      },
       itemBuilder: (context) => [
         const PopupMenuItem(
           value: 'view',
@@ -412,6 +441,29 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
           ),
       ],
     );
+  }
+
+  Future<void> _cancelTrip(Trip trip) async {
+    final reason = await CancelTripDialog.show(context);
+    if (reason == null) return;
+
+    try {
+      await ref
+          .read(tripRepositoryProvider)
+          .cancelTrip(trip.id, reason: reason.isEmpty ? null : reason);
+      ref.invalidate(tripsAsyncProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trip cancelled')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to cancel trip: $e')),
+        );
+      }
+    }
   }
 
   String _abbreviateAddress(String address) {

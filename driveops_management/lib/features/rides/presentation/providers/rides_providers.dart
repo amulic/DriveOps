@@ -1,7 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/models/route_point.dart';
+import 'package:driveops_management/shared/models/recommended_driver.dart';
+import 'package:driveops_management/shared/dtos/requests/trip_requests.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
+import 'package:driveops_management/services/trip_api_service.dart';
 
 final tripsAsyncProvider = FutureProvider<List<Trip>>((ref) async {
   final repo = ref.watch(tripRepositoryProvider);
@@ -65,4 +69,83 @@ final filteredTripsProvider = Provider<AsyncValue<List<Trip>>>((ref) {
     loading: () => const AsyncValue.loading(),
     error: (error, stack) => AsyncValue.error(error, stack),
   );
+});
+
+class SelectedTripIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void select(String? id) => state = id;
+}
+
+/// Id of the trip whose details panel is open; null = panel closed.
+final selectedTripIdProvider =
+    NotifierProvider<SelectedTripIdNotifier, String?>(SelectedTripIdNotifier.new);
+
+/// Live trip derived from the trips list — auto-refreshes when SignalR
+/// invalidates the list provider.
+final selectedTripProvider = Provider<Trip?>((ref) {
+  final id = ref.watch(selectedTripIdProvider);
+  if (id == null) return null;
+
+  final tripsAsync = ref.watch(tripsAsyncProvider);
+  return tripsAsync.value?.where((t) => t.id == id).firstOrNull;
+});
+
+/// Route points for the selected trip: recorded breadcrumbs for
+/// in-progress/completed trips, OSRM planned geometry otherwise, with a
+/// straight pickup→dropoff line as the final fallback.
+final tripRoutePointsProvider = FutureProvider<List<RoutePoint>>((ref) async {
+  final trip = ref.watch(selectedTripProvider);
+  if (trip == null) return [];
+
+  final repo = ref.watch(tripRepositoryProvider);
+
+  List<RoutePoint> recorded = [];
+  if (trip.tripStatus == TripStatus.inProgress ||
+      trip.tripStatus == TripStatus.completed) {
+    recorded = await repo.getTripRoute(trip.id);
+    if (recorded.length >= 2) return recorded;
+  }
+
+  List<RoutePoint> planned = [];
+  try {
+    final estimate = await ref.watch(tripApiServiceProvider).estimateTrip(
+          TripEstimateRequest(
+            pickupLatitude: trip.pickupLatitude,
+            pickupLongitude: trip.pickupLongitude,
+            dropoffLatitude: trip.dropoffLatitude,
+            dropoffLongitude: trip.dropoffLongitude,
+            tripType: trip.tripType.toInt(),
+          ),
+        );
+    planned = estimate.routePoints;
+  } catch (_) {
+    // OSRM unavailable — fall through to the straight-line fallback.
+  }
+
+  if (planned.length >= 2) return planned;
+
+  return [
+    RoutePoint(latitude: trip.pickupLatitude, longitude: trip.pickupLongitude),
+    RoutePoint(latitude: trip.dropoffLatitude, longitude: trip.dropoffLongitude),
+  ];
+});
+
+/// True when the selected trip can receive a driver assignment.
+bool _isAssignable(Trip? trip) {
+  if (trip == null) return false;
+  return trip.driverId == null &&
+      (trip.tripStatus == TripStatus.requested ||
+          trip.tripStatus == TripStatus.noDriverAvailable);
+}
+
+/// Ranked driver recommendations for the selected trip; empty when the trip
+/// is not assignable.
+final recommendedDriversProvider = FutureProvider<List<RecommendedDriver>>((ref) async {
+  final trip = ref.watch(selectedTripProvider);
+  if (!_isAssignable(trip)) return [];
+
+  final repo = ref.watch(tripRepositoryProvider);
+  return repo.getRecommendedDrivers(trip!.id);
 });

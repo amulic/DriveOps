@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/services/api_service.dart';
 import 'package:driveops_management/shared/models/trip.dart';
+import 'package:driveops_management/shared/models/route_point.dart';
+import 'package:driveops_management/shared/models/recommended_driver.dart';
 import 'package:driveops_management/shared/dtos/requests/trip_requests.dart';
 import 'package:driveops_management/config/api_config.dart';
 
@@ -97,5 +99,20 @@ class TripApiService {
       data: request.toJson(),
     );
     return Trip.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<RoutePoint>> getTripRoute(String tripId) async {
+    final response = await _api.get('${ApiConfig.tripEndpoint}/$tripId/route');
+    final List<dynamic> data = response.data as List<dynamic>;
+    return data.map((json) => RoutePoint.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<RecommendedDriver>> getRecommendedDrivers(String tripId, {int count = 5}) async {
+    final response = await _api.get(
+      '${ApiConfig.tripEndpoint}/$tripId/recommended-drivers',
+      queryParameters: {'count': count},
+    );
+    final List<dynamic> data = response.data as List<dynamic>;
+    return data.map((json) => RecommendedDriver.fromJson(json as Map<String, dynamic>)).toList();
   }
 }
