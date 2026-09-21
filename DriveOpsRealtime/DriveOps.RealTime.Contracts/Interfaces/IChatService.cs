@@ -10,4 +10,9 @@ public interface IChatService
     Task CloseConversationByTripIdAsync(Guid tripId);
     Task<ConversationDto?> GetConversationAsync(Guid conversationId, Guid userId);
     Task<ConversationDto?> GetOrCreateTripConversationAsync(Guid tripId, Guid customerId, Guid driverId);
+    Task<IEnumerable<ConversationSummaryDto>> GetMyConversationsAsync(Guid userId);
+    Task<PagedMessagesDto> GetMessagesAsync(Guid conversationId, Guid userId, int page, int pageSize);
+    Task<ConversationDto> CreateDirectConversationAsync(Guid initiatorUserId, Guid otherUserId);
+    Task<ConversationDto> JoinConversationAsync(Guid conversationId, Guid userId);
+    Task<IEnumerable<ConversationSummaryDto>> GetActiveTripConversationsAsync();
 }

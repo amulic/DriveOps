@@ -1,6 +1,10 @@
 using DriveOps.Application.DependencyInjection;
 using DriveOps.Application.Helpers;
 using DriveOps.Infrastructure.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+
+JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,16 +78,14 @@ builder.Services.AddAuthentication("Bearer")
    .AddJwtBearer("Bearer", options =>
    {
        options.Authority = builder.Configuration["Keycloak:Authority"];
-       options.Audience = builder.Configuration["Keycloak:Audience"];
        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
        {
-           ValidateAudience = true,
+           ValidateAudience = false,
            ValidateIssuer = true,
            ValidateLifetime = true,
            ValidateIssuerSigningKey = true,
-           ValidAudience = builder.Configuration["Keycloak:Audience"],
            ValidIssuer = builder.Configuration["Keycloak:Authority"],
            ClockSkew = TimeSpan.Zero
        };
@@ -99,15 +101,15 @@ builder.Services.AddAuthentication("Bearer")
                logger.LogWarning("JWT authentication failed: {ExceptionType}", context.Exception.GetType().Name);
                return Task.CompletedTask;
            },
-           OnTokenValidated = context =>
-           {
-               var logger = context.HttpContext.RequestServices
-                   .GetRequiredService<ILoggerFactory>()
-                   .CreateLogger("Authentication");
+OnTokenValidated = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Authentication");
 
-               logger.LogDebug("JWT token validated successfully.");
-               return Task.CompletedTask;
-           }
+                logger.LogDebug("JWT token validated successfully.");
+                return Task.CompletedTask;
+            }
        };
    });
 
@@ -116,7 +118,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // TODO change to whatever frontend is
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:42069", "http://localhost:42069")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -131,6 +133,14 @@ builder.Logging.AddConsole();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DriveOps.Infrastructure.Persistence.ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    db.Database.Migrate();
+    DriveOps.Infrastructure.Persistence.SeedData.SeedAsync(db, logger).GetAwaiter().GetResult();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -139,7 +149,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowFrontend");
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 
 app.UseAuthentication();

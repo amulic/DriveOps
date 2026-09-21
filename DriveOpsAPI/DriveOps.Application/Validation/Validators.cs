@@ -33,7 +33,11 @@ public class CreateDriverDtoValidator : AbstractValidator<CreateDriverDto>
 {
     public CreateDriverDtoValidator()
     {
-        RuleFor(x => x.UserId).NotEmpty();
+        RuleFor(x => x.KeycloakId).NotEmpty();
+        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(255);
+        RuleFor(x => x.PhoneNumber).NotEmpty().MaximumLength(20);
         RuleFor(x => x.LicenseNumber)
             .NotEmpty().MaximumLength(50);
         RuleFor(x => x.LicenseExpiryDate)

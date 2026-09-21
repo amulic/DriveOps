@@ -3,7 +3,7 @@ namespace DriveOps.Application.DTOs
     public record CustomerDto
     {
         public Guid Id { get; init; }
-        public Guid? UserId { get; init; }
+        public Guid KeycloakId { get; init; }
         public string Name { get; init; } = null!;
         public string PhoneNumber { get; init; } = null!;
         public string? Email { get; init; }
@@ -15,7 +15,7 @@ namespace DriveOps.Application.DTOs
 
     public class CreateCustomerDto
     {
-        public Guid? UserId { get; set; }
+        public Guid KeycloakId { get; set; }
         public string Name { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;
         public string? Email { get; set; }

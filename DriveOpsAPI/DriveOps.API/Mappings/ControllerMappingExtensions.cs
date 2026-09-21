@@ -6,51 +6,14 @@ namespace DriveOps.API.Mappings
 {
     public static class ControllerMappingExtensions
     {
-        // ── User ──
-        public static CreateUserDto ToApplicationDto(this CreateUserRequest request) => new()
-        {
-            Email = request.Email,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            PhoneNumber = request.PhoneNumber,
-            UserType = request.UserType,
-            ProfileImageUrl = request.ProfileImageUrl,
-            Address = request.Address,
-            DateOfBirth = request.DateOfBirth
-        };
-
-        public static UpdateUserDto ToApplicationDto(this UpdateUserRequest request, Guid userId) => new()
-        {
-            Id = userId,
-            Email = request.Email,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            PhoneNumber = request.PhoneNumber,
-            ProfileImageUrl = request.ProfileImageUrl,
-            Address = request.Address,
-            DateOfBirth = request.DateOfBirth
-        };
-
-        public static UserResponse ToResponse(this UserDto dto) => new()
-        {
-            Id = dto.Id,
-            KeycloakId = dto.KeycloakId,
-            Email = dto.Email,
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            PhoneNumber = dto.PhoneNumber,
-            UserType = dto.UserType,
-            IsActive = dto.IsActive,
-            ProfileImageUrl = dto.ProfileImageUrl,
-            Address = dto.Address,
-            DateOfBirth = dto.DateOfBirth,
-            CreatedAt = dto.CreatedAt
-        };
-
         // ── Driver ──
         public static CreateDriverDto ToApplicationDto(this CreateDriverRequest request) => new()
         {
-            UserId = request.UserId,
+            KeycloakId = request.KeycloakId,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
             LicenseNumber = request.LicenseNumber,
             LicenseExpiryDate = request.LicenseExpiryDate,
             EmergencyContactName = request.EmergencyContactName,
@@ -60,6 +23,10 @@ namespace DriveOps.API.Mappings
         public static UpdateDriverDto ToApplicationDto(this UpdateDriverRequest request, Guid driverId) => new()
         {
             Id = driverId,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
             LicenseNumber = request.LicenseNumber,
             LicenseExpiryDate = request.LicenseExpiryDate,
             EmergencyContactName = request.EmergencyContactName,
@@ -76,8 +43,10 @@ namespace DriveOps.API.Mappings
         public static DriverResponse ToResponse(this DriverDto dto) => new()
         {
             Id = dto.Id,
-            UserId = dto.UserId,
+            KeycloakId = dto.KeycloakId,
             DriverName = dto.DriverName,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
             LicenseNumber = dto.LicenseNumber,
@@ -97,7 +66,7 @@ namespace DriveOps.API.Mappings
         // ── Customer ──
         public static CreateCustomerDto ToApplicationDto(this CreateCustomerRequest request) => new()
         {
-            UserId = request.UserId,
+            KeycloakId = request.KeycloakId,
             Name = request.Name,
             PhoneNumber = request.PhoneNumber,
             Email = request.Email,
@@ -116,7 +85,7 @@ namespace DriveOps.API.Mappings
         public static CustomerResponse ToResponse(this CustomerDto dto) => new()
         {
             Id = dto.Id,
-            UserId = dto.UserId,
+            KeycloakId = dto.KeycloakId,
             Name = dto.Name,
             PhoneNumber = dto.PhoneNumber,
             Email = dto.Email,

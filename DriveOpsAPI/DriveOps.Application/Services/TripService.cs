@@ -14,6 +14,7 @@ namespace DriveOps.Application.Services
         private readonly ITripRepository _tripRepository;
         private readonly ITripRouteRepository _tripRouteRepository;
         private readonly IDriverRepository _driverRepository;
+        private readonly ICustomerRepository _customerRepository;
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IRoutingService _routingService;
         private readonly IUnitOfWork _unitOfWork;
@@ -23,6 +24,7 @@ namespace DriveOps.Application.Services
             ITripRepository tripRepository,
             ITripRouteRepository tripRouteRepository,
             IDriverRepository driverRepository,
+            ICustomerRepository customerRepository,
             IVehicleRepository vehicleRepository,
             IRoutingService routingService,
             IUnitOfWork unitOfWork,
@@ -31,10 +33,24 @@ namespace DriveOps.Application.Services
             _tripRepository = tripRepository;
             _tripRouteRepository = tripRouteRepository;
             _driverRepository = driverRepository;
+            _customerRepository = customerRepository;
             _vehicleRepository = vehicleRepository;
             _routingService = routingService;
             _unitOfWork = unitOfWork;
             _eventPublisher = eventPublisher;
+        }
+
+        public async Task<PaginatedResult<TripDto>> GetAllTripsAsync(int page = 1, int pageSize = 20)
+        {
+            var trips = await _tripRepository.GetAllTripsAsync(page, pageSize);
+            var total = await _tripRepository.CountAllTripsAsync();
+            return new PaginatedResult<TripDto>
+            {
+                Items = trips.Select(t => t.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<TripDto?> GetTripByIdAsync(Guid tripId)
@@ -77,7 +93,6 @@ namespace DriveOps.Application.Services
 
         public async Task<TripDto> RequestTripAsync(CreateTripDto dto)
         {
-            // Get route estimate from OSRM
             var estimate = await _routingService.GetTripEstimateAsync(
                 dto.PickupLatitude, dto.PickupLongitude,
                 dto.DropoffLatitude, dto.DropoffLongitude,
@@ -91,6 +106,7 @@ namespace DriveOps.Application.Services
             await _tripRepository.AddAsync(trip);
             await _unitOfWork.SaveChangesAsync();
 
+            var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
             await _eventPublisher.PublishAsync("driveops.trips", "trip.requested",
                 new TripRequestedEvent(
                     trip.Id, trip.CustomerId,
@@ -98,7 +114,8 @@ namespace DriveOps.Application.Services
                     (TripType)trip.TripType,
                     dto.PickupLatitude, dto.PickupLongitude, dto.PickupAddress ?? "",
                     dto.DropoffLatitude, dto.DropoffLongitude, dto.DropoffAddress ?? "",
-                    trip.EstimatedFare, trip.EstimatedDuration, trip.RequestedAt ?? DateTime.UtcNow));
+                    trip.EstimatedFare, trip.EstimatedDuration, trip.RequestedAt ?? DateTime.UtcNow,
+                    customer?.KeycloakId));
 
             return trip.ToDto();
         }
@@ -135,10 +152,8 @@ namespace DriveOps.Application.Services
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
-            var customerUserId = result?.Customer?.UserId;
-            var driverDisplayName = result?.Driver?.User != null
-                ? $"{result.Driver.User.FirstName} {result.Driver.User.LastName}".Trim()
-                : string.Empty;
+            var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
+            var driverDisplayName = $"{driver.FirstName} {driver.LastName}".Trim();
 
             await _eventPublisher.PublishAsync("driveops.trips", "trip.assigned",
                 new TripAssignedEvent(
@@ -146,8 +161,8 @@ namespace DriveOps.Application.Services
                     driverDisplayName,
                     driver.CurrentLatitude ?? 0, driver.CurrentLongitude ?? 0,
                     trip.AssignedAt ?? DateTime.UtcNow,
-                    customerUserId,
-                    driver.UserId));
+                    customer?.KeycloakId,
+                    driver.KeycloakId));
 
             return result!.ToDto();
         }
@@ -168,10 +183,14 @@ namespace DriveOps.Application.Services
             await _unitOfWork.SaveChangesAsync();
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
-            var customerUserId = result?.Customer?.UserId;
+            var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
+            var driver = await _driverRepository.GetByIdAsync(trip.DriverId!.Value);
 
             await _eventPublisher.PublishAsync("driveops.trips", "trip.started",
-                new TripStartedEvent(tripId, trip.CustomerId, trip.DriverId!.Value, trip.PickupTime!.Value, customerUserId));
+                new TripStartedEvent(
+                    tripId, trip.CustomerId, trip.DriverId!.Value, trip.PickupTime!.Value,
+                    customer?.KeycloakId,
+                    driver?.KeycloakId));
 
             return result!.ToDto();
         }
@@ -226,12 +245,13 @@ namespace DriveOps.Application.Services
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
-            var customerUserId = result?.Customer?.UserId;
+            var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
 
             await _eventPublisher.PublishAsync("driveops.trips", "trip.completed",
                 new TripCompletedEvent(
                     tripId, trip.CustomerId, trip.DriverId!.Value,
-                    actualDistance, trip.ActualFare ?? 0, trip.DropoffTime ?? DateTime.UtcNow, customerUserId));
+                    actualDistance, trip.ActualFare ?? 0, trip.DropoffTime ?? DateTime.UtcNow,
+                    customer?.KeycloakId));
 
             return result!.ToDto();
         }
@@ -274,11 +294,12 @@ namespace DriveOps.Application.Services
             });
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
-            var customerUserId = result?.Customer?.UserId;
+            var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
 
             await _eventPublisher.PublishAsync("driveops.trips", "trip.cancelled",
                 new TripCancelledEvent(
-                    tripId, trip.CustomerId, trip.DriverId, reason, DateTime.UtcNow, customerUserId));
+                    tripId, trip.CustomerId, trip.DriverId, reason, DateTime.UtcNow,
+                    customer?.KeycloakId));
 
             return result!.ToDto();
         }

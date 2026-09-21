@@ -16,6 +16,16 @@ namespace DriveOps.API.Controllers
             _driverService = driverService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllDrivers(
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _driverService.GetAllDriversAsync(page, pageSize);
+            return Ok(result);
+        }
+
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetDriverById(Guid id)
         {
@@ -26,10 +36,10 @@ namespace DriveOps.API.Controllers
             return Ok(driver.ToResponse());
         }
 
-        [HttpGet("user/{userId:guid}")]
-        public async Task<IActionResult> GetDriverByUserId(Guid userId)
+        [HttpGet("keycloak/{keycloakId:guid}")]
+        public async Task<IActionResult> GetDriverByKeycloakId(Guid keycloakId)
         {
-            var driver = await _driverService.GetDriverByUserIdAsync(userId);
+            var driver = await _driverService.GetDriverByKeycloakIdAsync(keycloakId);
             if (driver == null)
                 return NotFound();
 
@@ -88,7 +98,7 @@ namespace DriveOps.API.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id:guid}/suspend")] // deactivate
+        [HttpPost("{id:guid}/suspend")]
         public async Task<IActionResult> SuspendDriver(Guid id)
         {
             await _driverService.SuspendDriverAsync(id);

@@ -12,10 +12,22 @@ namespace DriveOps.API.Controllers
     public class TripController : ControllerBase
     {
         private readonly ITripService _tripService;
+        private readonly IDriverRecommendationService _recommendationService;
 
-        public TripController(ITripService tripService)
+        public TripController(ITripService tripService, IDriverRecommendationService recommendationService)
         {
             _tripService = tripService;
+            _recommendationService = recommendationService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllTrips(
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _tripService.GetAllTripsAsync(page, pageSize);
+            return Ok(result);
         }
 
         [HttpGet("{id:guid}")]
@@ -114,6 +126,20 @@ namespace DriveOps.API.Controllers
 
             var trip = await _tripService.RateTripAsync(dto);
             return Ok(trip.ToResponse());
+        }
+
+        [HttpGet("{id:guid}/recommended-drivers")]
+        public async Task<IActionResult> GetRecommendedDrivers(Guid id, [FromQuery] int count = 5)
+        {
+            try
+            {
+                var drivers = await _recommendationService.GetRecommendedDriversAsync(id, Math.Clamp(count, 1, 20));
+                return Ok(drivers);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
 
         [HttpGet("{id:guid}/route")]

@@ -4,8 +4,9 @@ namespace DriveOps.Application.Interfaces
 {
     public interface IDriverService
     {
+        Task<PaginatedResult<DriverDto>> GetAllDriversAsync(int page = 1, int pageSize = 50);
         Task<DriverDto?> GetDriverByIdAsync(Guid driverId);
-        Task<DriverDto?> GetDriverByUserIdAsync(Guid userId);
+        Task<DriverDto?> GetDriverByKeycloakIdAsync(Guid keycloakId);
         Task<PaginatedResult<DriverDto>> GetAvailableDriversAsync(int page = 1, int pageSize = 50);
         Task<PaginatedResult<DriverDto>> GetNearbyDriversAsync(decimal latitude, decimal longitude, decimal radiusKm, int page = 1, int pageSize = 50);
         Task<DriverDto> CreateDriverAsync(CreateDriverDto dto);

@@ -20,7 +20,6 @@ namespace DriveOps.Infrastructure.DependencyInjection
 
             // Repositories
             services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IDriverRepository, DriverRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<IVehicleRepository, VehicleRepository>();

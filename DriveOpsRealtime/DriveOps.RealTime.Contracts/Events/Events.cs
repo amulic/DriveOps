@@ -15,7 +15,8 @@ public record TripRequestedEvent(
     string DropoffAddress,
     decimal? EstimatedFare,
     int? EstimatedDuration,
-    DateTime RequestedAt
+    DateTime RequestedAt,
+    Guid? CustomerKeycloakId = null
 );
 
 public record TripAssignedEvent(
@@ -27,8 +28,8 @@ public record TripAssignedEvent(
     decimal DriverLatitude,
     decimal DriverLongitude,
     DateTime AssignedAt,
-    Guid? CustomerUserId = null,
-    Guid? DriverUserId = null
+    Guid? CustomerKeycloakId = null,
+    Guid? DriverKeycloakId = null
 );
 
 public record TripStartedEvent(
@@ -36,7 +37,8 @@ public record TripStartedEvent(
     Guid CustomerId,
     Guid DriverId,
     DateTime PickupTime,
-    Guid? CustomerUserId = null
+    Guid? CustomerKeycloakId = null,
+    Guid? DriverKeycloakId = null
 );
 
 public record TripCompletedEvent(
@@ -46,7 +48,7 @@ public record TripCompletedEvent(
     decimal ActualDistance,
     decimal ActualFare,
     DateTime DropoffTime,
-    Guid? CustomerUserId = null
+    Guid? CustomerKeycloakId = null
 );
 
 public record TripCancelledEvent(
@@ -55,7 +57,8 @@ public record TripCancelledEvent(
     Guid? DriverId,
     string? Reason,
     DateTime CancelledAt,
-    Guid? CustomerUserId = null
+    Guid? CustomerKeycloakId = null,
+    Guid? DriverKeycloakId = null
 );
 
 public record DriverLocationUpdatedEvent(
@@ -76,4 +79,43 @@ public record DriverLocationReceivedEvent(
     decimal Latitude,
     decimal Longitude,
     DateTime Timestamp
+);
+
+public record VehicleAssignedEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    string Make,
+    string Model,
+    Guid? PreviousDriverId,
+    Guid DriverId,
+    string DriverName,
+    Guid? PreviousVehicleId,
+    DateTime AssignedAt
+);
+
+public record VehicleUnassignedEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    string Make,
+    string Model,
+    Guid PreviousDriverId,
+    string PreviousDriverName,
+    DateTime UnassignedAt
+);
+
+public record DriverStatusChangedEvent(
+    Guid DriverId,
+    string DriverName,
+    string NewStatus,
+    bool IsOnline,
+    DateTime ChangedAt
+);
+
+public record VehicleStatusChangedEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    string Make,
+    string Model,
+    string NewStatus,
+    DateTime ChangedAt
 );

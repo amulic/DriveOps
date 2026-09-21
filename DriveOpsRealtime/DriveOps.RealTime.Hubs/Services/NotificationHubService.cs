@@ -41,9 +41,15 @@ namespace DriveOps.RealTime.Hubs.Services
                 _logger.LogDebug("Sent TripStatusChanged to user {UserId}", userId);
             }
 
-            public async Task SendSystemNotificationAsync(Guid userId, NotificationDto dto)
-            {
-                await _hubContext.Clients.Group($"user-{userId}").SendAsync("SystemNotification", dto);
-            }
+        public async Task SendSystemNotificationAsync(Guid userId, NotificationDto dto)
+        {
+            await _hubContext.Clients.Group($"user-{userId}").SendAsync("SystemNotification", dto);
         }
+
+        public async Task SendFleetUpdateAsync(FleetUpdateDto dto)
+        {
+            await _hubContext.Clients.Group("admin-dashboard").SendAsync("FleetUpdate", dto);
+            _logger.LogDebug("Broadcast FleetUpdate ({UpdateType}) to admin-dashboard", dto.UpdateType);
+        }
+    }
 }

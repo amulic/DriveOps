@@ -21,9 +21,9 @@ namespace DriveOps.Application.Services
             return customer?.ToDto();
         }
 
-        public async Task<CustomerDto?> GetCustomerByUserIdAsync(Guid userId)
+        public async Task<CustomerDto?> GetCustomerByKeycloakIdAsync(Guid keycloakId)
         {
-            var customer = await _customerRepository.GetByUserIdAsync(userId);
+            var customer = await _customerRepository.GetByKeycloakIdAsync(keycloakId);
             return customer?.ToDto();
         }
 

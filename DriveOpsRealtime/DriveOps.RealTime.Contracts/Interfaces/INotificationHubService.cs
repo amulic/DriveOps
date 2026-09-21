@@ -9,4 +9,5 @@ public interface INotificationHubService
     Task SendTripStatusChangedAsync(Guid driverId, TripStatusChangedDto dto);
     Task SendTripStatusChangedToUserAsync(Guid userId, TripStatusChangedDto dto);
     Task SendSystemNotificationAsync(Guid userId, NotificationDto dto);
+    Task SendFleetUpdateAsync(FleetUpdateDto dto);
 }

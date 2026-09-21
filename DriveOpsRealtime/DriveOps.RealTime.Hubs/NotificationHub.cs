@@ -41,11 +41,29 @@ public class NotificationHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"driver-{driverId}");
     }
 
+    public async Task JoinAdminDashboard()
+    {
+        if (!Context.User?.IsInRole("admin") ?? true)
+            throw new HubException("Access denied. Admin role required.");
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, "admin-dashboard");
+    }
+
+    public async Task LeaveAdminDashboard()
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, "admin-dashboard");
+    }
+
     private Guid GetUserId()
     {
-        var sub = Context.User?.FindFirstValue("sub")
-            ?? Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new HubException("User not authenticated.");
-        return Guid.Parse(sub);
+        var sub = Context.User?.FindFirstValue("sub");
+        if (!string.IsNullOrEmpty(sub) && Guid.TryParse(sub, out var subGuid))
+            return subGuid;
+
+        var nameId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrEmpty(nameId) && Guid.TryParse(nameId, out var nameGuid))
+            return nameGuid;
+
+        throw new HubException("User ID not found in token.");
     }
 }

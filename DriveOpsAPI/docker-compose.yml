@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mysql:
     image: mysql:8.0
@@ -15,6 +13,25 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./keycloak/mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - driveops-net
+
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    ports:
+      - "8089:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - ADMINER_DEFAULT_SERVER=mysql
+      - ADMINER_DESIGN=galkaev
     networks:
       - driveops-net
 
@@ -24,6 +41,8 @@ services:
     command:
       - start-dev
       - --import-realm
+    volumes:
+      - ./keycloak/realms:/opt/keycloak/data/import
     environment:
       KC_DB: mysql
       KC_DB_URL_HOST: mysql
@@ -37,9 +56,8 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - mysql
-    volumes:
-      - ./keycloak/realms:/opt/keycloak/data/import
+      mysql:
+        condition: service_healthy
     networks:
       - driveops-net
 

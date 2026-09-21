@@ -10,11 +10,11 @@ namespace DriveOps.Application.DependencyInjection
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            services.AddScoped<IUserService, UserService>();
             services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<IVehicleService, VehicleService>();
             services.AddScoped<ITripService, TripService>();
+            services.AddScoped<IDriverRecommendationService, DriverRecommendationService>();
 
             services.AddValidatorsFromAssemblyContaining<CreateTripDtoValidator>();
 

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace DriveOps.API.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class TestController : ControllerBase
     {
         [HttpGet("public")]

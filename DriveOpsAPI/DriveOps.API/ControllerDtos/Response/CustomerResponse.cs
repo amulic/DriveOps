@@ -3,7 +3,7 @@ namespace DriveOps.API.ControllerDtos.Response
     public class CustomerResponse
     {
         public Guid Id { get; set; }
-        public Guid? UserId { get; set; }
+        public Guid KeycloakId { get; set; }
         public string Name { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;
         public string? Email { get; set; }
