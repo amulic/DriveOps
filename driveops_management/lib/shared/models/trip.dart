@@ -5,10 +5,11 @@ enum TripStatus {
   inProgress,
   completed,
   cancelled,
-  noDriverAvailable;
+  noDriverAvailable,
+  declined;
 
   static TripStatus fromInt(int value) {
-    if (value >= 0 && value < values.length) {
+    if (value >= 1 && value <= values.length) {
       return values[value - 1];
     }
     return requested;

@@ -337,6 +337,9 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
       case TripStatus.noDriverAvailable:
         color = const Color(0xFFF59E0B);
         label = 'No Driver';
+      case TripStatus.declined:
+        color = const Color(0xFFF59E0B);
+        label = 'Declined';
       case TripStatus.inProgress:
         color = const Color(0xFF3B82F6);
         label = 'In Progress';

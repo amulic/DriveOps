@@ -74,5 +74,40 @@ namespace DriveOps.API.Controllers
             await _vehicleService.DeleteVehicleAsync(id);
             return NoContent();
         }
+
+        [HttpPost("{id:guid}/defects")]
+        public async Task<IActionResult> ReportDefect(Guid id, [FromBody] ReportVehicleDefectRequest request)
+        {
+            try
+            {
+                var report = await _vehicleService.ReportVehicleDefectAsync(new Application.DTOs.ReportVehicleDefectDto
+                {
+                    VehicleId = id,
+                    DriverId = request.DriverId,
+                    Title = request.Title,
+                    Description = request.Description,
+                    Severity = request.Severity
+                });
+                return CreatedAtAction(nameof(GetDefects), new { id }, report.ToResponse());
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id:guid}/defects")]
+        public async Task<IActionResult> GetDefects(Guid id)
+        {
+            try
+            {
+                var reports = await _vehicleService.GetVehicleDefectsAsync(id);
+                return Ok(reports.Select(r => r.ToResponse()));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
     }
 }

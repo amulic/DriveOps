@@ -67,6 +67,22 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = const AsyncValue.data(AuthState());
   }
 
+  /// Forces a token refresh and rebuilds the [User] from the new JWT so that
+  /// profile changes made in Keycloak (name, email) are reflected in the app.
+  Future<void> reloadUser() async {
+    try {
+      final tokens = await _authService.refreshToken();
+      if (tokens != null) {
+        final user = await _buildUserFromToken(tokens.accessToken);
+        if (user != null) {
+          state = AsyncValue.data(AuthState(user: user));
+        }
+      }
+    } catch (_) {
+      // Keep the current state if the reload fails.
+    }
+  }
+
   Future<User?> _buildUserFromToken(String token) async {
     try {
       final parts = token.split('.');

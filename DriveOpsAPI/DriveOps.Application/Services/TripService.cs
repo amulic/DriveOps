@@ -304,6 +304,48 @@ namespace DriveOps.Application.Services
             return result!.ToDto();
         }
 
+        public async Task<TripDto> DeclineTripAsync(Guid tripId, Guid driverId, string? reason)
+        {
+            var trip = await _tripRepository.GetByIdAsync(tripId)
+                ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
+
+            if (trip.TripStatus != ModelEnums.TripStatus.Assigned && trip.TripStatus != ModelEnums.TripStatus.DriverEnRoute)
+                throw new InvalidOperationException("Only an assigned or en-route trip can be declined.");
+
+            if (trip.DriverId != driverId)
+                throw new InvalidOperationException("Trip is not assigned to this driver.");
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                // Keep DriverId/VehicleId on the trip so declines stay countable per driver.
+                trip.TripStatus = ModelEnums.TripStatus.Declined;
+                trip.CancellationReason = reason;
+                trip.UpdatedAt = DateTime.UtcNow;
+
+                var driver = await _driverRepository.GetByIdAsync(driverId);
+                if (driver != null)
+                {
+                    driver.Status = ModelEnums.DriverStatus.Active;
+                    driver.UpdatedAt = DateTime.UtcNow;
+                }
+
+                if (trip.VehicleId.HasValue)
+                {
+                    var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
+                    if (vehicle != null)
+                    {
+                        vehicle.Status = ModelEnums.VehicleStatus.Available;
+                        vehicle.UpdatedAt = DateTime.UtcNow;
+                    }
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+            });
+
+            var result = await _tripRepository.GetWithDetailsAsync(tripId);
+            return result!.ToDto();
+        }
+
         public async Task<TripDto> RateTripAsync(RateTripDto dto)
         {
             var trip = await _tripRepository.GetByIdAsync(dto.TripId)

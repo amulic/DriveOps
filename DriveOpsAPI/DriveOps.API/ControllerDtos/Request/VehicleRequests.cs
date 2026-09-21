@@ -15,6 +15,9 @@ namespace DriveOps.API.ControllerDtos.Request
         public DateOnly RegistrationExpiryDate { get; set; }
         public FuelType FuelType { get; set; }
         public int? SeatingCapacity { get; set; }
+        public string? PhotoUrl { get; set; }
+        public string? InternalName { get; set; }
+        public DateTime? LastServiceDate { get; set; }
     }
 
     public class UpdateVehicleRequest
@@ -25,10 +28,21 @@ namespace DriveOps.API.ControllerDtos.Request
         public DateOnly? RegistrationExpiryDate { get; set; }
         public VehicleStatus? Status { get; set; }
         public int? Mileage { get; set; }
+        public string? PhotoUrl { get; set; }
+        public string? InternalName { get; set; }
+        public DateTime? LastServiceDate { get; set; }
     }
 
     public class AssignVehicleRequest
     {
         public Guid DriverId { get; set; }
+    }
+
+    public class ReportVehicleDefectRequest
+    {
+        public Guid DriverId { get; set; }
+        public string Title { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public DefectSeverity Severity { get; set; } = DefectSeverity.Medium;
     }
 }

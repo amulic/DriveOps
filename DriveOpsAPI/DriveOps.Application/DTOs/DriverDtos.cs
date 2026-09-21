@@ -22,6 +22,7 @@ namespace DriveOps.Application.DTOs
         public bool? IsOnline { get; init; }
         public decimal? CurrentLatitude { get; init; }
         public decimal? CurrentLongitude { get; init; }
+        public string? ProfileImageUrl { get; init; }
         public DateTime? LastLocationUpdate { get; init; }
         public DateTime? CreatedAt { get; init; }
     }

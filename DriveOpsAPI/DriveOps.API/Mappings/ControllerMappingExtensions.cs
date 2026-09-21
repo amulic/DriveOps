@@ -60,6 +60,7 @@ namespace DriveOps.API.Mappings
             IsOnline = dto.IsOnline,
             CurrentLatitude = dto.CurrentLatitude,
             CurrentLongitude = dto.CurrentLongitude,
+            ProfileImageUrl = dto.ProfileImageUrl,
             CreatedAt = dto.CreatedAt
         };
 
@@ -108,7 +109,10 @@ namespace DriveOps.API.Mappings
             InsuranceExpiryDate = request.InsuranceExpiryDate,
             RegistrationExpiryDate = request.RegistrationExpiryDate,
             FuelType = request.FuelType,
-            SeatingCapacity = request.SeatingCapacity
+            SeatingCapacity = request.SeatingCapacity,
+            PhotoUrl = request.PhotoUrl,
+            InternalName = request.InternalName,
+            LastServiceDate = request.LastServiceDate
         };
 
         public static UpdateVehicleDto ToApplicationDto(this UpdateVehicleRequest request, Guid vehicleId) => new()
@@ -119,7 +123,10 @@ namespace DriveOps.API.Mappings
             InsuranceExpiryDate = request.InsuranceExpiryDate,
             RegistrationExpiryDate = request.RegistrationExpiryDate,
             Status = request.Status,
-            Mileage = request.Mileage
+            Mileage = request.Mileage,
+            PhotoUrl = request.PhotoUrl,
+            InternalName = request.InternalName,
+            LastServiceDate = request.LastServiceDate
         };
 
         public static VehicleResponse ToResponse(this VehicleDto dto) => new()
@@ -140,7 +147,24 @@ namespace DriveOps.API.Mappings
             SeatingCapacity = dto.SeatingCapacity,
             AssignedDriverId = dto.AssignedDriverId,
             AssignedDriverName = dto.AssignedDriverName,
+            PhotoUrl = dto.PhotoUrl,
+            InternalName = dto.InternalName,
+            LastServiceDate = dto.LastServiceDate,
             CreatedAt = dto.CreatedAt
+        };
+
+        public static VehicleDefectReportResponse ToResponse(this VehicleDefectReportDto dto) => new()
+        {
+            Id = dto.Id,
+            VehicleId = dto.VehicleId,
+            DriverId = dto.DriverId,
+            DriverName = dto.DriverName,
+            Title = dto.Title,
+            Description = dto.Description,
+            Severity = dto.Severity,
+            Status = dto.Status,
+            ReportedAt = dto.ReportedAt,
+            ResolvedAt = dto.ResolvedAt
         };
 
         // ── Trip ──

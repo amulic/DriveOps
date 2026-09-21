@@ -113,6 +113,24 @@ namespace DriveOps.API.Controllers
             return Ok(trip.ToResponse());
         }
 
+        [HttpPost("{id:guid}/decline")]
+        public async Task<IActionResult> DeclineTrip(Guid id, [FromBody] DeclineTripRequest request)
+        {
+            try
+            {
+                var trip = await _tripService.DeclineTripAsync(id, request.DriverId, request.Reason);
+                return Ok(trip.ToResponse());
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPost("{id:guid}/rate")]
         public async Task<IActionResult> RateTrip(Guid id, [FromBody] RateTripRequest request)
         {

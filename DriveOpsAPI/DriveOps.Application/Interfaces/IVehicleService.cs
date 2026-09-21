@@ -12,5 +12,7 @@ namespace DriveOps.Application.Interfaces
         Task<VehicleDto> AssignVehicleToDriverAsync(Guid vehicleId, Guid driverId);
         Task<VehicleDto> UnassignVehicleAsync(Guid vehicleId);
         Task DeleteVehicleAsync(Guid vehicleId);
+        Task<VehicleDefectReportDto> ReportVehicleDefectAsync(ReportVehicleDefectDto dto);
+        Task<IEnumerable<VehicleDefectReportDto>> GetVehicleDefectsAsync(Guid vehicleId);
     }
 }

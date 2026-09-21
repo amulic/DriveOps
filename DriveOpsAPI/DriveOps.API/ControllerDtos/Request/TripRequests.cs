@@ -33,6 +33,12 @@ namespace DriveOps.API.ControllerDtos.Request
         public string? Reason { get; set; }
     }
 
+    public class DeclineTripRequest
+    {
+        public Guid DriverId { get; set; }
+        public string? Reason { get; set; }
+    }
+
     public class RateTripRequest
     {
         public int Rating { get; set; }

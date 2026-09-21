@@ -311,6 +311,7 @@ class TripDetailsPanel extends ConsumerWidget {
       TripStatus.completed => (const Color(0xFF22C55E), 'Completed'),
       TripStatus.cancelled => (const Color(0xFFEF4444), 'Cancelled'),
       TripStatus.noDriverAvailable => (const Color(0xFFF59E0B), 'No Driver'),
+      TripStatus.declined => (const Color(0xFFF59E0B), 'Declined'),
       TripStatus.inProgress => (const Color(0xFF3B82F6), 'In Progress'),
       TripStatus.driverEnRoute => (const Color(0xFF8B5CF6), 'En Route'),
       TripStatus.assigned => (const Color(0xFF06B6D4), 'Assigned'),

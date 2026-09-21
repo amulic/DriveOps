@@ -20,6 +20,9 @@ namespace DriveOps.Application.DTOs
         public int? SeatingCapacity { get; init; }
         public Guid? AssignedDriverId { get; init; }
         public string? AssignedDriverName { get; init; }
+        public string? PhotoUrl { get; init; }
+        public string? InternalName { get; init; }
+        public DateTime? LastServiceDate { get; init; }
         public DateTime? CreatedAt { get; init; }
     }
 
@@ -36,6 +39,9 @@ namespace DriveOps.Application.DTOs
         public DateOnly RegistrationExpiryDate { get; set; }
         public FuelType FuelType { get; set; }
         public int? SeatingCapacity { get; set; }
+        public string? PhotoUrl { get; set; }
+        public string? InternalName { get; set; }
+        public DateTime? LastServiceDate { get; set; }
     }
 
     public class UpdateVehicleDto
@@ -47,5 +53,31 @@ namespace DriveOps.Application.DTOs
         public DateOnly? RegistrationExpiryDate { get; set; }
         public VehicleStatus? Status { get; set; }
         public int? Mileage { get; set; }
+        public string? PhotoUrl { get; set; }
+        public string? InternalName { get; set; }
+        public DateTime? LastServiceDate { get; set; }
+    }
+
+    public class ReportVehicleDefectDto
+    {
+        public Guid VehicleId { get; set; }
+        public Guid DriverId { get; set; }
+        public string Title { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public DefectSeverity Severity { get; set; } = DefectSeverity.Medium;
+    }
+
+    public record VehicleDefectReportDto
+    {
+        public Guid Id { get; init; }
+        public Guid VehicleId { get; init; }
+        public Guid DriverId { get; init; }
+        public string? DriverName { get; init; }
+        public string Title { get; init; } = null!;
+        public string Description { get; init; } = null!;
+        public DefectSeverity Severity { get; init; }
+        public string Status { get; init; } = "Reported";
+        public DateTime ReportedAt { get; init; }
+        public DateTime? ResolvedAt { get; init; }
     }
 }

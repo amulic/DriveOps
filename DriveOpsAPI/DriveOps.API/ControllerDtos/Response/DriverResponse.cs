@@ -22,6 +22,7 @@ namespace DriveOps.API.ControllerDtos.Response
         public bool? IsOnline { get; set; }
         public decimal? CurrentLatitude { get; set; }
         public decimal? CurrentLongitude { get; set; }
+        public string? ProfileImageUrl { get; set; }
         public DateTime? CreatedAt { get; set; }
     }
 }

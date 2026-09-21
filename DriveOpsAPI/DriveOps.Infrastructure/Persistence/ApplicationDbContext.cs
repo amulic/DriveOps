@@ -25,6 +25,8 @@ namespace DriveOps.Infrastructure.Persistence
 
         public virtual DbSet<Vehicle> Vehicles { get; set; }
 
+        public virtual DbSet<VehicleDefectReport> VehicleDefectReports { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -74,6 +76,7 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.Property(e => e.LastName).HasMaxLength(100);
                 entity.Property(e => e.LicenseNumber).HasMaxLength(50);
                 entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+                entity.Property(e => e.ProfileImageUrl).HasMaxLength(500);
                 entity.Property(e => e.Rating)
                     .HasDefaultValue(5.00m)
                     .HasColumnType("decimal(3, 2)");
@@ -152,10 +155,12 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.Property(e => e.Color).HasMaxLength(30);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.InsurancePolicyNumber).HasMaxLength(50);
+                entity.Property(e => e.InternalName).HasMaxLength(100);
                 entity.Property(e => e.LicensePlate).HasMaxLength(20);
                 entity.Property(e => e.Make).HasMaxLength(50);
                 entity.Property(e => e.Mileage).HasDefaultValue(0);
                 entity.Property(e => e.Model).HasMaxLength(50);
+                entity.Property(e => e.PhotoUrl).HasMaxLength(500);
                 entity.Property(e => e.SeatingCapacity).HasDefaultValue(4);
                 entity.Property(e => e.Status).HasDefaultValue(VehicleStatus.Available);
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
@@ -166,6 +171,25 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.HasOne(d => d.AssignedDriver).WithMany(p => p.Vehicles)
                     .HasForeignKey(d => d.AssignedDriverId)
                     .HasConstraintName("FK__Vehicles__Assign__4F7CD00D");
+            });
+
+            modelBuilder.Entity<VehicleDefectReport>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__VehicleDefectReports__3214EC07");
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
+                entity.Property(e => e.Title).HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("Reported");
+                entity.Property(e => e.ReportedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                entity.HasOne(d => d.Vehicle).WithMany()
+                    .HasForeignKey(d => d.VehicleId)
+                    .HasConstraintName("FK__VehicleDefectReports__VehicleId");
+
+                entity.HasOne(d => d.Driver).WithMany()
+                    .HasForeignKey(d => d.DriverId)
+                    .HasConstraintName("FK__VehicleDefectReports__DriverId");
             });
 
             OnModelCreatingPartial(modelBuilder);

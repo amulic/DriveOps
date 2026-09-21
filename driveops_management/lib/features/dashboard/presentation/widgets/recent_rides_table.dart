@@ -132,6 +132,9 @@ class RecentRidesTable extends ConsumerWidget {
       case TripStatus.noDriverAvailable:
         color = const Color(0xFFF59E0B);
         label = 'No Driver';
+      case TripStatus.declined:
+        color = const Color(0xFFF59E0B);
+        label = 'Declined';
     }
 
     return Container(

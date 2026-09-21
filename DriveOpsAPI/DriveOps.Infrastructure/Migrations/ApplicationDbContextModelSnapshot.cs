@@ -143,6 +143,10 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<string>("ProfileImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
                     b.Property<decimal?>("Rating")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(3, 2)")
@@ -375,6 +379,13 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<string>("InternalName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("LastServiceDate")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("LicensePlate")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -394,6 +405,10 @@ namespace DriveOps.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<DateOnly>("RegistrationExpiryDate")
                         .HasColumnType("date");
@@ -434,6 +449,57 @@ namespace DriveOps.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Vehicles");
+                });
+
+            modelBuilder.Entity("DriveOps.Model.Entity.VehicleDefectReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasDefaultValueSql("(UUID())");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("ReportedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("Reported");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<Guid>("VehicleId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id")
+                        .HasName("PK__VehicleDefectReports__3214EC07");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("VehicleId");
+
+                    b.ToTable("VehicleDefectReports");
                 });
 
             modelBuilder.Entity("DriveOps.Model.Entity.Trip", b =>
@@ -480,6 +546,27 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasConstraintName("FK__Vehicles__Assign__4F7CD00D");
 
                     b.Navigation("AssignedDriver");
+                });
+
+            modelBuilder.Entity("DriveOps.Model.Entity.VehicleDefectReport", b =>
+                {
+                    b.HasOne("DriveOps.Model.Entity.Driver", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK__VehicleDefectReports__DriverId");
+
+                    b.HasOne("DriveOps.Model.Entity.Vehicle", "Vehicle")
+                        .WithMany()
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK__VehicleDefectReports__VehicleId");
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("DriveOps.Model.Entity.Customer", b =>

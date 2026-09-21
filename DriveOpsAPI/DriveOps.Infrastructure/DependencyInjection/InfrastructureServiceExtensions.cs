@@ -23,6 +23,7 @@ namespace DriveOps.Infrastructure.DependencyInjection
             services.AddScoped<IDriverRepository, DriverRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<IVehicleRepository, VehicleRepository>();
+            services.AddScoped<IVehicleDefectReportRepository, VehicleDefectReportRepository>();
             services.AddScoped<ITripRepository, TripRepository>();
             services.AddScoped<ITripRouteRepository, TripRouteRepository>();
 

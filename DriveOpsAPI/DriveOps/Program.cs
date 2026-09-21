@@ -80,15 +80,20 @@ builder.Services.AddAuthentication("Bearer")
        options.Authority = builder.Configuration["Keycloak:Authority"];
        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
-       options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-       {
-           ValidateAudience = false,
-           ValidateIssuer = true,
-           ValidateLifetime = true,
-           ValidateIssuerSigningKey = true,
-           ValidIssuer = builder.Configuration["Keycloak:Authority"],
-           ClockSkew = TimeSpan.Zero
-       };
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            // Accept tokens issued via localhost (desktop) or the Android emulator loopback alias (mobile dev).
+            ValidIssuers = new[]
+            {
+                builder.Configuration["Keycloak:Authority"],
+                builder.Configuration["Keycloak:Authority"]?.Replace("localhost", "10.0.2.2")
+            },
+            ClockSkew = TimeSpan.Zero
+        };
 
        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
        {

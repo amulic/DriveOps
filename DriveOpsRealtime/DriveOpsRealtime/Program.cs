@@ -54,7 +54,12 @@ builder.Services.AddAuthentication("Bearer")
             ValidateIssuer = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Keycloak:Authority"],
+            // Accept tokens issued via localhost (desktop) or the Android emulator loopback alias (mobile dev).
+            ValidIssuers = new[]
+            {
+                builder.Configuration["Keycloak:Authority"],
+                builder.Configuration["Keycloak:Authority"]?.Replace("localhost", "10.0.2.2")
+            },
             ClockSkew = TimeSpan.Zero,
             RoleClaimType = System.Security.Claims.ClaimTypes.Role
         };

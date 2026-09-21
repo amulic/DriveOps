@@ -36,6 +36,12 @@ public partial class Vehicle
 
     public Guid? AssignedDriverId { get; set; }
 
+    public string? PhotoUrl { get; set; }
+
+    public string? InternalName { get; set; }
+
+    public DateTime? LastServiceDate { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
