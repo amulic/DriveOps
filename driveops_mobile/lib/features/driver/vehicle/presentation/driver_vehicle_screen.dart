@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:driveops_mobile/features/driver/vehicle/presentation/widgets/report_defect_dialog.dart';
+import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/shared/models/vehicle.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
@@ -19,7 +20,12 @@ class DriverVehicleScreen extends ConsumerWidget {
         title: const Text('Vehicle'),
       ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(driverVehicleProvider),
+        // Bypass the 5-minute Hive vehicle-list cache so a fresh assignment
+        // made in the management app shows up immediately.
+        onRefresh: () async {
+          await ref.read(cacheServiceProvider).remove(CacheService.vehiclesAll);
+          ref.invalidate(driverVehicleProvider);
+        },
         child: vehicleAsync.when(
           loading: () => const Center(
             child: CircularProgressIndicator(color: Color(0xFF3B82F6)),

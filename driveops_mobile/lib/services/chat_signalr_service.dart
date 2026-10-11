@@ -6,8 +6,16 @@ class ChatSignalrService {
   HubConnection? _connection;
   final _handlers = <String, List<void Function(List<dynamic>?)>>{};
   final _connectionStateController = StreamController<HubConnectionState>.broadcast();
+  final _reconnectedController = StreamController<void>.broadcast();
+
+  /// Conversation groups this client has joined. Server-side group membership
+  /// is per-connection, so it must be re-established after every reconnect.
+  final _joinedConversations = <String>{};
 
   Stream<HubConnectionState> get connectionState => _connectionStateController.stream;
+
+  /// Fires after a successful automatic reconnect (not on the initial connect).
+  Stream<void> get onReconnected => _reconnectedController.stream;
 
   Future<void> connect(String accessToken) async {
     if (_connection?.state == HubConnectionState.Connected) {
@@ -42,8 +50,17 @@ class ChatSignalrService {
       _connectionStateController.add(HubConnectionState.Reconnecting);
     });
 
-    _connection!.onreconnected(({connectionId}) {
+    _connection!.onreconnected(({connectionId}) async {
       _connectionStateController.add(HubConnectionState.Connected);
+      // Group membership is lost on reconnect — re-join all conversation groups.
+      for (final id in _joinedConversations.toList()) {
+        try {
+          await _connection?.invoke('JoinConversation', args: [id]);
+        } catch (_) {
+          // Best-effort; the next history refetch still restores state.
+        }
+      }
+      _reconnectedController.add(null);
     });
 
     await _connection!.start();
@@ -51,6 +68,7 @@ class ChatSignalrService {
   }
 
   Future<void> disconnect() async {
+    _joinedConversations.clear();
     await _connection?.stop();
     _connection = null;
   }
@@ -64,10 +82,12 @@ class ChatSignalrService {
   }
 
   Future<void> joinConversationGroup(String conversationId) async {
+    _joinedConversations.add(conversationId);
     await _connection?.invoke('JoinConversation', args: [conversationId]);
   }
 
   Future<void> leaveConversationGroup(String conversationId) async {
+    _joinedConversations.remove(conversationId);
     await _connection?.invoke('LeaveConversation', args: [conversationId]);
   }
 
@@ -88,5 +108,6 @@ class ChatSignalrService {
 
   void dispose() {
     _connectionStateController.close();
+    _reconnectedController.close();
   }
 }

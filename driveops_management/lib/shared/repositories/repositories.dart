@@ -3,6 +3,7 @@ import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/models/route_point.dart';
 import 'package:driveops_management/shared/models/recommended_driver.dart';
+import 'package:driveops_management/shared/models/keycloak_candidate.dart';
 import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
 
 abstract class DriverRepository {
@@ -13,6 +14,9 @@ abstract class DriverRepository {
   Future<Driver?> getDriverByKeycloakId(String keycloakId);
   Future<List<Driver>> getNearbyDrivers(double latitude, double longitude, double radiusKm);
   Future<Driver> createDriver(CreateDriverRequest request);
+  Future<List<KeycloakCandidate>> getPromotionCandidates(String search);
+  Future<Driver> promoteDriver(CreateDriverRequest request);
+  Future<Driver> onboardDriver(OnboardDriverRequest request);
   Future<Driver> updateDriver(String id, UpdateDriverRequest request);
   Future<void> suspendDriver(String id);
   Future<void> activateDriver(String id);

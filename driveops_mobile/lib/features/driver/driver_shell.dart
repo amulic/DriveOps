@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:driveops_mobile/features/driver/chat/presentation/providers/chat_signalr_provider.dart';
 import 'package:driveops_mobile/features/driver/chat/presentation/providers/total_unread_provider.dart';
+import 'package:driveops_mobile/features/driver/pending_approval_screen.dart';
+import 'package:driveops_mobile/services/cache_service.dart';
+import 'package:driveops_mobile/shared/models/driver.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
 /// Driver area shell — hosts the 5-tab bottom navigation:
@@ -12,7 +15,15 @@ class DriverShell extends ConsumerWidget {
 
   const DriverShell({super.key, required this.navigationShell});
 
-  void _onDestinationSelected(int index) {
+  void _onDestinationSelected(WidgetRef ref, int index) {
+    if (index == 4) {
+      // Vehicle tab: always reflect the current assignment. Assignments are
+      // made in the management app, which cannot bust this device's cache —
+      // drop the cached vehicle list, then refetch.
+      ref.read(cacheServiceProvider).remove(CacheService.vehiclesAll).then((_) {
+        ref.invalidate(driverVehicleProvider);
+      });
+    }
     navigationShell.goBranch(
       index,
       initialLocation: index == navigationShell.currentIndex,
@@ -21,10 +32,18 @@ class DriverShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Keep the chat hub connected for as long as the driver shell is alive.
-    ref.watch(chatSignalrConnectionProvider);
     // Resolves the domain driver record (and warms the cache for all tabs).
-    ref.watch(currentDriverProvider);
+    final driverAsync = ref.watch(currentDriverProvider);
+
+    // Approval gate: a Pending driver is authenticated but locked out of every
+    // driver feature until an admin activates them from the management app.
+    final driver = driverAsync.value;
+    if (driver != null && driver.status == DriverStatus.pending) {
+      return PendingApprovalScreen(driver: driver);
+    }
+
+    // Keep the chat hub connected for as long as the (approved) driver shell is alive.
+    ref.watch(chatSignalrConnectionProvider);
 
     final unread = ref.watch(totalUnreadProvider);
 
@@ -35,7 +54,7 @@ class DriverShell extends ConsumerWidget {
         backgroundColor: const Color(0xFF1A1A2E),
         indicatorColor: const Color(0xFF3B82F6).withValues(alpha: 0.25),
         selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _onDestinationSelected,
+        onDestinationSelected: (index) => _onDestinationSelected(ref, index),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: [
           const NavigationDestination(

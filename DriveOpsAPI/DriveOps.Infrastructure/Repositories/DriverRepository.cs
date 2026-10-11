@@ -46,6 +46,14 @@ namespace DriveOps.Infrastructure.Repositories
                 .FirstOrDefaultAsync(d => d.KeycloakId == keycloakId);
         }
 
+        public async Task<List<Guid>> GetExistingKeycloakIdsAsync(IEnumerable<Guid> keycloakIds)
+        {
+            return await _dbSet
+                .Where(d => keycloakIds.Contains(d.KeycloakId))
+                .Select(d => d.KeycloakId)
+                .ToListAsync();
+        }
+
         public async Task<Driver?> GetWithVehiclesAsync(Guid driverId)
         {
             return await _dbSet

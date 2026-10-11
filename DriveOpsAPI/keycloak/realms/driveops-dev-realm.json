@@ -208,6 +208,17 @@
       ],
       "realmRoles": ["default-roles-driveops-dev", "customer"],
       "requiredActions": []
+    },
+    {
+      "id": "b1b2c3d4-0004-4000-8000-000000000004",
+      "username": "service-account-driveops-backend",
+      "enabled": true,
+      "emailVerified": false,
+      "serviceAccountClientId": "driveops-backend",
+      "clientRoles": {
+        "realm-management": ["view-users", "manage-users"]
+      },
+      "requiredActions": []
     }
   ],
   "roles": {
@@ -227,6 +238,25 @@
       {
         "name": "customer",
         "description": "Customer role for the mobile app"
+      },
+      {
+        "name": "default-roles-driveops-dev",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "offline_access",
+            "uma_authorization",
+            "customer"
+          ],
+          "client": {
+            "account": [
+              "view-profile",
+              "manage-account"
+            ]
+          }
+        },
+        "clientRole": false
       }
     ]
   },
@@ -240,7 +270,7 @@
       "secret": "driveops-backend-secret-dev",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": false,
+      "serviceAccountsEnabled": true,
       "publicClient": false,
       "frontchannelLogout": true,
       "protocol": "openid-connect",

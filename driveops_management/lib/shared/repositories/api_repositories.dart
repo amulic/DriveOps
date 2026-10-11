@@ -3,6 +3,7 @@ import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/models/route_point.dart';
 import 'package:driveops_management/shared/models/recommended_driver.dart';
+import 'package:driveops_management/shared/models/keycloak_candidate.dart';
 import 'package:driveops_management/services/driver_api_service.dart';
 import 'package:driveops_management/services/trip_api_service.dart';
 import 'package:driveops_management/services/vehicle_api_service.dart';
@@ -82,40 +83,68 @@ class ApiDriverRepository implements DriverRepository {
     );
   }
 
+  // The driver list caches are interdependent: a status/online change moves a
+  // driver between the all/active/available lists, so every mutation drops all
+  // three (plus the single-driver entry). Without this the Drivers tab, Assign
+  // Driver and New Conversation lists stay stale for up to the 5-min list TTL —
+  // e.g. an approved (Pending→Active) driver would not become messagable.
+  Future<void> _invalidateDriverCaches([String? id]) async {
+    await _cache.remove(CacheService.driversAll);
+    await _cache.remove(CacheService.driversActive);
+    await _cache.remove(CacheService.driversAvailable);
+    if (id != null) await _cache.remove(CacheService.driver(id));
+  }
+
   @override
   Future<Driver> createDriver(CreateDriverRequest request) async {
     final driver = await _api.createDriver(request);
-    await _cache.remove(CacheService.driversAll);
+    await _invalidateDriverCaches();
+    return driver;
+  }
+
+  // Promotion candidates are live Keycloak data — not cached.
+  @override
+  Future<List<KeycloakCandidate>> getPromotionCandidates(String search) {
+    return _api.getPromotionCandidates(search);
+  }
+
+  @override
+  Future<Driver> promoteDriver(CreateDriverRequest request) async {
+    final driver = await _api.promoteDriver(request);
+    await _invalidateDriverCaches();
+    return driver;
+  }
+
+  @override
+  Future<Driver> onboardDriver(OnboardDriverRequest request) async {
+    final driver = await _api.onboardDriver(request);
+    await _invalidateDriverCaches();
     return driver;
   }
 
   @override
   Future<Driver> updateDriver(String id, UpdateDriverRequest request) async {
     final driver = await _api.updateDriver(id, request);
-    await _cache.remove(CacheService.driversAll);
-    await _cache.remove(CacheService.driver(id));
+    await _invalidateDriverCaches(id);
     return driver;
   }
 
   @override
   Future<void> suspendDriver(String id) async {
     await _api.suspendDriver(id);
-    await _cache.remove(CacheService.driversAll);
-    await _cache.remove(CacheService.driver(id));
+    await _invalidateDriverCaches(id);
   }
 
   @override
   Future<void> activateDriver(String id) async {
     await _api.activateDriver(id);
-    await _cache.remove(CacheService.driversAll);
-    await _cache.remove(CacheService.driver(id));
+    await _invalidateDriverCaches(id);
   }
 
   @override
   Future<void> setDriverStatus(String id, bool isOnline) async {
     await _api.setDriverStatus(id, SetDriverStatusRequest(isOnline: isOnline));
-    await _cache.remove(CacheService.driversAll);
-    await _cache.remove(CacheService.driver(id));
+    await _invalidateDriverCaches(id);
   }
 }
 

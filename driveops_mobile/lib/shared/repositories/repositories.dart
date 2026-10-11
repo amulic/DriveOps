@@ -6,6 +6,7 @@ import 'package:driveops_mobile/shared/models/route_point.dart';
 import 'package:driveops_mobile/shared/models/recommended_driver.dart';
 import 'package:driveops_mobile/shared/dtos/requests/driver_requests.dart';
 import 'package:driveops_mobile/shared/dtos/requests/vehicle_requests.dart';
+import 'package:driveops_mobile/shared/dtos/requests/customer_requests.dart';
 
 abstract class DriverRepository {
   Future<List<Driver>> getAllDrivers();
@@ -47,4 +48,5 @@ abstract class VehicleRepository {
 
 abstract class CustomerRepository {
   Future<Customer?> getCustomerByKeycloakId(String keycloakId);
+  Future<Customer> createCustomer(CreateCustomerRequest request);
 }

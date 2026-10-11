@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/services/api_service.dart';
 import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/models/keycloak_candidate.dart';
 import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
 import 'package:driveops_management/config/api_config.dart';
 
@@ -78,6 +79,34 @@ class DriverApiService {
   Future<Driver> createDriver(CreateDriverRequest request) async {
     final response = await _api.post(
       ApiConfig.driverEndpoint,
+      data: request.toJson(),
+    );
+    return Driver.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<KeycloakCandidate>> getPromotionCandidates(String search) async {
+    final response = await _api.get(
+      '${ApiConfig.driverEndpoint}/candidates',
+      queryParameters: {'search': search},
+    );
+    final items = response.data as List<dynamic>;
+    return items
+        .map((json) =>
+            KeycloakCandidate.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Driver> promoteDriver(CreateDriverRequest request) async {
+    final response = await _api.post(
+      '${ApiConfig.driverEndpoint}/promote',
+      data: request.toJson(),
+    );
+    return Driver.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<Driver> onboardDriver(OnboardDriverRequest request) async {
+    final response = await _api.post(
+      '${ApiConfig.driverEndpoint}/onboard',
       data: request.toJson(),
     );
     return Driver.fromJson(response.data as Map<String, dynamic>);

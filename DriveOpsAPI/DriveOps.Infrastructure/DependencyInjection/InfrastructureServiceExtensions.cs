@@ -33,6 +33,10 @@ namespace DriveOps.Infrastructure.DependencyInjection
                 client.BaseAddress = new Uri("http://router.project-osrm.org/");
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
+            services.AddHttpClient<IKeycloakAdminService, KeycloakAdminService>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+            });
 
             return services;
         }

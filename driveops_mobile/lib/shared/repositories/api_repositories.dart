@@ -13,6 +13,7 @@ import 'package:driveops_mobile/shared/repositories/repositories.dart';
 import 'package:driveops_mobile/shared/dtos/requests/driver_requests.dart';
 import 'package:driveops_mobile/shared/dtos/requests/vehicle_requests.dart';
 import 'package:driveops_mobile/shared/dtos/requests/trip_requests.dart';
+import 'package:driveops_mobile/shared/dtos/requests/customer_requests.dart';
 
 class ApiDriverRepository implements DriverRepository {
   final DriverApiService _api;
@@ -319,5 +320,10 @@ class ApiCustomerRepository implements CustomerRepository {
   @override
   Future<Customer?> getCustomerByKeycloakId(String keycloakId) {
     return _api.getCustomerByKeycloakId(keycloakId);
+  }
+
+  @override
+  Future<Customer> createCustomer(CreateCustomerRequest request) {
+    return _api.createCustomer(request);
   }
 }

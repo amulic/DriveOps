@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/services/signalr_service.dart';
@@ -62,6 +61,9 @@ final fleetUpdateListenerProvider = Provider<void>((ref) {
           ref.invalidate(driversAsyncProvider);
           ref.invalidate(filteredDriversProvider);
           ref.invalidate(allDriversProvider);
+          // Keep the messagable/assignable lists in sync when a driver is
+          // approved, suspended or toggles online from another client.
+          ref.invalidate(activeDriversProvider);
           break;
       }
     } catch (_) {
