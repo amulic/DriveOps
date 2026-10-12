@@ -28,6 +28,7 @@ class ApiConfig {
 
   static const String notificationHubPath = '/hubs/notification';
   static const String chatHubPath = '/hubs/chat';
+  static const String locationHubPath = '/hubs/location';
 }
 
 class KeycloakConfig {

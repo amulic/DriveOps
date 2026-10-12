@@ -189,11 +189,37 @@ class ApiTripRepository implements TripRepository {
   }
 
   @override
+  Future<Trip> startTrip(String tripId) async {
+    final trip = await _api.startTrip(tripId);
+    await _invalidateTripCaches(trip);
+    return trip;
+  }
+
+  @override
+  Future<Trip> completeTrip(String tripId, double actualDistanceKm) async {
+    final trip = await _api.completeTrip(
+      tripId,
+      CompleteTripRequest(actualDistance: actualDistanceKm),
+    );
+    await _invalidateTripCaches(trip);
+    return trip;
+  }
+
+  @override
   Future<Trip> cancelTrip(String tripId, {String? reason}) async {
     final trip = await _api.cancelTrip(tripId, CancelTripRequest(reason: reason));
     await _cache.remove(CacheService.tripsAll);
     await _cache.remove(CacheService.trip(tripId));
     return trip;
+  }
+
+  Future<void> _invalidateTripCaches(Trip trip) async {
+    await _cache.remove(CacheService.tripsAll);
+    await _cache.remove(CacheService.trip(trip.id));
+    final driverId = trip.driverId;
+    if (driverId != null) {
+      await _cache.remove(CacheService.tripsDriver(driverId));
+    }
   }
 
   @override
@@ -208,7 +234,12 @@ class ApiTripRepository implements TripRepository {
     return trip;
   }
 
-  // Route breadcrumbs and recommendations are live data â€” not cached.
+  // Route estimates, breadcrumbs and recommendations are live data — not cached.
+  @override
+  Future<TripEstimateResponse> estimateTrip(TripEstimateRequest request) {
+    return _api.estimateTrip(request);
+  }
+
   @override
   Future<List<RoutePoint>> getTripRoute(String tripId) {
     return _api.getTripRoute(tripId);

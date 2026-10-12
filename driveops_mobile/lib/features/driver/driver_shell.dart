@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:driveops_mobile/features/driver/chat/presentation/providers/chat_signalr_provider.dart';
 import 'package:driveops_mobile/features/driver/chat/presentation/providers/total_unread_provider.dart';
+import 'package:driveops_mobile/features/driver/providers/map_providers.dart';
 import 'package:driveops_mobile/features/driver/pending_approval_screen.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
@@ -16,6 +17,11 @@ class DriverShell extends ConsumerWidget {
   const DriverShell({super.key, required this.navigationShell});
 
   void _onDestinationSelected(WidgetRef ref, int index) {
+    if (index == 2) {
+      // Map tab: refresh the active trip so a fresh assignment shows up
+      // immediately (the 30 s poll is the fallback).
+      ref.invalidate(driverActiveTripProvider);
+    }
     if (index == 4) {
       // Vehicle tab: always reflect the current assignment. Assignments are
       // made in the management app, which cannot bust this device's cache —
@@ -44,6 +50,12 @@ class DriverShell extends ConsumerWidget {
 
     // Keep the chat hub connected for as long as the (approved) driver shell is alive.
     ref.watch(chatSignalrConnectionProvider);
+
+    // Location hub + trip push notifications + GPS streaming while a trip is
+    // active (streaming self-disables when there is no active trip).
+    ref.watch(locationSignalrConnectionProvider);
+    ref.watch(driverTripPushProvider);
+    ref.watch(driverLocationStreamingProvider);
 
     final unread = ref.watch(totalUnreadProvider);
 

@@ -7,6 +7,7 @@ import 'package:driveops_mobile/shared/models/recommended_driver.dart';
 import 'package:driveops_mobile/shared/dtos/requests/driver_requests.dart';
 import 'package:driveops_mobile/shared/dtos/requests/vehicle_requests.dart';
 import 'package:driveops_mobile/shared/dtos/requests/customer_requests.dart';
+import 'package:driveops_mobile/shared/dtos/requests/trip_requests.dart';
 
 abstract class DriverRepository {
   Future<List<Driver>> getAllDrivers();
@@ -29,8 +30,14 @@ abstract class TripRepository {
   Future<List<Trip>> getTripsByDriver(String driverId);
   Future<List<Trip>> getActiveTripsByDriver(String driverId);
   Future<Trip> assignDriver(String tripId, String driverId, String vehicleId);
+  Future<Trip> startTrip(String tripId);
+  Future<Trip> completeTrip(String tripId, double actualDistanceKm);
   Future<Trip> cancelTrip(String tripId, {String? reason});
   Future<Trip> declineTrip(String tripId, String driverId, {String? reason});
+
+  /// A→B route estimate (distance/duration/fare + polyline points) without
+  /// creating a trip — used by the driver map to draw the current leg.
+  Future<TripEstimateResponse> estimateTrip(TripEstimateRequest request);
   Future<List<RoutePoint>> getTripRoute(String tripId);
   Future<List<RecommendedDriver>> getRecommendedDrivers(String tripId, {int count = 5});
 }
