@@ -2,6 +2,7 @@ using DriveOps.API.ControllerDtos.Request;
 using DriveOps.API.ControllerDtos.Response;
 using DriveOps.API.Mappings;
 using DriveOps.Application.DTOs;
+using DriveOps.Application.Exceptions;
 using DriveOps.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -70,8 +71,15 @@ namespace DriveOps.API.Controllers
         [HttpPost]
         public async Task<IActionResult> RequestTrip([FromBody] CreateTripRequest request)
         {
-            var trip = await _tripService.RequestTripAsync(request.ToApplicationDto());
-            return CreatedAtAction(nameof(GetTripById), new { id = trip.Id }, trip.ToResponse());
+            try
+            {
+                var trip = await _tripService.RequestTripAsync(request.ToApplicationDto());
+                return CreatedAtAction(nameof(GetTripById), new { id = trip.Id }, trip.ToResponse());
+            }
+            catch (ActiveTripExistsException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
         }
 
         [HttpPost("estimate")]

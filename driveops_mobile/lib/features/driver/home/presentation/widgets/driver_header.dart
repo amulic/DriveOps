@@ -4,7 +4,7 @@ import 'package:driveops_mobile/features/driver/providers/driver_providers.dart'
 import 'package:driveops_mobile/shared/models/driver.dart';
 
 /// Profile card: avatar, name, and the Active slider that controls whether
-/// the driver receives ride requests.
+/// the driver receives trip requests.
 class DriverHeader extends ConsumerWidget {
   final Driver driver;
 

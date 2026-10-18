@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
-import 'widgets/trip_status_chip.dart';
+import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
 /// Full detail view of a single trip, opened from the history list.
 class TripDetailsScreen extends StatelessWidget {

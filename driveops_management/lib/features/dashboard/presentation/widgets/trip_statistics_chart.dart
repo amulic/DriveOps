@@ -3,8 +3,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 
-class RideStatisticsChart extends ConsumerWidget {
-  const RideStatisticsChart({super.key});
+class TripStatisticsChart extends ConsumerWidget {
+  const TripStatisticsChart({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,7 +18,7 @@ class RideStatisticsChart extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Ride Statistics',
+              'Trip Statistics',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,

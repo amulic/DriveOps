@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_mobile/services/chat_api_service.dart';
 import 'package:driveops_mobile/shared/models/conversation_summary.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/providers/chat_signalr_provider.dart';
+import 'package:driveops_mobile/features/chat/presentation/providers/chat_signalr_provider.dart';
 
 final conversationsProvider = AsyncNotifierProvider<ConversationsNotifier, List<ConversationSummary>>(ConversationsNotifier.new);
 

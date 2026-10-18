@@ -3,18 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
-import 'package:driveops_management/features/rides/presentation/providers/rides_providers.dart';
-import 'package:driveops_management/features/rides/presentation/widgets/trip_details_panel.dart';
-import 'package:driveops_management/features/rides/presentation/widgets/cancel_trip_dialog.dart';
+import 'package:driveops_management/features/trips/presentation/providers/trips_providers.dart';
+import 'package:driveops_management/features/trips/presentation/widgets/trip_details_panel.dart';
+import 'package:driveops_management/features/trips/presentation/widgets/cancel_trip_dialog.dart';
+import 'package:driveops_management/services/cache_service.dart';
 
-class RidesScreen extends ConsumerStatefulWidget {
-  const RidesScreen({super.key});
+class TripsScreen extends ConsumerStatefulWidget {
+  const TripsScreen({super.key});
 
   @override
-  ConsumerState<RidesScreen> createState() => _RidesScreenState();
+  ConsumerState<TripsScreen> createState() => _TripsScreenState();
 }
 
-class _RidesScreenState extends ConsumerState<RidesScreen> {
+class _TripsScreenState extends ConsumerState<TripsScreen> {
   @override
   Widget build(BuildContext context) {
     final tripsAsync = ref.watch(filteredTripsProvider);
@@ -46,7 +47,7 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
                       children: [
                         const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 48),
                         const SizedBox(height: 16),
-                        Text('Failed to load rides: $error', style: const TextStyle(color: Colors.white54)),
+                        Text('Failed to load trips: $error', style: const TextStyle(color: Colors.white54)),
                         const SizedBox(height: 16),
                         OutlinedButton(
                           onPressed: () => ref.invalidate(tripsAsyncProvider),
@@ -72,7 +73,7 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
       child: Row(
         children: [
           const Text(
-            'Rides',
+            'Trips',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -95,13 +96,22 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
               ),
             ),
           ),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Refresh trips',
+            icon: const Icon(Icons.refresh, color: Colors.white54, size: 20),
+            onPressed: () async {
+              await ref.read(cacheServiceProvider).remove(CacheService.tripsAll);
+              ref.invalidate(tripsAsyncProvider);
+            },
+          ),
         ],
       ),
     );
   }
 
   Widget _buildToolbar() {
-    final selectedStatus = ref.watch(ridesStatusFilterProvider);
+    final selectedStatus = ref.watch(tripsStatusFilterProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -111,11 +121,11 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
             width: 280,
             child: TextField(
               onChanged: (value) {
-                ref.read(ridesSearchQueryProvider.notifier).update(value);
+                ref.read(tripsSearchQueryProvider.notifier).update(value);
               },
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Search rides...',
+                hintText: 'Search trips...',
                 hintStyle: const TextStyle(color: Colors.white38),
                 prefixIcon: const Icon(Icons.search, color: Colors.white54),
                 filled: true,
@@ -157,7 +167,7 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
               label: Text(entry.key),
               selected: isSelected,
               onSelected: (_) {
-                ref.read(ridesStatusFilterProvider.notifier).update(
+                ref.read(tripsStatusFilterProvider.notifier).update(
                     isSelected ? null : entry.value);
               },
               selectedColor: const Color(0xFF3B82F6).withValues(alpha: 0.2),
@@ -437,7 +447,7 @@ class _RidesScreenState extends ConsumerState<RidesScreen> {
               children: [
                 Icon(Icons.cancel, color: Color(0xFFEF4444), size: 18),
                 SizedBox(width: 8),
-                Text('Cancel Ride',
+                Text('Cancel Trip',
                     style: TextStyle(color: Color(0xFFEF4444))),
               ],
             ),

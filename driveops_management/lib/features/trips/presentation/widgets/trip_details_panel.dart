@@ -4,10 +4,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/route_point.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
-import 'package:driveops_management/features/rides/presentation/providers/rides_providers.dart';
-import 'package:driveops_management/features/rides/presentation/widgets/trip_map_view.dart';
-import 'package:driveops_management/features/rides/presentation/widgets/recommended_drivers_section.dart';
-import 'package:driveops_management/features/rides/presentation/widgets/cancel_trip_dialog.dart';
+import 'package:driveops_management/features/trips/presentation/providers/trips_providers.dart';
+import 'package:driveops_management/features/trips/presentation/widgets/trip_map_view.dart';
+import 'package:driveops_management/features/trips/presentation/widgets/recommended_drivers_section.dart';
+import 'package:driveops_management/features/trips/presentation/widgets/cancel_trip_dialog.dart';
 
 /// Right-side panel for a selected trip: map, full details and contextual
 /// actions. Fixed ~440px width, full height.
@@ -229,7 +229,7 @@ class TripDetailsPanel extends ConsumerWidget {
         ),
         onPressed: () => _cancelTrip(context, ref, trip),
         icon: const Icon(Icons.cancel, size: 16),
-        label: const Text('Cancel Ride'),
+        label: const Text('Cancel Trip'),
       ),
     );
   }

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:driveops_management/features/dashboard/presentation/widgets/stats_card.dart';
-import 'package:driveops_management/features/dashboard/presentation/widgets/recent_rides_table.dart';
-import 'package:driveops_management/features/dashboard/presentation/widgets/ride_statistics_chart.dart';
+import 'package:driveops_management/features/dashboard/presentation/widgets/recent_trips_table.dart';
+import 'package:driveops_management/features/dashboard/presentation/widgets/trip_statistics_chart.dart';
 import 'package:driveops_management/features/dashboard/presentation/widgets/vehicles_service_table.dart';
 import 'package:driveops_management/features/dashboard/presentation/widgets/driver_scoreboard.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
@@ -137,9 +137,9 @@ class DashboardScreen extends ConsumerWidget {
     return const Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(flex: 2, child: RecentRidesTable()),
+        Expanded(flex: 2, child: RecentTripsTable()),
         SizedBox(width: 16),
-        Expanded(child: RideStatisticsChart()),
+        Expanded(child: TripStatisticsChart()),
       ],
     );
   }

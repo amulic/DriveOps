@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
-import 'trip_status_chip.dart';
+import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
 class TripListTile extends StatelessWidget {
   final Trip trip;

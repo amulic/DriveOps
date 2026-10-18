@@ -1,9 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
-/// Resolves display names for chat participants (Keycloak subs) by probing
-/// the driver repository first, then the customer repository — drivers chat
-/// with customers, so both lookups are needed.
 final userNamesProvider = FutureProvider.family<Map<String, String>, String>((ref, idsKey) async {
   if (idsKey.isEmpty) return {};
   final keycloakIds = idsKey.split(',');
@@ -21,9 +18,7 @@ final userNamesProvider = FutureProvider.family<Map<String, String>, String>((re
       if (customer != null) {
         result[kcId] = customer.name;
       }
-    } catch (_) {
-      // ignore — single lookup failures shouldn't break the whole batch
-    }
+    } catch (_) {}
   }
   return result;
 });

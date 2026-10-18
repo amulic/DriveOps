@@ -9,9 +9,9 @@ import 'package:driveops_mobile/shared/location/current_position_provider.dart';
 import 'package:driveops_mobile/shared/models/route_point.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
+import 'package:driveops_mobile/shared/providers/notification_signalr_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 import 'package:driveops_mobile/shared/widgets/map/map_utils.dart';
-import 'package:driveops_mobile/features/driver/providers/driver_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Location hub connection

@@ -2,9 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_mobile/shared/models/conversation_summary.dart';
 import 'package:driveops_mobile/services/chat_api_service.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/providers/conversations_provider.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/providers/user_names_provider.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/chat_thread_screen.dart';
+import 'package:driveops_mobile/features/chat/presentation/providers/conversations_provider.dart';
+import 'package:driveops_mobile/features/chat/presentation/providers/user_names_provider.dart';
+import 'package:driveops_mobile/features/chat/presentation/chat_thread_screen.dart';
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
 import 'package:driveops_mobile/shared/utils/id_display.dart';
 
@@ -119,7 +119,7 @@ class DriverChatScreen extends ConsumerWidget {
             const Text('No conversations yet',
                 style: TextStyle(color: Colors.white54, fontSize: 16)),
             const SizedBox(height: 8),
-            const Text('Trip chats appear once a ride is assigned to you',
+            const Text('Trip chats appear once a trip is assigned to you',
                 style: TextStyle(color: Colors.white38, fontSize: 14)),
           ],
         ),

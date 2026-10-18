@@ -72,14 +72,14 @@ class DriverHistoryScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFF0F0F1A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A2E),
-        title: const Text('Ride History'),
+        title: const Text('Trip History'),
         actions: [
           IconButton(
             icon: Badge(
               isLabelVisible: filter.isActive,
               child: const Icon(Icons.filter_list),
             ),
-            tooltip: 'Filter rides',
+            tooltip: 'Filter trips',
             onPressed: () async {
               final result = await showDialog<TripFilter>(
                 context: context,
@@ -106,7 +106,7 @@ class DriverHistoryScreen extends ConsumerWidget {
                     color: Color(0xFFEF4444), size: 48),
                 const SizedBox(height: 16),
                 Text(
-                  'Failed to load rides: $e',
+                  'Failed to load trips: $e',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white70),
                 ),
@@ -130,8 +130,8 @@ class DriverHistoryScreen extends ConsumerWidget {
             return Center(
               child: Text(
                 filter.isActive
-                    ? 'No rides match the current filters.'
-                    : 'No rides yet.',
+                    ? 'No trips match the current filters.'
+                    : 'No trips yet.',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
               ),
             );

@@ -168,7 +168,7 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
             columns: const [
               DataColumn(label: Text('Driver')),
               DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Rides')),
+              DataColumn(label: Text('Trips')),
               DataColumn(label: Text('Active Time')),
               DataColumn(label: Text('Earnings')),
               DataColumn(label: Text('')),

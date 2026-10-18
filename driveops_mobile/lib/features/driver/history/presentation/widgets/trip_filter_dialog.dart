@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:driveops_mobile/features/driver/history/presentation/driver_history_screen.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 
-/// Filter dialog for the ride history list: status, date range, free text.
+/// Filter dialog for the trip history list: status, date range, free text.
 class TripFilterDialog extends StatefulWidget {
   final TripFilter current;
 
@@ -62,7 +62,7 @@ class _TripFilterDialogState extends State<TripFilterDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Filter Rides',
+              'Filter Trips',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,

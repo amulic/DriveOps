@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
 
-/// Three stat cards: rides completed, rating, total earned.
+/// Three stat cards: trips completed, rating, total earned.
 class DriverStatsRow extends StatelessWidget {
   final Driver driver;
 
@@ -16,7 +16,7 @@ class DriverStatsRow extends StatelessWidget {
             icon: Icons.check_circle_outline,
             iconColor: const Color(0xFF22C55E),
             value: '${driver.totalTrips}',
-            label: 'Rides',
+            label: 'Trips',
           ),
         ),
         const SizedBox(width: 12),

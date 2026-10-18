@@ -26,27 +26,27 @@ final driversMapProvider = Provider<AsyncValue<Map<String, Driver>>>((ref) {
   );
 });
 
-class RidesSearchQueryNotifier extends Notifier<String> {
+class TripsSearchQueryNotifier extends Notifier<String> {
   @override
   String build() => '';
 
   void update(String value) => state = value;
 }
 
-class RidesStatusFilterNotifier extends Notifier<TripStatus?> {
+class TripsStatusFilterNotifier extends Notifier<TripStatus?> {
   @override
   TripStatus? build() => null;
 
   void update(TripStatus? value) => state = value;
 }
 
-final ridesSearchQueryProvider = NotifierProvider<RidesSearchQueryNotifier, String>(RidesSearchQueryNotifier.new);
-final ridesStatusFilterProvider = NotifierProvider<RidesStatusFilterNotifier, TripStatus?>(RidesStatusFilterNotifier.new);
+final tripsSearchQueryProvider = NotifierProvider<TripsSearchQueryNotifier, String>(TripsSearchQueryNotifier.new);
+final tripsStatusFilterProvider = NotifierProvider<TripsStatusFilterNotifier, TripStatus?>(TripsStatusFilterNotifier.new);
 
 final filteredTripsProvider = Provider<AsyncValue<List<Trip>>>((ref) {
   final tripsAsync = ref.watch(tripsAsyncProvider);
-  final query = ref.watch(ridesSearchQueryProvider).toLowerCase();
-  final statusFilter = ref.watch(ridesStatusFilterProvider);
+  final query = ref.watch(tripsSearchQueryProvider).toLowerCase();
+  final statusFilter = ref.watch(tripsStatusFilterProvider);
 
   return tripsAsync.when(
     data: (trips) {

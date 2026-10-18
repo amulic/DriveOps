@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/providers/chat_signalr_provider.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/providers/total_unread_provider.dart';
+import 'package:driveops_mobile/features/chat/presentation/providers/chat_signalr_provider.dart';
+import 'package:driveops_mobile/features/chat/presentation/providers/total_unread_provider.dart';
 import 'package:driveops_mobile/features/driver/providers/map_providers.dart';
 import 'package:driveops_mobile/features/driver/pending_approval_screen.dart';
 import 'package:driveops_mobile/services/cache_service.dart';

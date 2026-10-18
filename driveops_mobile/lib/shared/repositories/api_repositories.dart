@@ -151,10 +151,12 @@ class ApiTripRepository implements TripRepository {
   }
 
   @override
-  Future<List<Trip>> getTripsByCustomer(String customerId) async {
-    final cached = _cache.get(CacheService.tripsCustomer(customerId));
-    if (cached != null) {
-      return (cached as List).map((e) => Trip.fromJson(e as Map<String, dynamic>)).toList();
+  Future<List<Trip>> getTripsByCustomer(String customerId, {bool bypassCache = false}) async {
+    if (!bypassCache) {
+      final cached = _cache.get(CacheService.tripsCustomer(customerId));
+      if (cached != null) {
+        return (cached as List).map((e) => Trip.fromJson(e as Map<String, dynamic>)).toList();
+      }
     }
     final trips = await _api.getTripsByCustomer(customerId);
     await _cache.setList(CacheService.tripsCustomer(customerId), trips.map((t) => t.toJson()).toList());
@@ -175,6 +177,14 @@ class ApiTripRepository implements TripRepository {
   @override
   Future<List<Trip>> getActiveTripsByDriver(String driverId) async {
     return _api.getActiveTripsByDriver(driverId);
+  }
+
+  @override
+  Future<Trip> createTrip(CreateTripRequest request) async {
+    final trip = await _api.createTrip(request);
+    await _cache.remove(CacheService.tripsAll);
+    await _cache.remove(CacheService.tripsCustomer(request.customerId));
+    return trip;
   }
 
   @override
@@ -208,14 +218,14 @@ class ApiTripRepository implements TripRepository {
   @override
   Future<Trip> cancelTrip(String tripId, {String? reason}) async {
     final trip = await _api.cancelTrip(tripId, CancelTripRequest(reason: reason));
-    await _cache.remove(CacheService.tripsAll);
-    await _cache.remove(CacheService.trip(tripId));
+    await _invalidateTripCaches(trip);
     return trip;
   }
 
   Future<void> _invalidateTripCaches(Trip trip) async {
     await _cache.remove(CacheService.tripsAll);
     await _cache.remove(CacheService.trip(trip.id));
+    await _cache.remove(CacheService.tripsCustomer(trip.customerId));
     final driverId = trip.driverId;
     if (driverId != null) {
       await _cache.remove(CacheService.tripsDriver(driverId));
@@ -228,9 +238,7 @@ class ApiTripRepository implements TripRepository {
       tripId,
       DeclineTripRequest(driverId: driverId, reason: reason),
     );
-    await _cache.remove(CacheService.tripsAll);
-    await _cache.remove(CacheService.trip(tripId));
-    await _cache.remove(CacheService.tripsDriver(driverId));
+    await _invalidateTripCaches(trip);
     return trip;
   }
 

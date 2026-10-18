@@ -11,8 +11,8 @@ final recentTripsProvider = FutureProvider<List<Trip>>((ref) async {
   return sorted;
 });
 
-class RecentRidesTable extends ConsumerWidget {
-  const RecentRidesTable({super.key});
+class RecentTripsTable extends ConsumerWidget {
+  const RecentTripsTable({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,7 +26,7 @@ class RecentRidesTable extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Recent Rides',
+              'Recent Trips',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -42,7 +42,7 @@ class RecentRidesTable extends ConsumerWidget {
               ),
               error: (_, __) => const SizedBox(
                 height: 200,
-                child: Center(child: Text('Failed to load rides', style: TextStyle(color: Colors.white54))),
+                child: Center(child: Text('Failed to load trips', style: TextStyle(color: Colors.white54))),
               ),
             ),
           ],

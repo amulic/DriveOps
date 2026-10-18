@@ -26,9 +26,10 @@ abstract class DriverRepository {
 abstract class TripRepository {
   Future<List<Trip>> getAllTrips();
   Future<Trip?> getTripById(String id);
-  Future<List<Trip>> getTripsByCustomer(String customerId);
+  Future<List<Trip>> getTripsByCustomer(String customerId, {bool bypassCache = false});
   Future<List<Trip>> getTripsByDriver(String driverId);
   Future<List<Trip>> getActiveTripsByDriver(String driverId);
+  Future<Trip> createTrip(CreateTripRequest request);
   Future<Trip> assignDriver(String tripId, String driverId, String vehicleId);
   Future<Trip> startTrip(String tripId);
   Future<Trip> completeTrip(String tripId, double actualDistanceKm);

@@ -1,4 +1,5 @@
 using DriveOps.Application.DTOs;
+using DriveOps.Application.Exceptions;
 using DriveOps.Application.Helpers;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
@@ -93,6 +94,13 @@ namespace DriveOps.Application.Services
 
         public async Task<TripDto> RequestTripAsync(CreateTripDto dto)
         {
+            // Single-active-trip rule: a customer with a live trip (Requested →
+            // InProgress) cannot request another until it reaches a terminal state.
+            var activeTrips = await _tripRepository.GetActiveTripsByCustomerIdAsync(dto.CustomerId);
+            if (activeTrips.Any())
+                throw new ActiveTripExistsException(
+                    $"Customer {dto.CustomerId} already has an active trip. Cancel it before requesting a new one.");
+
             var estimate = await _routingService.GetTripEstimateAsync(
                 dto.PickupLatitude, dto.PickupLongitude,
                 dto.DropoffLatitude, dto.DropoffLongitude,

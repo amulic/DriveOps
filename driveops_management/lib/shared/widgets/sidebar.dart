@@ -46,10 +46,10 @@ class Sidebar extends ConsumerWidget {
                 ),
                 _SidebarTabButton(
                   icon: Icons.route_rounded,
-                  label: 'Rides',
-                  route: '/rides',
-                  isSelected: currentRoute == '/rides',
-                  onTap: () => context.go('/rides'),
+                  label: 'Trips',
+                  route: '/trips',
+                  isSelected: currentRoute == '/trips',
+                  onTap: () => context.go('/trips'),
                 ),
                 _SidebarTabButton(
                   icon: Icons.chat_rounded,

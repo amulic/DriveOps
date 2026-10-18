@@ -62,7 +62,7 @@ final currentCustomerProvider = FutureProvider<Customer?>((ref) async {
   return repo.getCustomerByKeycloakId(sub);
 });
 
-/// All trips for the logged-in driver (ride history source).
+/// All trips for the logged-in driver (trip history source).
 final driverTripsProvider = FutureProvider<List<Trip>>((ref) async {
   final driverAsync = ref.watch(currentDriverProvider);
   final driver = driverAsync.value;

@@ -1,12 +1,12 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_mobile/shared/models/chat_message.dart';
 import 'package:driveops_mobile/shared/models/conversation.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/providers/messages_provider.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/providers/chat_signalr_provider.dart';
-import 'package:driveops_mobile/features/driver/chat/presentation/providers/user_names_provider.dart';
+import 'package:driveops_mobile/features/chat/presentation/providers/messages_provider.dart';
+import 'package:driveops_mobile/features/chat/presentation/providers/chat_signalr_provider.dart';
+import 'package:driveops_mobile/features/chat/presentation/providers/user_names_provider.dart';
 import 'package:driveops_mobile/services/chat_signalr_service.dart';
 import 'package:driveops_mobile/shared/utils/id_display.dart';
 

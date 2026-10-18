@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:driveops_mobile/features/auth/presentation/login_screen.dart';
 import 'package:driveops_mobile/features/auth/presentation/unauthorized_screen.dart';
 import 'package:driveops_mobile/features/customer/customer_home_screen.dart';
+import 'package:driveops_mobile/features/customer/history/customer_history_screen.dart';
+import 'package:driveops_mobile/features/customer/request/customer_request_screen.dart';
+import 'package:driveops_mobile/features/customer/trip/customer_trip_screen.dart';
+import 'package:driveops_mobile/features/customer/widgets/customer_gate.dart';
 import 'package:driveops_mobile/features/driver/driver_shell.dart';
 import 'package:driveops_mobile/features/driver/home/presentation/driver_home_screen.dart';
 import 'package:driveops_mobile/features/driver/history/presentation/driver_history_screen.dart';
@@ -59,6 +63,22 @@ GoRouter createAppRouter(WidgetRef ref) {
       GoRoute(
         path: '/customer',
         builder: (context, state) => const CustomerHomeScreen(),
+      ),
+      // Customer area: each screen is wrapped in the profile-onboarding gate.
+      GoRoute(
+        path: '/customer/request',
+        builder: (context, state) =>
+            const CustomerGate(child: CustomerRequestScreen()),
+      ),
+      GoRoute(
+        path: '/customer/trip',
+        builder: (context, state) =>
+            const CustomerGate(child: CustomerTripScreen()),
+      ),
+      GoRoute(
+        path: '/customer/history',
+        builder: (context, state) =>
+            const CustomerGate(child: CustomerHistoryScreen()),
       ),
       // Driver area: 5-tab bottom navigation shell.
       StatefulShellRoute.indexedStack(

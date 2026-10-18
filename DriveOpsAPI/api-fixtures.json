@@ -282,7 +282,7 @@
         "path": "/api/Trip/{{tripId}}/rate",
         "body": {
           "rating": 5,
-          "feedback": "Great ride, very smooth.",
+          "feedback": "Great trip, very smooth.",
           "isCustomerRating": true
         }
       },

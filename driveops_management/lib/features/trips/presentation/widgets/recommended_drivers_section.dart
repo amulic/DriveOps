@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/recommended_driver.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
-import 'package:driveops_management/features/rides/presentation/providers/rides_providers.dart';
+import 'package:driveops_management/features/trips/presentation/providers/trips_providers.dart';
 
 /// Ranked recommended-driver cards with one-click assign.
 class RecommendedDriversSection extends ConsumerStatefulWidget {

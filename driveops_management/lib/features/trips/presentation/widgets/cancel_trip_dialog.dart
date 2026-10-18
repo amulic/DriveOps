@@ -29,13 +29,13 @@ class _CancelTripDialogState extends State<CancelTripDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: const Color(0xFF252538),
-      title: const Text('Cancel Ride', style: TextStyle(color: Colors.white)),
+      title: const Text('Cancel Trip', style: TextStyle(color: Colors.white)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Are you sure you want to cancel this ride?',
+            'Are you sure you want to cancel this trip?',
             style: TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 16),
@@ -59,12 +59,12 @@ class _CancelTripDialogState extends State<CancelTripDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Keep Ride', style: TextStyle(color: Colors.white54)),
+          child: const Text('Keep Trip', style: TextStyle(color: Colors.white54)),
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
           onPressed: () => Navigator.of(context).pop(_reasonController.text.trim()),
-          child: const Text('Cancel Ride'),
+          child: const Text('Cancel Trip'),
         ),
       ],
     );
