@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:driveops_mobile/features/chat/presentation/chat_thread_screen.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
 import 'package:driveops_mobile/services/chat_api_service.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
+import 'package:driveops_mobile/shared/widgets/map/drive_ops_map.dart';
+import 'package:driveops_mobile/shared/widgets/map/map_markers.dart';
+import 'package:driveops_mobile/shared/widgets/map/map_utils.dart';
 import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
 /// The customer's live trip: status, route summary, driver/vehicle once
@@ -98,6 +103,13 @@ class _ActiveTripView extends ConsumerWidget {
   final Trip trip;
 
   const _ActiveTripView({required this.trip});
+
+  static String _paymentLabel(PaymentMethod method) => switch (method) {
+        PaymentMethod.cash => 'Cash',
+        PaymentMethod.creditCard => 'Credit card',
+        PaymentMethod.debitCard => 'Debit card',
+        PaymentMethod.digitalWallet => 'Digital wallet',
+      };
 
   bool get _isRequested => trip.tripStatus == TripStatus.requested;
   bool get _hasDriver =>
@@ -237,6 +249,8 @@ class _ActiveTripView extends ConsumerWidget {
               ],
             ),
           ),
+        _TripMapSection(trip: trip),
+        const SizedBox(height: 16),
         _InfoCard(
           children: [
             _AddressRow(
@@ -268,6 +282,27 @@ class _ActiveTripView extends ConsumerWidget {
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (trip.paymentMethod != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.account_balance_wallet_outlined,
+                      color: Colors.white38, size: 18),
+                  const SizedBox(width: 10),
+                  const Text('Payment method',
+                      style: TextStyle(color: Colors.white54, fontSize: 13)),
+                  const Spacer(),
+                  Text(
+                    _paymentLabel(trip.paymentMethod!),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -363,6 +398,92 @@ class _InfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
+      ),
+    );
+  }
+}
+
+/// Map with pickup/dropoff markers and the driver's live position (streamed
+/// via the location hub). The camera starts fitted to pickup + dropoff and
+/// refits once when the first driver fix arrives.
+class _TripMapSection extends ConsumerStatefulWidget {
+  final Trip trip;
+
+  const _TripMapSection({required this.trip});
+
+  @override
+  ConsumerState<_TripMapSection> createState() => _TripMapSectionState();
+}
+
+class _TripMapSectionState extends ConsumerState<_TripMapSection> {
+  final MapController _mapController = MapController();
+  bool _fitOnFirstFixDone = false;
+
+  LatLng get _pickup =>
+      LatLng(widget.trip.pickupLatitude, widget.trip.pickupLongitude);
+  LatLng get _dropoff =>
+      LatLng(widget.trip.dropoffLatitude, widget.trip.dropoffLongitude);
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final driverPos =
+        ref.watch(customerLiveDriverLocationProvider(widget.trip.id)).value;
+
+    // One-shot refit on the first fix so the driver marker enters the view.
+    if (driverPos != null && !_fitOnFirstFixDone) {
+      _fitOnFirstFixDone = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _mapController.fitCamera(fitMapBounds([_pickup, _dropoff, driverPos]));
+      });
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        height: 260,
+        child: Stack(
+          children: [
+            DriveOpsMap(
+              mapController: _mapController,
+              initialCenter: _pickup,
+              initialFit: fitMapBounds([_pickup, _dropoff]),
+              layers: [
+                MarkerLayer(markers: [
+                  pickupMarker(_pickup),
+                  dropoffMarker(_dropoff),
+                  if (driverPos != null) driverMarker(driverPos),
+                ]),
+              ],
+            ),
+            if (driverPos == null)
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E).withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: const Text(
+                    'Live driver location will appear here once available.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -6,10 +6,18 @@ import 'package:driveops_mobile/features/customer/providers/customer_providers.d
 import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
+import 'package:driveops_mobile/shared/widgets/rate_trip_dialog.dart';
 import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
 /// The customer's trips: the live trip pinned on top, past trips newest-first
 /// below (server ordering).
+String _paymentLabel(PaymentMethod method) => switch (method) {
+      PaymentMethod.cash => 'Cash',
+      PaymentMethod.creditCard => 'Credit card',
+      PaymentMethod.debitCard => 'Debit card',
+      PaymentMethod.digitalWallet => 'Digital wallet',
+    };
+
 class CustomerHistoryScreen extends ConsumerWidget {
   const CustomerHistoryScreen({super.key});
 
@@ -173,13 +181,38 @@ class _ActiveTripTile extends StatelessWidget {
   }
 }
 
-class _TripTile extends StatelessWidget {
+class _TripTile extends ConsumerWidget {
   final Trip trip;
 
   const _TripTile({required this.trip});
 
+  bool get _canRate =>
+      trip.tripStatus == TripStatus.completed && trip.customerRating == null;
+
+  Future<void> _rate(BuildContext context, WidgetRef ref) async {
+    final request = await RateTripDialog.show(
+      context,
+      title: 'Rate your driver',
+      isCustomerRating: true,
+    );
+    if (request == null || !context.mounted) return;
+
+    try {
+      await ref.read(tripRepositoryProvider).rateTrip(trip.id, request);
+      ref.invalidate(customerTripsProvider);
+      ref.invalidate(customerActiveTripProvider);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Could not submit your rating. Please try again.')),
+        );
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final date = DateFormat('MMM d, yyyy · HH:mm').format(trip.requestedAt.toLocal());
     final fare = trip.actualFare ?? trip.estimatedFare;
 
@@ -189,7 +222,7 @@ class _TripTile extends StatelessWidget {
         color: const Color(0xFF1A1A2E),
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: () => _showDetails(context),
+          onTap: () => _showDetails(context, ref),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(14),
@@ -233,6 +266,25 @@ class _TripTile extends StatelessWidget {
                     ],
                   ],
                 ),
+                if (trip.customerRating != null) ...[
+                  const SizedBox(height: 8),
+                  RatingStars(rating: trip.customerRating!),
+                ] else if (_canRate) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _rate(context, ref),
+                      icon: const Icon(Icons.star_border, size: 16),
+                      label: const Text('Rate'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFF59E0B),
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 32),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -241,7 +293,7 @@ class _TripTile extends StatelessWidget {
     );
   }
 
-  void _showDetails(BuildContext context) {
+  void _showDetails(BuildContext context, WidgetRef ref) {
     final date =
         DateFormat('MMM d, yyyy · HH:mm').format(trip.requestedAt.toLocal());
 
@@ -275,11 +327,29 @@ class _TripTile extends StatelessWidget {
                 value:
                     '\$${(trip.actualFare ?? trip.estimatedFare)!.toStringAsFixed(2)}',
               ),
+            if (trip.paymentMethod != null)
+              _DetailLine(
+                  label: 'Payment',
+                  value: _paymentLabel(trip.paymentMethod!)),
+            if (trip.customerRating != null)
+              _DetailLine(
+                  label: 'Your rating', value: '${trip.customerRating} / 5'),
             if (trip.cancellationReason != null)
               _DetailLine(label: 'Cancel reason', value: trip.cancellationReason!),
           ],
         ),
         actions: [
+          if (_canRate)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _rate(context, ref);
+              },
+              icon: const Icon(Icons.star_border, size: 16),
+              label: const Text('Rate'),
+              style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFF59E0B)),
+            ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Close'),

@@ -242,6 +242,13 @@ class ApiTripRepository implements TripRepository {
     return trip;
   }
 
+  @override
+  Future<Trip> rateTrip(String tripId, RateTripRequest request) async {
+    final trip = await _api.rateTrip(tripId, request);
+    await _invalidateTripCaches(trip);
+    return trip;
+  }
+
   // Route estimates, breadcrumbs and recommendations are live data — not cached.
   @override
   Future<TripEstimateResponse> estimateTrip(TripEstimateRequest request) {
@@ -364,5 +371,10 @@ class ApiCustomerRepository implements CustomerRepository {
   @override
   Future<Customer> createCustomer(CreateCustomerRequest request) {
     return _api.createCustomer(request);
+  }
+
+  @override
+  Future<Customer> updateCustomer(String id, UpdateCustomerRequest request) {
+    return _api.updateCustomer(id, request);
   }
 }

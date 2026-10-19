@@ -80,17 +80,40 @@ namespace DriveOps.API.Controllers
             {
                 return Conflict(new { message = ex.Message });
             }
+            catch (InvalidOperationException ex)
+            {
+                // Routing failure (e.g. OSRM could not calculate a route).
+                return StatusCode(502, new { message = ex.Message });
+            }
+            catch (HttpRequestException ex)
+            {
+                // Routing service unreachable.
+                return StatusCode(502, new { message = ex.Message });
+            }
         }
 
         [HttpPost("estimate")]
         public async Task<IActionResult> GetTripEstimate([FromBody] TripEstimateRequest request)
         {
-            var estimate = await _tripService.GetTripEstimateAsync(
-                request.PickupLatitude, request.PickupLongitude,
-                request.DropoffLatitude, request.DropoffLongitude,
-                (DriveOps.RealTime.Contracts.Enums.TripType)(int)request.TripType);
+            try
+            {
+                var estimate = await _tripService.GetTripEstimateAsync(
+                    request.PickupLatitude, request.PickupLongitude,
+                    request.DropoffLatitude, request.DropoffLongitude,
+                    (DriveOps.RealTime.Contracts.Enums.TripType)(int)request.TripType);
 
-            return Ok(estimate.ToResponse());
+                return Ok(estimate.ToResponse());
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Routing failure (e.g. OSRM could not calculate a route).
+                return StatusCode(502, new { message = ex.Message });
+            }
+            catch (HttpRequestException ex)
+            {
+                // Routing service unreachable.
+                return StatusCode(502, new { message = ex.Message });
+            }
         }
 
         [HttpPost("{id:guid}/assign")]

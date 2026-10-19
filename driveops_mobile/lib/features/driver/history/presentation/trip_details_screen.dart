@@ -1,18 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
+import 'package:driveops_mobile/shared/providers/repository_providers.dart';
+import 'package:driveops_mobile/shared/widgets/rate_trip_dialog.dart';
 import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
 /// Full detail view of a single trip, opened from the history list.
-class TripDetailsScreen extends StatelessWidget {
+class TripDetailsScreen extends ConsumerWidget {
   final Trip trip;
 
   const TripDetailsScreen({super.key, required this.trip});
 
   static final _dateFormat = DateFormat('MMM d, yyyy · HH:mm');
 
+  bool get _canRateCustomer =>
+      trip.tripStatus == TripStatus.completed && trip.driverRating == null;
+
+  Future<void> _rateCustomer(BuildContext context, WidgetRef ref) async {
+    final request = await RateTripDialog.show(
+      context,
+      title: 'Rate your customer',
+      isCustomerRating: false,
+    );
+    if (request == null || !context.mounted) return;
+
+    try {
+      await ref.read(tripRepositoryProvider).rateTrip(trip.id, request);
+      ref.invalidate(driverTripsProvider);
+      if (context.mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Could not submit your rating. Please try again.')),
+        );
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
       appBar: AppBar(
@@ -134,6 +162,29 @@ class TripDetailsScreen extends StatelessWidget {
                         const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
+              ),
+            ),
+          ],
+          if (_canRateCustomer) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () => _rateCustomer(context, ref),
+                icon: const Icon(Icons.star_border),
+                label: const Text(
+                  'Rate customer',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFF59E0B),
+                  side: BorderSide(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.5)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
           ],

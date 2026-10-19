@@ -7,6 +7,7 @@ import 'package:driveops_mobile/features/driver/providers/map_providers.dart';
 import 'package:driveops_mobile/features/driver/pending_approval_screen.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
+import 'package:driveops_mobile/shared/providers/location_signalr_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
 /// Driver area shell — hosts the 5-tab bottom navigation:

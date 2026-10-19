@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:signalr_netcore/signalr_client.dart';
 import 'package:driveops_mobile/services/chat_api_service.dart';
+import 'package:driveops_mobile/shared/providers/location_signalr_provider.dart';
 import 'package:driveops_mobile/shared/providers/notification_signalr_provider.dart';
 import 'package:driveops_mobile/shared/dtos/requests/trip_requests.dart';
 import 'package:driveops_mobile/shared/models/conversation_summary.dart';
@@ -66,6 +71,57 @@ final customerTripPushProvider = Provider<void>((ref) {
     signalr.off('TripAssigned');
     signalr.off('TripStatusChanged');
   });
+});
+
+/// Live driver GPS for a trip: subscribes to the `trip-location-{tripId}`
+/// group on the location hub and maps `ReceiveDriverLocation` payloads
+/// (positional args: driverId, latitude, longitude, timestamp) to [LatLng].
+/// Emits null until the first fix arrives; auto-disposed with the trip screen
+/// (unsubscribes the group + removes the hub handler).
+final customerLiveDriverLocationProvider = StreamProvider.autoDispose
+    .family<LatLng?, String>((ref, tripId) async* {
+  ref.watch(locationSignalrConnectionProvider);
+  final hub = ref.watch(locationSignalrServiceProvider);
+
+  // Wait for the keep-alive connection before subscribing, otherwise the
+  // group join is silently dropped (invoke on a null/starting connection).
+  if (!hub.isConnected) {
+    try {
+      await hub.connectionState
+          .firstWhere((s) => s == HubConnectionState.Connected)
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // Never connected — no live tracking this session; the REST-driven
+      // trip data still renders. A later reconnect re-subscribes via the
+      // service's tracked trip ids.
+    }
+  }
+
+  final controller = StreamController<LatLng?>();
+
+  void handler(List<dynamic>? args) {
+    if (args == null || args.length < 3) return;
+    final lat = (args[1] as num?)?.toDouble();
+    final lng = (args[2] as num?)?.toDouble();
+    if (lat != null && lng != null) {
+      controller.add(LatLng(lat, lng));
+    }
+  }
+
+  hub.on('ReceiveDriverLocation', handler);
+  try {
+    await hub.subscribeToTripLocation(tripId);
+  } catch (_) {
+    // Best-effort — reconnect re-subscribes tracked trip ids.
+  }
+
+  ref.onDispose(() {
+    hub.off('ReceiveDriverLocation');
+    hub.unsubscribeFromTripLocation(tripId);
+    unawaited(controller.close());
+  });
+
+  yield* controller.stream;
 });
 
 /// The auto-created customer ↔ driver trip conversation (participants are the

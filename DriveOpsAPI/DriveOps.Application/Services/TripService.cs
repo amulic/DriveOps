@@ -348,13 +348,21 @@ namespace DriveOps.Application.Services
                 }
 
                 await _unitOfWork.SaveChangesAsync();
-            });
+              });
 
-            var result = await _tripRepository.GetWithDetailsAsync(tripId);
-            return result!.ToDto();
-        }
+              var result = await _tripRepository.GetWithDetailsAsync(tripId);
+              var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
+              var driver = await _driverRepository.GetByIdAsync(driverId);
 
-        public async Task<TripDto> RateTripAsync(RateTripDto dto)
+              await _eventPublisher.PublishAsync("driveops.trips", "trip.declined",
+                  new TripDeclinedEvent(
+                      tripId, trip.CustomerId, trip.DriverId, reason, DateTime.UtcNow,
+                      customer?.KeycloakId, driver?.KeycloakId));
+
+              return result!.ToDto();
+          }
+
+          public async Task<TripDto> RateTripAsync(RateTripDto dto)
         {
             var trip = await _tripRepository.GetByIdAsync(dto.TripId)
                 ?? throw new KeyNotFoundException($"Trip {dto.TripId} not found.");

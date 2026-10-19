@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
+import 'package:driveops_mobile/services/geocoding_api_service.dart';
 import 'package:driveops_mobile/shared/dtos/requests/trip_requests.dart';
 import 'package:driveops_mobile/shared/location/current_position_provider.dart';
 import 'package:driveops_mobile/shared/location/location_service.dart';
@@ -26,25 +29,122 @@ class CustomerRequestScreen extends ConsumerStatefulWidget {
 
 class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
   final MapController _mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
   LatLng? _dropoffPin;
   TripEstimateResponse? _estimate;
+  List<GeocodingResult> _searchResults = [];
+  bool _searching = false;
+  String? _pickupAddress;
+  String? _dropoffAddress;
+  PaymentMethod _paymentMethod = PaymentMethod.cash;
   bool _estimating = false;
   bool _confirming = false;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
     _mapController.dispose();
     super.dispose();
   }
 
   void _recenter(LatLng position) => _mapController.move(position, 16);
 
-  Future<void> _onMapTap(LatLng pin, LatLng currentPos) async {
+  // -------------------------------------------------------------------------
+  // Geocoding
+  // -------------------------------------------------------------------------
+
+  void _onSearchChanged(String query) {
+    _searchDebounce?.cancel();
+    final q = query.trim();
+    if (q.length < 3) {
+      setState(() {
+        _searchResults = [];
+        _searching = false;
+      });
+      return;
+    }
+    _searchDebounce =
+        Timer(const Duration(milliseconds: 500), () => _search(q));
+  }
+
+  Future<void> _search(String query) async {
+    setState(() => _searching = true);
+    try {
+      final results = await ref.read(geocodingApiServiceProvider).search(query);
+      // Ignore stale results if the query changed while fetching.
+      if (mounted && _searchController.text.trim() == query) {
+        setState(() {
+          _searchResults = results;
+          _searching = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Address search failed: $e');
+      if (mounted && _searchController.text.trim() == query) {
+        setState(() {
+          _searchResults = [];
+          _searching = false;
+        });
+      }
+    }
+  }
+
+  void _selectSearchResult(GeocodingResult result, LatLng currentPos) {
+    final pin = LatLng(result.latitude, result.longitude);
+    _searchController.text = result.displayName;
+    setState(() => _searchResults = []);
+    FocusScope.of(context).unfocus();
+    _mapController.move(pin, 16);
+    // The search hit is already a resolved address — no reverse lookup needed.
+    _onMapTap(pin, currentPos, preResolvedAddress: result.displayName);
+  }
+
+  /// Best-effort reverse geocode; failures keep the coordinate-label fallback.
+  Future<void> _resolvePickupAddress(LatLng pos) async {
+    if (_pickupAddress != null) return;
+    try {
+      final name = await ref
+          .read(geocodingApiServiceProvider)
+          .reverse(pos.latitude, pos.longitude);
+      if (mounted && name != null) {
+        setState(() => _pickupAddress = name);
+      }
+    } catch (e) {
+      debugPrint('Reverse geocode (pickup) failed: $e');
+    }
+  }
+
+  Future<void> _resolveDropoffAddress(LatLng pin) async {
+    try {
+      final name = await ref
+          .read(geocodingApiServiceProvider)
+          .reverse(pin.latitude, pin.longitude);
+      // Ignore stale results if the pin moved again while fetching.
+      if (mounted && _dropoffPin == pin) {
+        setState(() => _dropoffAddress = name);
+      }
+    } catch (e) {
+      debugPrint('Reverse geocode (dropoff) failed: $e');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Pin + estimate + confirm
+  // -------------------------------------------------------------------------
+
+  Future<void> _onMapTap(LatLng pin, LatLng currentPos,
+      {String? preResolvedAddress}) async {
     setState(() {
       _dropoffPin = pin;
       _estimate = null;
       _estimating = true;
+      _dropoffAddress = preResolvedAddress;
     });
+    if (preResolvedAddress == null) {
+      unawaited(_resolveDropoffAddress(pin));
+    }
 
     try {
       final repo = ref.read(tripRepositoryProvider);
@@ -62,7 +162,13 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
           _estimating = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      if (e is DioException) {
+        debugPrint('Estimate failed: ${e.response?.statusCode} '
+            '${e.response?.data ?? e.message}');
+      } else {
+        debugPrint('Estimate failed: $e');
+      }
       if (mounted && _dropoffPin == pin) {
         setState(() => _estimating = false);
         _showSnack('Could not get an estimate for that destination.');
@@ -91,10 +197,12 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
             tripType: TripType.standard.toInt(),
             pickupLatitude: currentPos.latitude,
             pickupLongitude: currentPos.longitude,
-            pickupAddress: 'Current location (${fmt(currentPos)})',
+            pickupAddress:
+                _pickupAddress ?? 'Current location (${fmt(currentPos)})',
             dropoffLatitude: pin.latitude,
             dropoffLongitude: pin.longitude,
-            dropoffAddress: 'Pin (${fmt(pin)})',
+            dropoffAddress: _dropoffAddress ?? 'Pin (${fmt(pin)})',
+            paymentMethod: _paymentMethod.toInt(),
           ));
 
       if (mounted) context.go('/customer/trip');
@@ -102,6 +210,8 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
       _showSnack(e.message);
       if (mounted) context.go('/customer/trip');
     } on DioException catch (e) {
+      debugPrint('Trip creation failed: ${e.response?.statusCode} '
+          '${e.response?.data ?? e.message}');
       if (e.response?.statusCode == 409) {
         // Server-side one-trip guard (double-tap / second device race).
         _showSnack('You already have an active trip.');
@@ -110,7 +220,8 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
       } else {
         _showSnack('Could not create the trip. Please try again.');
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Trip creation failed: $e');
       _showSnack('Could not create the trip. Please try again.');
     } finally {
       if (mounted) setState(() => _confirming = false);
@@ -126,6 +237,12 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
   @override
   Widget build(BuildContext context) {
     final positionAsync = ref.watch(currentPositionProvider);
+
+    // Resolve a human-readable pickup address once the GPS fix is available.
+    ref.listen(currentPositionProvider, (previous, next) {
+      final pos = next.value;
+      if (pos != null) unawaited(_resolvePickupAddress(pos.latLng));
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -168,10 +285,98 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
             ]),
           ],
         ),
+        // Address search bar + results.
+        Positioned(
+          top: 12,
+          left: 16,
+          right: 16,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A2E).withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Search for an address',
+                    hintStyle:
+                        const TextStyle(color: Colors.white38, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search,
+                        color: Colors.white38, size: 20),
+                    suffixIcon: _searching
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF3B82F6),
+                              ),
+                            ),
+                          )
+                        : (_searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear,
+                                    color: Colors.white38, size: 18),
+                                tooltip: 'Clear search',
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchResults = []);
+                                },
+                              )
+                            : null),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                  ),
+                ),
+              ),
+              if (_searchResults.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E).withValues(alpha: 0.98),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    itemCount: _searchResults.length,
+                    itemBuilder: (ctx, i) {
+                      final r = _searchResults[i];
+                      return ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.place_outlined,
+                            color: Colors.white38, size: 18),
+                        title: Text(
+                          r.displayName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 13),
+                        ),
+                        onTap: () =>
+                            _selectSearchResult(r, position.latLng),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
         // Hint banner while no pin is set.
         if (pin == null)
           Positioned(
-            top: 12,
+            top: 68,
             left: 16,
             right: 16,
             child: Container(
@@ -208,11 +413,16 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
               estimate: _estimate,
               estimating: _estimating,
               confirming: _confirming,
+              dropoffAddress: _dropoffAddress,
+              paymentMethod: _paymentMethod,
+              onPaymentMethodChanged: (m) =>
+                  setState(() => _paymentMethod = m),
               onConfirm: () => _confirm(position.latLng),
               onClear: () => setState(() {
                 _dropoffPin = null;
                 _estimate = null;
                 _estimating = false;
+                _dropoffAddress = null;
               }),
             ),
           ),
@@ -225,6 +435,9 @@ class _EstimateCard extends StatelessWidget {
   final TripEstimateResponse? estimate;
   final bool estimating;
   final bool confirming;
+  final String? dropoffAddress;
+  final PaymentMethod paymentMethod;
+  final ValueChanged<PaymentMethod> onPaymentMethodChanged;
   final VoidCallback onConfirm;
   final VoidCallback onClear;
 
@@ -232,6 +445,9 @@ class _EstimateCard extends StatelessWidget {
     required this.estimate,
     required this.estimating,
     required this.confirming,
+    required this.dropoffAddress,
+    required this.paymentMethod,
+    required this.onPaymentMethodChanged,
     required this.onConfirm,
     required this.onClear,
   });
@@ -270,6 +486,25 @@ class _EstimateCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
+            if (dropoffAddress != null) ...[
+              Row(
+                children: [
+                  const Icon(Icons.location_on,
+                      color: Color(0xFFEF4444), size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      dropoffAddress!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
             if (estimating || estimate == null)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
@@ -295,6 +530,37 @@ class _EstimateCard extends StatelessWidget {
                     value: '\$${estimate!.estimatedFare.toStringAsFixed(2)}',
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _PaymentChip(
+                      label: 'Cash',
+                      icon: Icons.payments_outlined,
+                      selected: paymentMethod == PaymentMethod.cash,
+                      onSelected: () =>
+                          onPaymentMethodChanged(PaymentMethod.cash),
+                    ),
+                    _PaymentChip(
+                      label: 'Credit card',
+                      icon: Icons.credit_card,
+                      selected: paymentMethod == PaymentMethod.creditCard,
+                      onSelected: () =>
+                          onPaymentMethodChanged(PaymentMethod.creditCard),
+                    ),
+                    _PaymentChip(
+                      label: 'Digital wallet',
+                      icon: Icons.account_balance_wallet_outlined,
+                      selected: paymentMethod == PaymentMethod.digitalWallet,
+                      onSelected: () =>
+                          onPaymentMethodChanged(PaymentMethod.digitalWallet),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -327,6 +593,59 @@ class _EstimateCard extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PaymentChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const _PaymentChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = Color(0xFF3B82F6);
+    return Material(
+      color: selected ? accent.withValues(alpha: 0.2) : const Color(0xFF252538),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onSelected,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? accent : Colors.white12,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon,
+                  size: 15,
+                  color: selected ? accent : Colors.white54),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? Colors.white : Colors.white54,
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

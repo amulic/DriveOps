@@ -35,4 +35,12 @@ class CustomerApiService {
     );
     return Customer.fromJson(response.data as Map<String, dynamic>);
   }
+
+  Future<Customer> updateCustomer(String id, UpdateCustomerRequest request) async {
+    final response = await _api.put(
+      '${ApiConfig.customerEndpoint}/$id',
+      data: request.toJson(),
+    );
+    return Customer.fromJson(response.data as Map<String, dynamic>);
+  }
 }

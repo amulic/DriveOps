@@ -25,6 +25,7 @@ class ApiConfig {
   static const String tripEndpoint = '/api/trip';
   static const String vehicleEndpoint = '/api/vehicle';
   static const String customerEndpoint = '/api/customer';
+  static const String geocodeEndpoint = '/api/geocode';
 
   static const String notificationHubPath = '/hubs/notification';
   static const String chatHubPath = '/hubs/chat';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:driveops_mobile/features/customer/profile/customer_profile_screen.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
 import 'package:driveops_mobile/features/customer/widgets/customer_gate.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
@@ -36,6 +37,15 @@ class _CustomerWelcome extends ConsumerWidget {
         backgroundColor: const Color(0xFF1A1A2E),
         title: Text('Welcome${firstName.isNotEmpty ? ', $firstName' : ''}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Your profile',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const CustomerProfileScreen(),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',

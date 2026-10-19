@@ -20,3 +20,23 @@ class CreateCustomerRequest {
     };
   }
 }
+
+class UpdateCustomerRequest {
+  final String name;
+  final String phoneNumber;
+  final String? email;
+
+  const UpdateCustomerRequest({
+    required this.name,
+    required this.phoneNumber,
+    this.email,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'phoneNumber': phoneNumber,
+      'email': email,
+    };
+  }
+}

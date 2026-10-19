@@ -2,43 +2,14 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:driveops_mobile/services/auth_service.dart';
-import 'package:driveops_mobile/services/location_signalr_service.dart';
 import 'package:driveops_mobile/shared/dtos/requests/trip_requests.dart';
 import 'package:driveops_mobile/shared/location/current_position_provider.dart';
 import 'package:driveops_mobile/shared/models/route_point.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
-import 'package:driveops_mobile/shared/providers/auth_provider.dart';
+import 'package:driveops_mobile/shared/providers/location_signalr_provider.dart';
 import 'package:driveops_mobile/shared/providers/notification_signalr_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 import 'package:driveops_mobile/shared/widgets/map/map_utils.dart';
-
-// ---------------------------------------------------------------------------
-// Location hub connection
-// ---------------------------------------------------------------------------
-
-final locationSignalrServiceProvider = Provider<LocationSignalrService>((ref) {
-  final service = LocationSignalrService();
-  ref.onDispose(() {
-    service.disconnect();
-    service.dispose();
-  });
-  return service;
-});
-
-/// Connects the location hub while the user is authenticated.
-final locationSignalrConnectionProvider = Provider<void>((ref) {
-  final signalr = ref.watch(locationSignalrServiceProvider);
-  final authState = ref.watch(authProvider);
-
-  if (authState.value?.isAuthenticated == true) {
-    AuthService().getAccessToken().then((t) {
-      if (t != null) signalr.connect(t);
-    });
-  } else {
-    signalr.disconnect();
-  }
-});
 
 // ---------------------------------------------------------------------------
 // Active trip (also the future data source for the "trip in progress" banner)

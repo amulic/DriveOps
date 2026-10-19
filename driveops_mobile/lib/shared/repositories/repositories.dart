@@ -36,6 +36,10 @@ abstract class TripRepository {
   Future<Trip> cancelTrip(String tripId, {String? reason});
   Future<Trip> declineTrip(String tripId, String driverId, {String? reason});
 
+  /// Post-trip rating (customer rates driver / driver rates customer — the
+  /// flag lives on the request).
+  Future<Trip> rateTrip(String tripId, RateTripRequest request);
+
   /// A→B route estimate (distance/duration/fare + polyline points) without
   /// creating a trip — used by the driver map to draw the current leg.
   Future<TripEstimateResponse> estimateTrip(TripEstimateRequest request);
@@ -57,4 +61,5 @@ abstract class VehicleRepository {
 abstract class CustomerRepository {
   Future<Customer?> getCustomerByKeycloakId(String keycloakId);
   Future<Customer> createCustomer(CreateCustomerRequest request);
+  Future<Customer> updateCustomer(String id, UpdateCustomerRequest request);
 }

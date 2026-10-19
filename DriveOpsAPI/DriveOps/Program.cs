@@ -45,7 +45,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 // DI - Infrastructure (DbContext, Repositories, External Services)
-builder.Services.AddInfrastructure(connectionString);
+var osrmBaseUrl = builder.Configuration["Osrm:BaseUrl"];
+var nominatimBaseUrl = builder.Configuration["Nominatim:BaseUrl"];
+builder.Services.AddInfrastructure(connectionString, osrmBaseUrl, nominatimBaseUrl);
 
 // DI - RabbitMQ (Event Publishing + Consumers)
 var rabbitHost = builder.Configuration["RabbitMQ:HostName"] ?? "localhost";

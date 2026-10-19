@@ -4,14 +4,14 @@ import 'package:driveops_mobile/features/chat/presentation/providers/chat_signal
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
 import 'package:driveops_mobile/features/customer/widgets/customer_onboarding_form.dart';
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
+import 'package:driveops_mobile/shared/providers/location_signalr_provider.dart';
 import 'package:driveops_mobile/shared/providers/notification_signalr_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
 /// Wraps every customer screen: resolves the local Customer profile
 /// (loading → error/retry → one-time onboarding form → child) and keeps the
-/// notification + chat hubs and the trip-push invalidations alive while the
-/// customer area is visible (same keep-alive trick as DriverShell). The
-/// location hub is not needed on the customer side (no live tracking in v1).
+/// notification + chat + location hubs and the trip-push invalidations alive
+/// while the customer area is visible (same keep-alive trick as DriverShell).
 class CustomerGate extends ConsumerWidget {
   final Widget child;
 
@@ -84,9 +84,11 @@ class CustomerGate extends ConsumerWidget {
           );
         }
 
-        // Keep-alive: notification hub, chat hub, trip push invalidations.
+        // Keep-alive: notification hub, chat hub, location hub (live driver
+        // tracking on the trip screen), trip push invalidations.
         ref.watch(notificationSignalrConnectionProvider);
         ref.watch(chatSignalrConnectionProvider);
+        ref.watch(locationSignalrConnectionProvider);
         ref.watch(customerTripPushProvider);
 
         return child;

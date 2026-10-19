@@ -219,8 +219,12 @@ namespace DriveOps.Application.Services
             await _driverRepository.UpdateAsync(driver);
             await _unitOfWork.SaveChangesAsync();
 
+            // Include assigned/en-route trips so the customer sees the driver
+            // approaching, not just the in-progress leg.
             var activeTripId = driver.Trips
-                ?.FirstOrDefault(t => t.TripStatus == TripStatus.InProgress)
+                ?.FirstOrDefault(t => t.TripStatus == TripStatus.InProgress
+                    || t.TripStatus == TripStatus.Assigned
+                    || t.TripStatus == TripStatus.DriverEnRoute)
                 ?.Id;
 
             await _eventPublisher.PublishAsync("driveops.location", "driver.location",

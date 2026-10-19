@@ -72,6 +72,15 @@ class LocationSignalrService {
 
     await _connection!.start();
     _connectionStateController.add(HubConnectionState.Connected);
+    // Trips subscribed before the connection finished joining get their
+    // groups now (invoke on a starting connection is a silent no-op).
+    for (final tripId in _subscribedTrips.toList()) {
+      try {
+        await _connection?.invoke('SubscribeToTripLocation', args: [tripId]);
+      } catch (_) {
+        // Best-effort; a later reconnect retries.
+      }
+    }
   }
 
   Future<void> disconnect() async {
