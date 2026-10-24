@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:driveops_mobile/features/customer/payment/payment_providers.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
 import 'package:driveops_mobile/services/geocoding_api_service.dart';
 import 'package:driveops_mobile/shared/dtos/requests/trip_requests.dart';
@@ -217,6 +218,12 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
         _showSnack('You already have an active trip.');
         ref.invalidate(customerActiveTripProvider);
         ref.invalidate(customerTripsProvider);
+      } else if (e.response?.statusCode == 400) {
+        // e.g. the server-side no-saved-card guard for card trips.
+        final data = e.response?.data;
+        final message =
+            data is Map<String, dynamic> ? data['message'] as String? : null;
+        _showSnack(message ?? 'Could not create the trip. Please try again.');
       } else {
         _showSnack('Could not create the trip. Please try again.');
       }
@@ -232,6 +239,21 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Card trips are charged off-session to a saved card — require one upfront
+  /// (the API enforces this too with a 400 as the race-safe backstop).
+  void _onPaymentMethodChanged(PaymentMethod method) {
+    final isCard = method == PaymentMethod.creditCard ||
+        method == PaymentMethod.debitCard;
+    if (isCard) {
+      final cards = ref.read(savedCardsProvider).value;
+      if (cards == null || cards.isEmpty) {
+        _showSnack('Add a card first — Profile → Payment methods.');
+        return;
+      }
+    }
+    setState(() => _paymentMethod = method);
   }
 
   @override
@@ -261,6 +283,10 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
 
   Widget _buildMap(DevicePosition position) {
     final pin = _dropoffPin;
+
+    // Prefetch saved cards so the card chip check has data by the time the
+    // user picks a payment method.
+    ref.watch(savedCardsProvider);
 
     return Stack(
       children: [
@@ -415,8 +441,7 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
               confirming: _confirming,
               dropoffAddress: _dropoffAddress,
               paymentMethod: _paymentMethod,
-              onPaymentMethodChanged: (m) =>
-                  setState(() => _paymentMethod = m),
+              onPaymentMethodChanged: _onPaymentMethodChanged,
               onConfirm: () => _confirm(position.latLng),
               onClear: () => setState(() {
                 _dropoffPin = null;

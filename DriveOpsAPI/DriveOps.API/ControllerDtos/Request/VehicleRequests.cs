@@ -45,4 +45,9 @@ namespace DriveOps.API.ControllerDtos.Request
         public string Description { get; set; } = null!;
         public DefectSeverity Severity { get; set; } = DefectSeverity.Medium;
     }
+
+    public class ResolveDefectRequest
+    {
+        public string? ResolutionNotes { get; set; }
+    }
 }

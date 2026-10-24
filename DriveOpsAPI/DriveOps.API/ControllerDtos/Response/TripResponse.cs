@@ -20,7 +20,6 @@ namespace DriveOps.API.ControllerDtos.Response
         public decimal DropoffLongitude { get; set; }
         public string DropoffAddress { get; set; } = null!;
         public DateTime? RequestedAt { get; set; }
-        public DateTime? ScheduledAt { get; set; }
         public DateTime? PickupTime { get; set; }
         public DateTime? DropoffTime { get; set; }
         public decimal? EstimatedDistance { get; set; }

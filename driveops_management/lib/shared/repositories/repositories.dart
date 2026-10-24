@@ -4,6 +4,7 @@ import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/models/route_point.dart';
 import 'package:driveops_management/shared/models/recommended_driver.dart';
 import 'package:driveops_management/shared/models/keycloak_candidate.dart';
+import 'package:driveops_management/shared/models/defect_report.dart';
 import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
 
 abstract class DriverRepository {
@@ -42,4 +43,16 @@ abstract class VehicleRepository {
   Future<List<Vehicle>> getVehiclesNeedingService();
   Future<Vehicle> assignVehicle(String vehicleId, String driverId);
   Future<void> unassignVehicle(String vehicleId);
+}
+
+abstract class DefectRepository {
+  Future<List<DefectReport>> getDefects({
+    String? status,
+    DefectSeverity? severity,
+    String? vehicleId,
+    String? driverId,
+  });
+  Future<List<DefectReport>> getVehicleDefects(String vehicleId);
+  Future<DefectReport> resolveDefect(String id, {String? resolutionNotes});
+  Future<DefectReport> reopenDefect(String id);
 }

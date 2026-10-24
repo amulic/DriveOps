@@ -38,7 +38,7 @@ namespace DriveOps.API.Controllers
         }
 
         // Self-service onboarding: any authenticated user may create their own customer
-        // profile (mobile first-login flow) — the JWT sub must match the payload's KeycloakId.
+        // profile (mobile first-login flow)
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerRequest request)

@@ -129,3 +129,25 @@ public record VehicleStatusChangedEvent(
     string NewStatus,
     DateTime ChangedAt
 );
+
+public record VehicleDefectReportedEvent(
+    Guid DefectId,
+    Guid VehicleId,
+    string LicensePlate,
+    Guid DriverId,
+    string DriverName,
+    string Title,
+    int Severity,
+    DateTime ReportedAt
+);
+
+public record VehicleDefectResolvedEvent(
+    Guid DefectId,
+    Guid VehicleId,
+    string LicensePlate,
+    Guid DriverId,
+    string DriverName,
+    string Title,
+    bool Reopened,
+    DateTime Timestamp
+);

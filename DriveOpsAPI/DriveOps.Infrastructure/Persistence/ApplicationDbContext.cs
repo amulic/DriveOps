@@ -27,6 +27,8 @@ namespace DriveOps.Infrastructure.Persistence
 
         public virtual DbSet<VehicleDefectReport> VehicleDefectReports { get; set; }
 
+        public virtual DbSet<Payment> Payments { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -44,12 +46,14 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC074429FDDF");
 
                 entity.HasIndex(e => e.KeycloakId, "UQ__Customer__KeycloakId").IsUnique();
+                entity.HasIndex(e => e.StripeCustomerId, "UQ__Customer__StripeCustomerId").IsUnique();
 
                 entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 entity.Property(e => e.Email).HasMaxLength(255);
                 entity.Property(e => e.Name).HasMaxLength(100);
                 entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+                entity.Property(e => e.StripeCustomerId).HasMaxLength(64);
                 entity.Property(e => e.Rating)
                     .HasDefaultValue(5.00m)
                     .HasColumnType("decimal(3, 2)");
@@ -182,6 +186,7 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.Property(e => e.Description).HasMaxLength(2000);
                 entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("Reported");
                 entity.Property(e => e.ReportedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+                entity.Property(e => e.ResolutionNotes).HasMaxLength(1000);
 
                 entity.HasOne(d => d.Vehicle).WithMany()
                     .HasForeignKey(d => d.VehicleId)
@@ -190,6 +195,25 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.HasOne(d => d.Driver).WithMany()
                     .HasForeignKey(d => d.DriverId)
                     .HasConstraintName("FK__VehicleDefectReports__DriverId");
+            });
+
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__Payments__3214EC07");
+
+                entity.HasIndex(e => e.TripId, "IX__Payments__TripId");
+                entity.HasIndex(e => e.TransactionId, "UQ__Payments__TransactionId").IsUnique();
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
+                entity.Property(e => e.Amount).HasColumnType("decimal(10, 2)");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+                entity.Property(e => e.FailureReason).HasMaxLength(500);
+                entity.Property(e => e.TransactionId).HasMaxLength(100);
+
+                entity.HasOne(d => d.Trip).WithMany()
+                    .HasForeignKey(d => d.TripId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__Payments__TripId");
             });
 
             OnModelCreatingPartial(modelBuilder);

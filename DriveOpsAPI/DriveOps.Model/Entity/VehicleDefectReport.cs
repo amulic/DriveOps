@@ -23,6 +23,8 @@ public partial class VehicleDefectReport
 
     public DateTime? ResolvedAt { get; set; }
 
+    public string? ResolutionNotes { get; set; }
+
     public virtual Vehicle Vehicle { get; set; } = null!;
 
     public virtual Driver Driver { get; set; } = null!;

@@ -114,8 +114,6 @@ class TripDetailsPanel extends ConsumerWidget {
                   ]),
                   _buildInfoSection('Schedule', [
                     _buildInfoRow('Requested', _formatDateTime(trip.requestedAt)),
-                    if (trip.scheduledAt != null)
-                      _buildInfoRow('Scheduled', _formatDateTime(trip.scheduledAt!)),
                     if (trip.assignedAt != null)
                       _buildInfoRow('Assigned', _formatDateTime(trip.assignedAt!)),
                     if (trip.pickupTime != null)

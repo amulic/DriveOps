@@ -59,6 +59,10 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasColumnType("decimal(3, 2)")
                         .HasDefaultValue(5.00m);
 
+                    b.Property<string>("StripeCustomerId")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
                     b.Property<int?>("TotalTrips")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -73,6 +77,9 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasName("PK__Customer__3214EC074429FDDF");
 
                     b.HasIndex(new[] { "KeycloakId" }, "UQ__Customer__KeycloakId")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "StripeCustomerId" }, "UQ__Customer__StripeCustomerId")
                         .IsUnique();
 
                     b.ToTable("Customers");
@@ -184,6 +191,52 @@ namespace DriveOps.Infrastructure.Migrations
                     b.ToTable("Drivers");
                 });
 
+            modelBuilder.Entity("DriveOps.Model.Entity.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasDefaultValueSql("(UUID())");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(10, 2)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransactionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id")
+                        .HasName("PK__Payments__3214EC07");
+
+                    b.HasIndex(new[] { "TripId" }, "IX__Payments__TripId");
+
+                    b.HasIndex(new[] { "TransactionId" }, "UQ__Payments__TransactionId")
+                        .IsUnique();
+
+                    b.ToTable("Payments");
+                });
+
             modelBuilder.Entity("DriveOps.Model.Entity.Trip", b =>
                 {
                     b.Property<Guid>("Id")
@@ -281,9 +334,6 @@ namespace DriveOps.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-
-                    b.Property<DateTime?>("ScheduledAt")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("SpecialInstructions")
                         .HasMaxLength(500)
@@ -471,6 +521,10 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasColumnType("datetime(6)")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
+                    b.Property<string>("ResolutionNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("datetime(6)");
 
@@ -500,6 +554,17 @@ namespace DriveOps.Infrastructure.Migrations
                     b.HasIndex("VehicleId");
 
                     b.ToTable("VehicleDefectReports");
+                });
+
+            modelBuilder.Entity("DriveOps.Model.Entity.Payment", b =>
+                {
+                    b.HasOne("DriveOps.Model.Entity.Trip", "Trip")
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .IsRequired()
+                        .HasConstraintName("FK__Payments__TripId");
+
+                    b.Navigation("Trip");
                 });
 
             modelBuilder.Entity("DriveOps.Model.Entity.Trip", b =>

@@ -383,9 +383,50 @@ public static class SeedData
         };
 
         await context.Trips.AddRangeAsync(trips);
+
+        var defectReports = new[]
+        {
+            new VehicleDefectReport
+            {
+                Id = Guid.Parse("f1b2c3d4-0001-4000-8000-000000000001"),
+                VehicleId = vehicles[4].Id,
+                DriverId = drivers[3].Id,
+                Title = "Engine warning light",
+                Description = "Check-engine light came on during a shift; vehicle hesitates under acceleration.",
+                Severity = DefectSeverity.Critical,
+                Status = DefectStatus.Reported,
+                ReportedAt = now.AddDays(-2)
+            },
+            new VehicleDefectReport
+            {
+                Id = Guid.Parse("f1b2c3d4-0002-4000-8000-000000000002"),
+                VehicleId = vehicles[0].Id,
+                DriverId = drivers[0].Id,
+                Title = "Cracked windshield",
+                Description = "Small crack on the passenger side, spreading slowly.",
+                Severity = DefectSeverity.Medium,
+                Status = DefectStatus.Reported,
+                ReportedAt = now.AddDays(-1)
+            },
+            new VehicleDefectReport
+            {
+                Id = Guid.Parse("f1b2c3d4-0003-4000-8000-000000000003"),
+                VehicleId = vehicles[1].Id,
+                DriverId = drivers[1].Id,
+                Title = "Wiper blades worn",
+                Description = "Front wipers smear in heavy rain.",
+                Severity = DefectSeverity.Low,
+                Status = DefectStatus.Resolved,
+                ReportedAt = now.AddDays(-6),
+                ResolvedAt = now.AddDays(-3),
+                ResolutionNotes = "Wiper blades replaced at partner garage."
+            }
+        };
+
+        await context.VehicleDefectReports.AddRangeAsync(defectReports);
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Database seeded with {CustomerCount} customers, {DriverCount} drivers, {VehicleCount} vehicles, {TripCount} trips.",
-            customers.Length, drivers.Length, vehicles.Length, trips.Length);
+        logger.LogInformation("Database seeded with {CustomerCount} customers, {DriverCount} drivers, {VehicleCount} vehicles, {TripCount} trips, {DefectCount} defect reports.",
+            customers.Length, drivers.Length, vehicles.Length, trips.Length, defectReports.Length);
     }
 }

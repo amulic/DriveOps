@@ -182,6 +182,8 @@ namespace DriveOps.API.Mappings
         {
             Id = dto.Id,
             VehicleId = dto.VehicleId,
+            VehicleLicensePlate = dto.VehicleLicensePlate,
+            VehicleInternalName = dto.VehicleInternalName,
             DriverId = dto.DriverId,
             DriverName = dto.DriverName,
             Title = dto.Title,
@@ -189,7 +191,8 @@ namespace DriveOps.API.Mappings
             Severity = dto.Severity,
             Status = dto.Status,
             ReportedAt = dto.ReportedAt,
-            ResolvedAt = dto.ResolvedAt
+            ResolvedAt = dto.ResolvedAt,
+            ResolutionNotes = dto.ResolutionNotes
         };
 
         // ── Trip ──
@@ -203,7 +206,6 @@ namespace DriveOps.API.Mappings
             DropoffLatitude = request.DropoffLatitude,
             DropoffLongitude = request.DropoffLongitude,
             DropoffAddress = request.DropoffAddress,
-            ScheduledAt = request.ScheduledAt,
             PaymentMethod = request.PaymentMethod,
             SpecialInstructions = request.SpecialInstructions
         };
@@ -226,7 +228,6 @@ namespace DriveOps.API.Mappings
             DropoffLongitude = dto.DropoffLongitude,
             DropoffAddress = dto.DropoffAddress,
             RequestedAt = dto.RequestedAt,
-            ScheduledAt = dto.ScheduledAt,
             PickupTime = dto.PickupTime,
             DropoffTime = dto.DropoffTime,
             EstimatedDistance = dto.EstimatedDistance,

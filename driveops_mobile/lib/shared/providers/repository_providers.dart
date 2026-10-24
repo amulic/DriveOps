@@ -3,6 +3,7 @@ import 'package:driveops_mobile/shared/models/customer.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/models/vehicle.dart';
+import 'package:driveops_mobile/shared/models/defect_report.dart';
 import 'package:driveops_mobile/shared/repositories/repositories.dart';
 import 'package:driveops_mobile/shared/repositories/api_repositories.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
@@ -78,4 +79,13 @@ final driverVehicleProvider = FutureProvider<Vehicle?>((ref) async {
   if (driver == null) return null;
   final repo = ref.watch(vehicleRepositoryProvider);
   return repo.getVehicleByDriverId(driver.id);
+});
+
+/// Defect reports for a vehicle (driver Vehicle tab "My reports" section).
+/// autoDispose so it refetches on every tab visit — reports are resolved
+/// out-of-band from the management app.
+final vehicleDefectsProvider =
+    FutureProvider.autoDispose.family<List<DefectReport>, String>((ref, vehicleId) async {
+  final repo = ref.watch(vehicleRepositoryProvider);
+  return repo.getVehicleDefects(vehicleId);
 });

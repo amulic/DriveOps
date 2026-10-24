@@ -55,6 +55,9 @@ class _ReportDefectDialogState extends ConsumerState<ReportDefectDialog> {
         ),
       );
 
+      // Refresh the "Defect Reports" section on the vehicle tab.
+      ref.invalidate(vehicleDefectsProvider);
+
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(

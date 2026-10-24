@@ -152,7 +152,6 @@ namespace DriveOps.Application.Mappings
             DropoffLongitude = trip.DropoffLongitude,
             DropoffAddress = trip.DropoffAddress,
             RequestedAt = trip.RequestedAt,
-            ScheduledAt = trip.ScheduledAt,
             PickupTime = trip.PickupTime,
             DropoffTime = trip.DropoffTime,
             EstimatedDistance = trip.EstimatedDistance,
@@ -181,7 +180,6 @@ namespace DriveOps.Application.Mappings
             DropoffLatitude = dto.DropoffLatitude,
             DropoffLongitude = dto.DropoffLongitude,
             DropoffAddress = dto.DropoffAddress,
-            ScheduledAt = dto.ScheduledAt,
             PaymentMethod = dto.PaymentMethod,
             SpecialInstructions = dto.SpecialInstructions,
             PaymentStatus = PaymentStatus.Pending,
@@ -203,6 +201,8 @@ namespace DriveOps.Application.Mappings
         {
             Id = report.Id,
             VehicleId = report.VehicleId,
+            VehicleLicensePlate = report.Vehicle?.LicensePlate,
+            VehicleInternalName = report.Vehicle?.InternalName,
             DriverId = report.DriverId,
             DriverName = report.Driver != null
                 ? $"{report.Driver.FirstName} {report.Driver.LastName}"
@@ -212,7 +212,8 @@ namespace DriveOps.Application.Mappings
             Severity = report.Severity,
             Status = report.Status,
             ReportedAt = report.ReportedAt,
-            ResolvedAt = report.ResolvedAt
+            ResolvedAt = report.ResolvedAt,
+            ResolutionNotes = report.ResolutionNotes
         };
     }
 }

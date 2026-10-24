@@ -12,7 +12,6 @@ namespace DriveOps.API.ControllerDtos.Request
         public decimal DropoffLatitude { get; set; }
         public decimal DropoffLongitude { get; set; }
         public string DropoffAddress { get; set; } = null!;
-        public DateTime? ScheduledAt { get; set; }
         public PaymentMethod? PaymentMethod { get; set; }
         public string? SpecialInstructions { get; set; }
     }

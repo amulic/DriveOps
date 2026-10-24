@@ -9,7 +9,6 @@ class CreateTripRequest {
   final double dropoffLatitude;
   final double dropoffLongitude;
   final String dropoffAddress;
-  final DateTime? scheduledAt;
   final int? paymentMethod;
   final String? specialInstructions;
 
@@ -22,7 +21,6 @@ class CreateTripRequest {
     required this.dropoffLatitude,
     required this.dropoffLongitude,
     required this.dropoffAddress,
-    this.scheduledAt,
     this.paymentMethod,
     this.specialInstructions,
   });
@@ -37,7 +35,6 @@ class CreateTripRequest {
       'dropoffLatitude': dropoffLatitude,
       'dropoffLongitude': dropoffLongitude,
       'dropoffAddress': dropoffAddress,
-      if (scheduledAt != null) 'scheduledAt': scheduledAt!.toIso8601String(),
       if (paymentMethod != null) 'paymentMethod': paymentMethod,
       if (specialInstructions != null) 'specialInstructions': specialInstructions,
     };

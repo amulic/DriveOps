@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:driveops_mobile/features/driver/vehicle/presentation/widgets/report_defect_dialog.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/shared/models/vehicle.dart';
+import 'package:driveops_mobile/shared/models/defect_report.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
 class DriverVehicleScreen extends ConsumerWidget {
@@ -171,6 +172,10 @@ class _VehicleDetails extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 24),
+
+        // Defect reports for this vehicle (status of my reports)
+        _DefectReportsSection(vehicleId: vehicle.id),
       ],
     );
   }
@@ -242,5 +247,157 @@ class _VehicleDetails extends StatelessWidget {
         FuelType.diesel => 'Diesel',
         FuelType.hybrid => 'Hybrid',
         FuelType.electric => 'Electric',
+      };
+}
+
+class _DefectReportsSection extends ConsumerWidget {
+  final String vehicleId;
+
+  const _DefectReportsSection({required this.vehicleId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final defectsAsync = ref.watch(vehicleDefectsProvider(vehicleId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Defect Reports',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        defectsAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Color(0xFF3B82F6)),
+              ),
+            ),
+          ),
+          error: (_, _) => const Text(
+            'Failed to load defect reports.',
+            style: TextStyle(color: Colors.white38, fontSize: 13),
+          ),
+          data: (defects) {
+            if (defects.isEmpty) {
+              return const Text(
+                'No defects reported for this vehicle.',
+                style: TextStyle(color: Colors.white38, fontSize: 13),
+              );
+            }
+            return Column(
+              children: defects.map((d) => _DefectTile(defect: d)).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _DefectTile extends StatelessWidget {
+  final DefectReport defect;
+
+  const _DefectTile({required this.defect});
+
+  @override
+  Widget build(BuildContext context) {
+    final isResolved = defect.status == DefectStatus.resolved;
+    final statusColor =
+        isResolved ? const Color(0xFF22C55E) : const Color(0xFFF59E0B);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.build_outlined,
+                  size: 16, color: _severityColor(defect.severity)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  defect.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border:
+                      Border.all(color: statusColor.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  defect.status,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Reported ${DateFormat('MMM d, yyyy').format(defect.reportedAt.toLocal())}'
+            '${defect.resolvedAt != null ? '  ·  Resolved ${DateFormat('MMM d, yyyy').format(defect.resolvedAt!.toLocal())}' : ''}',
+            style: const TextStyle(color: Colors.white38, fontSize: 12),
+          ),
+          if (defect.resolutionNotes != null &&
+              defect.resolutionNotes!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.check_circle_outline,
+                    size: 14, color: Color(0xFF22C55E)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    defect.resolutionNotes!,
+                    style: const TextStyle(
+                        color: Colors.white54, fontSize: 12, height: 1.3),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _severityColor(DefectSeverity severity) => switch (severity) {
+        DefectSeverity.low => const Color(0xFF3B82F6),
+        DefectSeverity.medium => const Color(0xFFF59E0B),
+        DefectSeverity.high => const Color(0xFFF97316),
+        DefectSeverity.critical => const Color(0xFFEF4444),
       };
 }

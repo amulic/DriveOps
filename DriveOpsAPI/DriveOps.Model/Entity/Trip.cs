@@ -32,8 +32,6 @@ public partial class Trip
 
     public DateTime? RequestedAt { get; set; }
 
-    public DateTime? ScheduledAt { get; set; }
-
     public DateTime? AssignedAt { get; set; }
 
     public DateTime? PickupTime { get; set; }

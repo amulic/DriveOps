@@ -5,6 +5,7 @@ class ApiConfig {
   static const String driverEndpoint = '/api/driver';
   static const String tripEndpoint = '/api/trip';
   static const String vehicleEndpoint = '/api/vehicle';
+  static const String defectEndpoint = '/api/defects';
 
   static const String notificationHubPath = '/hubs/notification';
   static const String chatHubPath = '/hubs/chat';

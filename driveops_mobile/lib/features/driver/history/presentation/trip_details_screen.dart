@@ -107,7 +107,6 @@ class TripDetailsScreen extends ConsumerWidget {
                 _sectionTitle('Timeline'),
                 const SizedBox(height: 12),
                 _timeRow('Requested', trip.requestedAt),
-                _timeRow('Scheduled', trip.scheduledAt),
                 _timeRow('Assigned', trip.assignedAt),
                 _timeRow('Picked up', trip.pickupTime),
                 _timeRow('Dropped off', trip.dropoffTime),
@@ -315,7 +314,6 @@ class TripDetailsScreen extends ConsumerWidget {
         TripType.standard => 'Standard',
         TripType.premium => 'Premium',
         TripType.shared => 'Shared',
-        TripType.scheduled => 'Scheduled',
       };
 
   String _paymentLabel(PaymentMethod method) => switch (method) {

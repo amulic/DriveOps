@@ -80,6 +80,11 @@ namespace DriveOps.API.Controllers
             {
                 return Conflict(new { message = ex.Message });
             }
+            catch (PaymentGatewayException ex)
+            {
+                // Stripe unreachable while checking the saved-card guard.
+                return StatusCode(502, new { message = ex.Message });
+            }
             catch (InvalidOperationException ex)
             {
                 // Routing failure (e.g. OSRM could not calculate a route).

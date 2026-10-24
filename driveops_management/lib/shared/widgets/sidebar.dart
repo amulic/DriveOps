@@ -5,6 +5,7 @@ import 'package:driveops_management/config/api_config.dart';
 import 'package:driveops_management/shared/models/user.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
 import 'package:driveops_management/features/messages/presentation/providers/total_unread_provider.dart';
+import 'package:driveops_management/features/defects/presentation/providers/defects_providers.dart';
 
 class Sidebar extends ConsumerWidget {
   const Sidebar({super.key});
@@ -15,6 +16,7 @@ class Sidebar extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final user = authState.value?.user;
     final unreadCount = ref.watch(totalUnreadProvider);
+    final openDefects = ref.watch(totalOpenDefectsProvider);
 
     return Container(
       width: AppConstants.sidebarWidth,
@@ -65,6 +67,14 @@ class Sidebar extends ConsumerWidget {
                   route: '/vehicles',
                   isSelected: currentRoute == '/vehicles',
                   onTap: () => context.go('/vehicles'),
+                ),
+                _SidebarTabButton(
+                  icon: Icons.build_rounded,
+                  label: 'Defects',
+                  route: '/defects',
+                  isSelected: currentRoute == '/defects',
+                  onTap: () => context.go('/defects'),
+                  badge: openDefects > 0 ? '$openDefects' : null,
                 ),
               ],
             ),

@@ -4,6 +4,7 @@ import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/models/vehicle.dart';
 import 'package:driveops_mobile/shared/models/route_point.dart';
 import 'package:driveops_mobile/shared/models/recommended_driver.dart';
+import 'package:driveops_mobile/shared/models/defect_report.dart';
 import 'package:driveops_mobile/services/driver_api_service.dart';
 import 'package:driveops_mobile/services/customer_api_service.dart';
 import 'package:driveops_mobile/services/trip_api_service.dart';
@@ -352,11 +353,16 @@ class ApiVehicleRepository implements VehicleRepository {
     await _cache.remove(CacheService.vehiclesNeedingService);
   }
 
-  @override
-  Future<void> reportDefect(String vehicleId, ReportVehicleDefectRequest request) {
-    return _api.reportDefect(vehicleId, request);
+    @override
+    Future<void> reportDefect(String vehicleId, ReportVehicleDefectRequest request) {
+      return _api.reportDefect(vehicleId, request);
+    }
+
+    @override
+    Future<List<DefectReport>> getVehicleDefects(String vehicleId) {
+      return _api.getVehicleDefects(vehicleId);
+    }
   }
-}
 
 class ApiCustomerRepository implements CustomerRepository {
   final CustomerApiService _api;

@@ -1,5 +1,6 @@
 package com.driveops.driveops_mobile
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// FlutterFragmentActivity is required by flutter_stripe (PaymentSheet).
+class MainActivity : FlutterFragmentActivity()

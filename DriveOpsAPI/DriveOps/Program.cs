@@ -59,6 +59,14 @@ builder.Services.AddRabbitMq(rabbitHost, rabbitPort, rabbitUser, rabbitPass);
 // DI - Application (Services)
 builder.Services.AddApplication();
 
+// DI - Payments (Stripe gateway + non-secret options; secrets come from user-secrets/env)
+builder.Services.AddPayments(builder.Configuration["Stripe:SecretKey"]);
+builder.Services.AddSingleton(new DriveOps.Application.Services.PaymentServiceOptions
+{
+    Currency = builder.Configuration["Stripe:Currency"] ?? "eur",
+    WebhookSecret = builder.Configuration["Stripe:WebhookSecret"] ?? ""
+});
+
 // Fare Calculator configuration
 builder.Services.Configure<FareCalculatorOptions>(
     builder.Configuration.GetSection("FareCalculator"));

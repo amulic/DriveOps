@@ -21,8 +21,7 @@ enum TripStatus {
 enum TripType {
   standard,
   premium,
-  shared,
-  scheduled;
+  shared;
 
   static TripType fromInt(int value) {
     if (value >= 0 && value < values.length) {
@@ -83,7 +82,6 @@ class Trip {
   final double dropoffLongitude;
   final String dropoffAddress;
   final DateTime requestedAt;
-  final DateTime? scheduledAt;
   final DateTime? assignedAt;
   final DateTime? pickupTime;
   final DateTime? dropoffTime;
@@ -118,7 +116,6 @@ class Trip {
     required this.dropoffLongitude,
     required this.dropoffAddress,
     required this.requestedAt,
-    this.scheduledAt,
     this.assignedAt,
     this.pickupTime,
     this.dropoffTime,
@@ -155,9 +152,6 @@ class Trip {
       dropoffLongitude: (json['dropoffLongitude'] as num).toDouble(),
       dropoffAddress: json['dropoffAddress'] as String,
       requestedAt: DateTime.parse(json['requestedAt'] as String),
-      scheduledAt: json['scheduledAt'] != null
-          ? DateTime.parse(json['scheduledAt'] as String)
-          : null,
       assignedAt: json['assignedAt'] != null
           ? DateTime.parse(json['assignedAt'] as String)
           : null,
@@ -207,7 +201,6 @@ class Trip {
       'dropoffLongitude': dropoffLongitude,
       'dropoffAddress': dropoffAddress,
       'requestedAt': requestedAt.toIso8601String(),
-      'scheduledAt': scheduledAt?.toIso8601String(),
       'assignedAt': assignedAt?.toIso8601String(),
       'pickupTime': pickupTime?.toIso8601String(),
       'dropoffTime': dropoffTime?.toIso8601String(),
@@ -244,7 +237,6 @@ class Trip {
     double? dropoffLongitude,
     String? dropoffAddress,
     DateTime? requestedAt,
-    DateTime? scheduledAt,
     DateTime? assignedAt,
     DateTime? pickupTime,
     DateTime? dropoffTime,
@@ -279,7 +271,6 @@ class Trip {
       dropoffLongitude: dropoffLongitude ?? this.dropoffLongitude,
       dropoffAddress: dropoffAddress ?? this.dropoffAddress,
       requestedAt: requestedAt ?? this.requestedAt,
-      scheduledAt: scheduledAt ?? this.scheduledAt,
       assignedAt: assignedAt ?? this.assignedAt,
       pickupTime: pickupTime ?? this.pickupTime,
       dropoffTime: dropoffTime ?? this.dropoffTime,

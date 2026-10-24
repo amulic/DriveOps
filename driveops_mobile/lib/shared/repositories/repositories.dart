@@ -4,6 +4,7 @@ import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/models/vehicle.dart';
 import 'package:driveops_mobile/shared/models/route_point.dart';
 import 'package:driveops_mobile/shared/models/recommended_driver.dart';
+import 'package:driveops_mobile/shared/models/defect_report.dart';
 import 'package:driveops_mobile/shared/dtos/requests/driver_requests.dart';
 import 'package:driveops_mobile/shared/dtos/requests/vehicle_requests.dart';
 import 'package:driveops_mobile/shared/dtos/requests/customer_requests.dart';
@@ -55,8 +56,9 @@ abstract class VehicleRepository {
   Future<List<Vehicle>> getVehiclesNeedingService();
   Future<Vehicle> assignVehicle(String vehicleId, String driverId);
   Future<void> unassignVehicle(String vehicleId);
-  Future<void> reportDefect(String vehicleId, ReportVehicleDefectRequest request);
-}
+    Future<void> reportDefect(String vehicleId, ReportVehicleDefectRequest request);
+    Future<List<DefectReport>> getVehicleDefects(String vehicleId);
+  }
 
 abstract class CustomerRepository {
   Future<Customer?> getCustomerByKeycloakId(String keycloakId);

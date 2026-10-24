@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:driveops_mobile/features/customer/payment/payment_methods_screen.dart';
 import 'package:driveops_mobile/shared/dtos/requests/customer_requests.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
@@ -151,6 +152,35 @@ class _CustomerProfileScreenState
                         label: 'Email (optional)',
                         hint: 'e.g. john@email.com',
                         keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 28),
+                      Card(
+                        color: const Color(0xFF1A1A2E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          leading: const Icon(Icons.credit_card,
+                              color: Color(0xFF3B82F6)),
+                          title: const Text(
+                            'Payment methods',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: const Text(
+                            'Add or remove cards for card payments',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 12),
+                          ),
+                          trailing: const Icon(Icons.chevron_right,
+                              color: Colors.white38),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const PaymentMethodsScreen(),
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 28),
                       SizedBox(

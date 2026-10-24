@@ -20,6 +20,7 @@ namespace DriveOps.Application.Services
         private readonly IRoutingService _routingService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEventPublisher _eventPublisher;
+        private readonly IPaymentService _paymentService;
 
         public TripService(
             ITripRepository tripRepository,
@@ -29,7 +30,8 @@ namespace DriveOps.Application.Services
             IVehicleRepository vehicleRepository,
             IRoutingService routingService,
             IUnitOfWork unitOfWork,
-            IEventPublisher eventPublisher)
+            IEventPublisher eventPublisher,
+            IPaymentService paymentService)
         {
             _tripRepository = tripRepository;
             _tripRouteRepository = tripRouteRepository;
@@ -39,6 +41,7 @@ namespace DriveOps.Application.Services
             _routingService = routingService;
             _unitOfWork = unitOfWork;
             _eventPublisher = eventPublisher;
+            _paymentService = paymentService;
         }
 
         public async Task<PaginatedResult<TripDto>> GetAllTripsAsync(int page = 1, int pageSize = 20)
@@ -100,6 +103,12 @@ namespace DriveOps.Application.Services
             if (activeTrips.Any())
                 throw new ActiveTripExistsException(
                     $"Customer {dto.CustomerId} already has an active trip. Cancel it before requesting a new one.");
+
+            // Card trips need a saved card at request time — the charge at completion is off-session.
+            if (dto.PaymentMethod is ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard
+                && !await _paymentService.CustomerHasSavedCardAsync(dto.CustomerId))
+                throw new InvalidOperationException(
+                    "No saved card found. Add a card (Profile → Payment methods) before requesting a card trip.");
 
             var estimate = await _routingService.GetTripEstimateAsync(
                 dto.PickupLatitude, dto.PickupLongitude,
@@ -223,7 +232,11 @@ namespace DriveOps.Application.Services
                     actualDistance,
                     trip.ActualDuration ?? trip.EstimatedDuration ?? 0,
                     (DriveOps.RealTime.Contracts.Enums.TripType)(int)trip.TripType);
-                trip.PaymentStatus = ModelEnums.PaymentStatus.Completed;
+                // Cash is collected by the driver → settled immediately. Card trips stay Pending
+                // until the off-session charge below resolves (or the customer retries in-app).
+                trip.PaymentStatus = trip.PaymentMethod is ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard
+                    ? ModelEnums.PaymentStatus.Pending
+                    : ModelEnums.PaymentStatus.Completed;
                 trip.UpdatedAt = DateTime.UtcNow;
 
                 if (trip.DriverId.HasValue)
@@ -251,6 +264,10 @@ namespace DriveOps.Application.Services
 
                 await _unitOfWork.SaveChangesAsync();
             });
+
+            // Charge the saved card for card trips. Runs after the completion transaction commits —
+            // a failed charge never rolls back a completed trip; it marks the payment Failed instead.
+            await _paymentService.ChargeCompletedTripAsync(tripId);
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
             var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);

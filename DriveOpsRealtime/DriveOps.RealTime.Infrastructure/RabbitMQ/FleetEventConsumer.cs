@@ -41,7 +41,9 @@ public class FleetEventConsumer : BackgroundService
             { "realtime.fleet.vehicle.assigned", "vehicle.assigned" },
             { "realtime.fleet.vehicle.unassigned", "vehicle.unassigned" },
             { "realtime.fleet.driver.status.changed", "driver.status.changed" },
-            { "realtime.fleet.vehicle.status.changed", "vehicle.status.changed" }
+            { "realtime.fleet.vehicle.status.changed", "vehicle.status.changed" },
+            { "realtime.fleet.vehicle.defect.reported", "vehicle.defect.reported" },
+            { "realtime.fleet.vehicle.defect.resolved", "vehicle.defect.resolved" }
         };
 
         foreach (var (queue, routingKey) in queues)
@@ -97,6 +99,22 @@ public class FleetEventConsumer : BackgroundService
                             "VehicleStatusChanged",
                             JsonSerializer.Serialize(vehicleStatus),
                             vehicleStatus.ChangedAt));
+                        break;
+
+                    case "vehicle.defect.reported":
+                        var defectReported = JsonSerializer.Deserialize<VehicleDefectReportedEvent>(body)!;
+                        await notifications.SendFleetUpdateAsync(new FleetUpdateDto(
+                            "VehicleDefectReported",
+                            JsonSerializer.Serialize(defectReported),
+                            defectReported.ReportedAt));
+                        break;
+
+                    case "vehicle.defect.resolved":
+                        var defectResolved = JsonSerializer.Deserialize<VehicleDefectResolvedEvent>(body)!;
+                        await notifications.SendFleetUpdateAsync(new FleetUpdateDto(
+                            defectResolved.Reopened ? "VehicleDefectReopened" : "VehicleDefectResolved",
+                            JsonSerializer.Serialize(defectResolved),
+                            defectResolved.Timestamp));
                         break;
                 }
 

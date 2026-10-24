@@ -1,6 +1,7 @@
 ﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_mobile/services/api_service.dart';
 import 'package:driveops_mobile/shared/models/vehicle.dart';
+import 'package:driveops_mobile/shared/models/defect_report.dart';
 import 'package:driveops_mobile/shared/dtos/requests/vehicle_requests.dart';
 import 'package:driveops_mobile/config/api_config.dart';
 
@@ -69,5 +70,11 @@ class VehicleApiService {
       '${ApiConfig.vehicleEndpoint}/$vehicleId/defects',
       data: request.toJson(),
     );
+  }
+
+  Future<List<DefectReport>> getVehicleDefects(String vehicleId) async {
+    final response = await _api.get('${ApiConfig.vehicleEndpoint}/$vehicleId/defects');
+    final List<dynamic> data = response.data as List<dynamic>;
+    return data.map((json) => DefectReport.fromJson(json as Map<String, dynamic>)).toList();
   }
 }

@@ -20,7 +20,6 @@ namespace DriveOps.Application.DTOs
         public decimal DropoffLongitude { get; init; }
         public string DropoffAddress { get; init; } = null!;
         public DateTime? RequestedAt { get; init; }
-        public DateTime? ScheduledAt { get; init; }
         public DateTime? PickupTime { get; init; }
         public DateTime? DropoffTime { get; init; }
         public decimal? EstimatedDistance { get; init; }
@@ -47,7 +46,6 @@ namespace DriveOps.Application.DTOs
         public decimal DropoffLatitude { get; set; }
         public decimal DropoffLongitude { get; set; }
         public string DropoffAddress { get; set; } = null!;
-        public DateTime? ScheduledAt { get; set; }
         public PaymentMethod? PaymentMethod { get; set; }
         public string? SpecialInstructions { get; set; }
     }

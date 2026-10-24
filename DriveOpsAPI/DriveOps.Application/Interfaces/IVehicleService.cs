@@ -14,5 +14,8 @@ namespace DriveOps.Application.Interfaces
         Task DeleteVehicleAsync(Guid vehicleId);
         Task<VehicleDefectReportDto> ReportVehicleDefectAsync(ReportVehicleDefectDto dto);
         Task<IEnumerable<VehicleDefectReportDto>> GetVehicleDefectsAsync(Guid vehicleId);
+        Task<IEnumerable<VehicleDefectReportDto>> GetDefectsAsync(string? status, DriveOps.Model.Enums.DefectSeverity? severity, Guid? vehicleId, Guid? driverId);
+        Task<VehicleDefectReportDto> ResolveDefectAsync(Guid defectId, string? resolutionNotes);
+        Task<VehicleDefectReportDto> ReopenDefectAsync(Guid defectId);
     }
 }

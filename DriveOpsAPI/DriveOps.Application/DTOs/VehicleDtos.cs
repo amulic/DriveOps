@@ -71,13 +71,21 @@ namespace DriveOps.Application.DTOs
     {
         public Guid Id { get; init; }
         public Guid VehicleId { get; init; }
+        public string? VehicleLicensePlate { get; init; }
+        public string? VehicleInternalName { get; init; }
         public Guid DriverId { get; init; }
         public string? DriverName { get; init; }
         public string Title { get; init; } = null!;
         public string Description { get; init; } = null!;
         public DefectSeverity Severity { get; init; }
-        public string Status { get; init; } = "Reported";
+        public string Status { get; init; } = DefectStatus.Reported;
         public DateTime ReportedAt { get; init; }
         public DateTime? ResolvedAt { get; init; }
+        public string? ResolutionNotes { get; init; }
+    }
+
+    public class ResolveVehicleDefectDto
+    {
+        public string? ResolutionNotes { get; set; }
     }
 }

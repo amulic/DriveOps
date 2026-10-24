@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:driveops_mobile/features/customer/payment/payment_status_banner.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
@@ -16,6 +17,13 @@ String _paymentLabel(PaymentMethod method) => switch (method) {
       PaymentMethod.creditCard => 'Credit card',
       PaymentMethod.debitCard => 'Debit card',
       PaymentMethod.digitalWallet => 'Digital wallet',
+    };
+
+String _paymentStatusLabel(PaymentStatus status) => switch (status) {
+      PaymentStatus.pending => 'Processing',
+      PaymentStatus.completed => 'Paid',
+      PaymentStatus.failed => 'Failed',
+      PaymentStatus.refunded => 'Refunded',
     };
 
 class CustomerHistoryScreen extends ConsumerWidget {
@@ -266,6 +274,8 @@ class _TripTile extends ConsumerWidget {
                     ],
                   ],
                 ),
+                if (tripNeedsPayment(trip))
+                  PaymentStatusBanner(trip: trip, compact: true),
                 if (trip.customerRating != null) ...[
                   const SizedBox(height: 8),
                   RatingStars(rating: trip.customerRating!),
@@ -330,7 +340,14 @@ class _TripTile extends ConsumerWidget {
             if (trip.paymentMethod != null)
               _DetailLine(
                   label: 'Payment',
-                  value: _paymentLabel(trip.paymentMethod!)),
+                  value: trip.paymentStatus != null
+                      ? '${_paymentLabel(trip.paymentMethod!)} — '
+                          '${_paymentStatusLabel(trip.paymentStatus!)}'
+                      : _paymentLabel(trip.paymentMethod!)),
+            if (tripNeedsPayment(trip)) ...[
+              const SizedBox(height: 4),
+              PaymentStatusBanner(trip: trip),
+            ],
             if (trip.customerRating != null)
               _DetailLine(
                   label: 'Your rating', value: '${trip.customerRating} / 5'),

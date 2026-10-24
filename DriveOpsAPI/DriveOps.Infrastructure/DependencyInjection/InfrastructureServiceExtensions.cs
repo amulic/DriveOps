@@ -1,4 +1,5 @@
 using DriveOps.Application.Interfaces;
+using DriveOps.Infrastructure.Payments;
 using DriveOps.Infrastructure.Persistence;
 using DriveOps.Infrastructure.RabbitMQ;
 using DriveOps.Infrastructure.Repositories;
@@ -26,6 +27,7 @@ namespace DriveOps.Infrastructure.DependencyInjection
             services.AddScoped<IVehicleDefectReportRepository, VehicleDefectReportRepository>();
             services.AddScoped<ITripRepository, TripRepository>();
             services.AddScoped<ITripRouteRepository, TripRouteRepository>();
+            services.AddScoped<IPaymentRepository, PaymentRepository>();
 
             // External services
             services.AddHttpClient<IRoutingService, OsrmRoutingService>(client =>
@@ -47,6 +49,15 @@ namespace DriveOps.Infrastructure.DependencyInjection
                 client.Timeout = TimeSpan.FromSeconds(15);
             });
 
+            return services;
+        }
+
+        public static IServiceCollection AddPayments(this IServiceCollection services, string? stripeSecretKey)
+        {
+            services.AddSingleton<IPaymentGateway>(sp =>
+                new StripePaymentGateway(
+                    stripeSecretKey ?? "",
+                    sp.GetRequiredService<ILogger<StripePaymentGateway>>()));
             return services;
         }
 

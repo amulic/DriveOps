@@ -4,9 +4,11 @@ import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/models/route_point.dart';
 import 'package:driveops_management/shared/models/recommended_driver.dart';
 import 'package:driveops_management/shared/models/keycloak_candidate.dart';
+import 'package:driveops_management/shared/models/defect_report.dart';
 import 'package:driveops_management/services/driver_api_service.dart';
 import 'package:driveops_management/services/trip_api_service.dart';
 import 'package:driveops_management/services/vehicle_api_service.dart';
+import 'package:driveops_management/services/defect_api_service.dart';
 import 'package:driveops_management/services/cache_service.dart';
 import 'package:driveops_management/shared/repositories/repositories.dart';
 import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
@@ -309,5 +311,43 @@ class ApiVehicleRepository implements VehicleRepository {
     await _cache.remove(CacheService.vehiclesAvailable);
     await _cache.remove(CacheService.vehicle(vehicleId));
     await _cache.remove(CacheService.vehiclesNeedingService);
+  }
+}
+
+class ApiDefectRepository implements DefectRepository {
+  final DefectApiService _api;
+
+  // Defect lists are volatile workflow data — fetched fresh every time,
+  // no Hive caching (consistency with the recommendations pattern).
+  ApiDefectRepository(this._api);
+
+  @override
+  Future<List<DefectReport>> getDefects({
+    String? status,
+    DefectSeverity? severity,
+    String? vehicleId,
+    String? driverId,
+  }) {
+    return _api.getDefects(
+      status: status,
+      severity: severity?.toInt(),
+      vehicleId: vehicleId,
+      driverId: driverId,
+    );
+  }
+
+  @override
+  Future<List<DefectReport>> getVehicleDefects(String vehicleId) {
+    return _api.getVehicleDefects(vehicleId);
+  }
+
+  @override
+  Future<DefectReport> resolveDefect(String id, {String? resolutionNotes}) {
+    return _api.resolveDefect(id, resolutionNotes: resolutionNotes);
+  }
+
+  @override
+  Future<DefectReport> reopenDefect(String id) {
+    return _api.reopenDefect(id);
   }
 }

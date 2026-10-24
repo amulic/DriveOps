@@ -30,6 +30,8 @@ namespace DriveOps.API.ControllerDtos.Response
     {
         public Guid Id { get; set; }
         public Guid VehicleId { get; set; }
+        public string? VehicleLicensePlate { get; set; }
+        public string? VehicleInternalName { get; set; }
         public Guid DriverId { get; set; }
         public string? DriverName { get; set; }
         public string Title { get; set; } = null!;
@@ -38,5 +40,6 @@ namespace DriveOps.API.ControllerDtos.Response
         public string Status { get; set; } = "Reported";
         public DateTime ReportedAt { get; set; }
         public DateTime? ResolvedAt { get; set; }
+        public string? ResolutionNotes { get; set; }
     }
 }

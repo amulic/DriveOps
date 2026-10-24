@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/defect_report.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
 import 'package:driveops_management/features/drivers/presentation/providers/drivers_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/widgets/assign_driver_dialog.dart';
+import 'package:driveops_management/features/defects/presentation/providers/defects_providers.dart';
+import 'package:driveops_management/features/defects/presentation/widgets/defect_chips.dart';
+import 'package:driveops_management/features/defects/presentation/widgets/defect_detail_dialog.dart';
 
 class VehicleDetailDialog extends ConsumerWidget {
   final Vehicle vehicle;
@@ -97,6 +101,8 @@ class VehicleDetailDialog extends ConsumerWidget {
                     _buildInfoRow(Icons.person_off_outlined, 'Unassigned',
                       color: Colors.white38),
                 ]),
+                const SizedBox(height: 16),
+                _buildDefectsSection(context, ref),
                 const SizedBox(height: 24),
                 Row(
                   children: [
@@ -185,6 +191,91 @@ class VehicleDetailDialog extends ConsumerWidget {
           child: Column(children: rows),
         ),
       ],
+    );
+  }
+
+  Widget _buildDefectsSection(BuildContext context, WidgetRef ref) {
+    final defectsAsync = ref.watch(vehicleDefectsProvider(vehicle.id));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Defect Reports',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6)),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF252538),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: defectsAsync.when(
+            data: (defects) {
+              if (defects.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 16, color: Colors.white38),
+                      SizedBox(width: 10),
+                      Text('No defect reports', style: TextStyle(color: Colors.white38, fontSize: 14)),
+                    ],
+                  ),
+                );
+              }
+              return Column(
+                children: defects.map((d) => _buildDefectTile(context, d)).toList(),
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF3B82F6)),
+                ),
+              ),
+            ),
+            error: (_, __) => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text('Failed to load defect reports', style: TextStyle(color: Colors.white38, fontSize: 14)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDefectTile(BuildContext context, DefectReport defect) {
+    return InkWell(
+      onTap: () => showDialog(
+        context: context,
+        builder: (context) => DefectDetailDialog(defect: defect),
+      ),
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(Icons.build_outlined, size: 16, color: defectSeverityColor(defect.severity)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                defect.title,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            DefectStatusChip(status: defect.status),
+          ],
+        ),
+      ),
     );
   }
 

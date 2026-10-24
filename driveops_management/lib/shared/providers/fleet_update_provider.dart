@@ -5,6 +5,7 @@ import 'package:driveops_management/services/auth_service.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
 import 'package:driveops_management/features/drivers/presentation/providers/drivers_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
+import 'package:driveops_management/features/defects/presentation/providers/defects_providers.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 
 final signalrServiceProvider = Provider<SignalrService>((ref) {
@@ -64,6 +65,16 @@ final fleetUpdateListenerProvider = Provider<void>((ref) {
           // Keep the messagable/assignable lists in sync when a driver is
           // approved, suspended or toggles online from another client.
           ref.invalidate(activeDriversProvider);
+          break;
+
+        case 'VehicleDefectReported':
+        case 'VehicleDefectResolved':
+        case 'VehicleDefectReopened':
+          // Keep the Defects screen, vehicle detail defects section, Vehicles
+          // table badges and the sidebar badge in sync across clients.
+          ref.invalidate(defectsProvider);
+          ref.invalidate(vehicleDefectsProvider);
+          ref.invalidate(openDefectCountsProvider);
           break;
       }
     } catch (_) {
