@@ -3,6 +3,7 @@ using System;
 using DriveOps.RealTime.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -39,9 +40,17 @@ namespace DriveOps.RealTime.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<long>("Seq")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn);
+
                     b.HasKey("Id");
 
                     b.HasIndex("ConversationId");
+
+                    b.HasIndex("Seq")
+                        .IsUnique();
 
                     b.ToTable("ChatMessages");
                 });

@@ -1,6 +1,7 @@
 using DriveOps.RealTime.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace DriveOps.RealTime.Infrastructure.Configurations;
 
@@ -41,7 +42,11 @@ public class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMessage>
         builder.HasKey(m => m.Id);
         builder.Property(m => m.Id).ValueGeneratedOnAdd();
         builder.Property(m => m.Content).IsRequired().HasMaxLength(4000);
+        builder.Property(m => m.Seq)
+            .ValueGeneratedOnAdd()
+            .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn);
         builder.HasIndex(m => m.ConversationId);
+        builder.HasIndex(m => m.Seq).IsUnique();
     }
 }
 

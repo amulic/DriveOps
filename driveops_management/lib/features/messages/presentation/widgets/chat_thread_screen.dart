@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/chat_message.dart';
@@ -28,14 +30,24 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   late final ChatSignalrService _chatSignalr;
-  late List<ChatMessage> _messages;
+  List<ChatMessage> _messages = [];
+
+  /// Live messages that arrived while the initial history fetch was in flight.
+  final List<ChatMessage> _pendingMessages = [];
   bool _initialized = false;
+  StreamSubscription? _reconnectSub;
 
   @override
   void initState() {
     super.initState();
     _chatSignalr = ref.read(chatSignalrServiceProvider);
     _chatSignalr.joinConversationGroup(widget.conversation.id);
+    // Register hub handlers immediately so messages arriving while the history
+    // REST call is in flight are buffered instead of lost.
+    _listenForMessages();
+    // The service re-joins conversation groups after a reconnect, but messages
+    // sent during the disconnect window are gone — refetch the history.
+    _reconnectSub = _chatSignalr.onReconnected.listen((_) => _reloadHistory());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatSignalr.markAsRead(widget.conversation.id);
     });
@@ -43,6 +55,9 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
 
   @override
   void dispose() {
+    _reconnectSub?.cancel();
+    _chatSignalr.off('ReceiveMessage');
+    _chatSignalr.off('MessageSent');
     _chatSignalr.leaveConversationGroup(widget.conversation.id);
     _messageController.dispose();
     _scrollController.dispose();
@@ -82,19 +97,42 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
         .toList();
   }
 
+  /// Refetches the history after a reconnect, closing the disconnect gap.
+  Future<void> _reloadHistory() async {
+    try {
+      final fresh =
+          await ref.refresh(messagesProvider(widget.conversation.id).future);
+      if (!mounted || !_initialized) return;
+      setState(() {
+        // Keep unsent optimistic messages; the server list is authoritative
+        // for everything persisted.
+        final unsent = _messages.where((m) => m.id.startsWith('_'));
+        _messages = [...unsent, ...fresh];
+      });
+    } catch (_) {
+      // Keep the current list; the next reconnect or thread entry retries.
+    }
+  }
+
   void _listenForMessages() {
     _chatSignalr.on('ReceiveMessage', (args) {
       if (args != null && args.isNotEmpty) {
         final data = args.first as Map<String, dynamic>;
         final msg = ChatMessage.fromJson(data);
-        if (msg.conversationId == widget.conversation.id) {
-          setState(() {
-            if (!_messages.any((m) => m.id == msg.id)) {
-              _messages = [msg, ..._messages];
-            }
-          });
-          _scrollToBottom();
+        if (msg.conversationId != widget.conversation.id || !mounted) return;
+        if (!_initialized) {
+          // History still loading — buffer; merged (deduped) once it arrives.
+          if (!_pendingMessages.any((m) => m.id == msg.id)) {
+            _pendingMessages.insert(0, msg);
+          }
+          return;
         }
+        setState(() {
+          if (!_messages.any((m) => m.id == msg.id)) {
+            _messages = [msg, ..._messages];
+          }
+        });
+        _scrollToBottom();
       }
     });
 
@@ -102,11 +140,28 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
       if (args != null && args.isNotEmpty) {
         final data = args.first as Map<String, dynamic>;
         final msg = ChatMessage.fromJson(data);
-        if (msg.conversationId == widget.conversation.id) {
-          setState(() {
-            _messages = _messages.map((m) => m.id.startsWith('_') && m.content == msg.content ? msg : m).toList();
-          });
+        if (msg.conversationId != widget.conversation.id ||
+            !mounted ||
+            !_initialized) {
+          return;
         }
+        setState(() {
+          // Replace only the most recent optimistic copy (sentinel '_' id +
+          // matching content), so identical consecutive messages reconcile
+          // one-by-one. Then drop any duplicate of the authoritative id.
+          final idx = _messages.indexWhere(
+              (m) => m.id.startsWith('_') && m.content == msg.content);
+          if (idx >= 0) {
+            final copy = [..._messages];
+            copy[idx] = msg;
+            final seen = <String>{};
+            _messages = [for (final m in copy) if (seen.add(m.id)) m];
+          } else if (!_messages.any((m) => m.id == msg.id)) {
+            // Optimistic copy is gone (e.g. after a history reload) — insert
+            // the authoritative message directly.
+            _messages = [msg, ..._messages];
+          }
+        });
       }
     });
   }
@@ -119,9 +174,15 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
 
     if (!_initialized) {
       messagesAsync.whenData((msgs) {
-        _messages = msgs;
+        // Merge: keep unsent optimistic messages and any live messages that
+        // arrived while loading (deduped), ahead of the history page.
+        final knownIds = msgs.map((m) => m.id).toSet();
+        final pending =
+            _pendingMessages.where((m) => !knownIds.contains(m.id)).toList();
+        final unsent = _messages.where((m) => m.id.startsWith('_')).toList();
+        _messages = [...unsent, ...pending, ...msgs];
+        _pendingMessages.clear();
         _initialized = true;
-        _listenForMessages();
       });
     }
 

@@ -2,6 +2,7 @@ using DriveOps.API.ControllerDtos.Request;
 using DriveOps.API.ControllerDtos.Response;
 using DriveOps.API.Mappings;
 using DriveOps.Application.DTOs;
+using DriveOps.Application.Exceptions;
 using DriveOps.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -70,19 +71,54 @@ namespace DriveOps.API.Controllers
         [HttpPost]
         public async Task<IActionResult> RequestTrip([FromBody] CreateTripRequest request)
         {
-            var trip = await _tripService.RequestTripAsync(request.ToApplicationDto());
-            return CreatedAtAction(nameof(GetTripById), new { id = trip.Id }, trip.ToResponse());
+            try
+            {
+                var trip = await _tripService.RequestTripAsync(request.ToApplicationDto());
+                return CreatedAtAction(nameof(GetTripById), new { id = trip.Id }, trip.ToResponse());
+            }
+            catch (ActiveTripExistsException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
+            catch (PaymentGatewayException ex)
+            {
+                // Stripe unreachable while checking the saved-card guard.
+                return StatusCode(502, new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Routing failure (e.g. OSRM could not calculate a route).
+                return StatusCode(502, new { message = ex.Message });
+            }
+            catch (HttpRequestException ex)
+            {
+                // Routing service unreachable.
+                return StatusCode(502, new { message = ex.Message });
+            }
         }
 
         [HttpPost("estimate")]
         public async Task<IActionResult> GetTripEstimate([FromBody] TripEstimateRequest request)
         {
-            var estimate = await _tripService.GetTripEstimateAsync(
-                request.PickupLatitude, request.PickupLongitude,
-                request.DropoffLatitude, request.DropoffLongitude,
-                (DriveOps.RealTime.Contracts.Enums.TripType)(int)request.TripType);
+            try
+            {
+                var estimate = await _tripService.GetTripEstimateAsync(
+                    request.PickupLatitude, request.PickupLongitude,
+                    request.DropoffLatitude, request.DropoffLongitude,
+                    (DriveOps.RealTime.Contracts.Enums.TripType)(int)request.TripType);
 
-            return Ok(estimate.ToResponse());
+                return Ok(estimate.ToResponse());
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Routing failure (e.g. OSRM could not calculate a route).
+                return StatusCode(502, new { message = ex.Message });
+            }
+            catch (HttpRequestException ex)
+            {
+                // Routing service unreachable.
+                return StatusCode(502, new { message = ex.Message });
+            }
         }
 
         [HttpPost("{id:guid}/assign")]
@@ -111,6 +147,24 @@ namespace DriveOps.API.Controllers
         {
             var trip = await _tripService.CancelTripAsync(id, request.Reason);
             return Ok(trip.ToResponse());
+        }
+
+        [HttpPost("{id:guid}/decline")]
+        public async Task<IActionResult> DeclineTrip(Guid id, [FromBody] DeclineTripRequest request)
+        {
+            try
+            {
+                var trip = await _tripService.DeclineTripAsync(id, request.DriverId, request.Reason);
+                return Ok(trip.ToResponse());
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("{id:guid}/rate")]

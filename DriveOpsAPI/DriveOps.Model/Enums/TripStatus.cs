@@ -8,5 +8,6 @@ public enum TripStatus
     InProgress = 4,
     Completed = 5,
     Cancelled = 6,
-    NoDriverAvailable = 7
+    NoDriverAvailable = 7,
+    Declined = 8
 }

@@ -1,6 +1,7 @@
 using DriveOps.API.ControllerDtos.Request;
 using DriveOps.API.Mappings;
 using DriveOps.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DriveOps.API.Controllers
@@ -36,9 +37,17 @@ namespace DriveOps.API.Controllers
             return Ok(customer.ToResponse());
         }
 
+        // Self-service onboarding: any authenticated user may create their own customer
+        // profile (mobile first-login flow)
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerRequest request)
         {
+            // DefaultMapInboundClaims = false keeps the claim name as "sub".
+            var sub = User.FindFirst("sub")?.Value;
+            if (sub == null || !string.Equals(sub, request.KeycloakId.ToString(), StringComparison.OrdinalIgnoreCase))
+                return StatusCode(403, new { message = "You can only create a customer profile for your own account." });
+
             var customer = await _customerService.CreateCustomerAsync(request.ToApplicationDto());
             return CreatedAtAction(nameof(GetCustomerById), new { id = customer.Id }, customer.ToResponse());
         }

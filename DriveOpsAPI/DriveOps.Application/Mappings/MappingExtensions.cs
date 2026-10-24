@@ -27,6 +27,7 @@ namespace DriveOps.Application.Mappings
             IsOnline = driver.IsOnline,
             CurrentLatitude = driver.CurrentLatitude,
             CurrentLongitude = driver.CurrentLongitude,
+            ProfileImageUrl = driver.ProfileImageUrl,
             LastLocationUpdate = driver.LastLocationUpdate,
             CreatedAt = driver.CreatedAt
         };
@@ -101,6 +102,9 @@ namespace DriveOps.Application.Mappings
             AssignedDriverName = vehicle.AssignedDriver != null
                 ? $"{vehicle.AssignedDriver.FirstName} {vehicle.AssignedDriver.LastName}"
                 : null,
+            PhotoUrl = vehicle.PhotoUrl,
+            InternalName = vehicle.InternalName,
+            LastServiceDate = vehicle.LastServiceDate,
             CreatedAt = vehicle.CreatedAt
         };
 
@@ -118,6 +122,9 @@ namespace DriveOps.Application.Mappings
             RegistrationExpiryDate = dto.RegistrationExpiryDate,
             FuelType = dto.FuelType,
             SeatingCapacity = dto.SeatingCapacity ?? 4,
+            PhotoUrl = dto.PhotoUrl,
+            InternalName = dto.InternalName,
+            LastServiceDate = dto.LastServiceDate,
             Status = VehicleStatus.Available,
             Mileage = 0,
             CreatedAt = DateTime.UtcNow,
@@ -145,7 +152,6 @@ namespace DriveOps.Application.Mappings
             DropoffLongitude = trip.DropoffLongitude,
             DropoffAddress = trip.DropoffAddress,
             RequestedAt = trip.RequestedAt,
-            ScheduledAt = trip.ScheduledAt,
             PickupTime = trip.PickupTime,
             DropoffTime = trip.DropoffTime,
             EstimatedDistance = trip.EstimatedDistance,
@@ -174,7 +180,6 @@ namespace DriveOps.Application.Mappings
             DropoffLatitude = dto.DropoffLatitude,
             DropoffLongitude = dto.DropoffLongitude,
             DropoffAddress = dto.DropoffAddress,
-            ScheduledAt = dto.ScheduledAt,
             PaymentMethod = dto.PaymentMethod,
             SpecialInstructions = dto.SpecialInstructions,
             PaymentStatus = PaymentStatus.Pending,
@@ -189,6 +194,26 @@ namespace DriveOps.Application.Mappings
             Latitude = routePoint.Latitude,
             Longitude = routePoint.Longitude,
             Timestamp = routePoint.Timestamp
+        };
+
+        // ── VehicleDefectReport ──
+        public static VehicleDefectReportDto ToDto(this VehicleDefectReport report) => new()
+        {
+            Id = report.Id,
+            VehicleId = report.VehicleId,
+            VehicleLicensePlate = report.Vehicle?.LicensePlate,
+            VehicleInternalName = report.Vehicle?.InternalName,
+            DriverId = report.DriverId,
+            DriverName = report.Driver != null
+                ? $"{report.Driver.FirstName} {report.Driver.LastName}"
+                : null,
+            Title = report.Title,
+            Description = report.Description,
+            Severity = report.Severity,
+            Status = report.Status,
+            ReportedAt = report.ReportedAt,
+            ResolvedAt = report.ResolvedAt,
+            ResolutionNotes = report.ResolutionNotes
         };
     }
 }

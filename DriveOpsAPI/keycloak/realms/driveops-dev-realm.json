@@ -80,7 +80,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-driveops-dev"],
+      "realmRoles": ["default-roles-driveops-dev", "driver"],
       "requiredActions": []
     },
     {
@@ -98,7 +98,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-driveops-dev"],
+      "realmRoles": ["default-roles-driveops-dev", "driver"],
       "requiredActions": []
     },
     {
@@ -116,7 +116,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-driveops-dev"],
+      "realmRoles": ["default-roles-driveops-dev", "driver"],
       "requiredActions": []
     },
     {
@@ -134,7 +134,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-driveops-dev"],
+      "realmRoles": ["default-roles-driveops-dev", "driver"],
       "requiredActions": []
     },
     {
@@ -152,7 +152,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-driveops-dev"],
+      "realmRoles": ["default-roles-driveops-dev", "driver"],
       "requiredActions": []
     },
     {
@@ -170,7 +170,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-driveops-dev"],
+      "realmRoles": ["default-roles-driveops-dev", "customer"],
       "requiredActions": []
     },
     {
@@ -188,7 +188,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-driveops-dev"],
+      "realmRoles": ["default-roles-driveops-dev", "customer"],
       "requiredActions": []
     },
     {
@@ -206,7 +206,18 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-driveops-dev"],
+      "realmRoles": ["default-roles-driveops-dev", "customer"],
+      "requiredActions": []
+    },
+    {
+      "id": "b1b2c3d4-0004-4000-8000-000000000004",
+      "username": "service-account-driveops-backend",
+      "enabled": true,
+      "emailVerified": false,
+      "serviceAccountClientId": "driveops-backend",
+      "clientRoles": {
+        "realm-management": ["view-users", "manage-users"]
+      },
       "requiredActions": []
     }
   ],
@@ -219,6 +230,33 @@
       {
         "name": "dispatcher",
         "description": "Dispatcher access for management console"
+      },
+      {
+        "name": "driver",
+        "description": "Driver role for the mobile app"
+      },
+      {
+        "name": "customer",
+        "description": "Customer role for the mobile app"
+      },
+      {
+        "name": "default-roles-driveops-dev",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "offline_access",
+            "uma_authorization",
+            "customer"
+          ],
+          "client": {
+            "account": [
+              "view-profile",
+              "manage-account"
+            ]
+          }
+        },
+        "clientRole": false
       }
     ]
   },
@@ -232,7 +270,7 @@
       "secret": "driveops-backend-secret-dev",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": false,
+      "serviceAccountsEnabled": true,
       "publicClient": false,
       "frontchannelLogout": true,
       "protocol": "openid-connect",
@@ -272,6 +310,39 @@
       "protocol": "openid-connect",
       "attributes": {
         "post.logout.redirect.uris": "http://127.0.0.1:42069##http://localhost:42069",
+        "pkce.code.challenge.method": "S256"
+      },
+    "fullScopeAllowed": true,
+    "defaultClientScopes": [
+      "web-origins",
+      "profile",
+      "roles",
+      "email",
+      "basic"
+    ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "clientId": "driveops-mobile",
+      "name": "DriveOps Mobile App",
+      "description": "Flutter mobile app for drivers and customers (PKCE flow)",
+      "enabled": true,
+      "redirectUris": [
+        "com.driveops.mobile://oauth2redirect"
+      ],
+      "webOrigins": [],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "publicClient": true,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "post.logout.redirect.uris": "com.driveops.mobile://logout",
         "pkce.code.challenge.method": "S256"
       },
     "fullScopeAllowed": true,

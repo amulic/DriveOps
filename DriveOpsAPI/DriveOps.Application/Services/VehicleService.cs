@@ -10,13 +10,15 @@ namespace DriveOps.Application.Services
     {
         private readonly IVehicleRepository _vehicleRepository;
         private readonly IDriverRepository _driverRepository;
+        private readonly IVehicleDefectReportRepository _vehicleDefectReportRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEventPublisher _eventPublisher;
 
-        public VehicleService(IVehicleRepository vehicleRepository, IDriverRepository driverRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
+        public VehicleService(IVehicleRepository vehicleRepository, IDriverRepository driverRepository, IVehicleDefectReportRepository vehicleDefectReportRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher)
         {
             _vehicleRepository = vehicleRepository;
             _driverRepository = driverRepository;
+            _vehicleDefectReportRepository = vehicleDefectReportRepository;
             _unitOfWork = unitOfWork;
             _eventPublisher = eventPublisher;
         }
@@ -58,14 +60,18 @@ namespace DriveOps.Application.Services
         public async Task<VehicleDto> UpdateVehicleAsync(UpdateVehicleDto dto)
         {
             var vehicle = await _vehicleRepository.GetByIdAsync(dto.Id)
-                ?? throw new KeyNotFoundException($"Vehicle {dto.Id} not found.");
+                  ?? throw new KeyNotFoundException($"Vehicle {dto.Id} not found.");
 
+            // crap
             if (dto.Color != null) vehicle.Color = dto.Color;
             if (dto.InsurancePolicyNumber != null) vehicle.InsurancePolicyNumber = dto.InsurancePolicyNumber;
             if (dto.InsuranceExpiryDate.HasValue) vehicle.InsuranceExpiryDate = dto.InsuranceExpiryDate.Value;
             if (dto.RegistrationExpiryDate.HasValue) vehicle.RegistrationExpiryDate = dto.RegistrationExpiryDate.Value;
             if (dto.Status.HasValue) vehicle.Status = dto.Status;
             if (dto.Mileage.HasValue) vehicle.Mileage = dto.Mileage;
+            if (dto.PhotoUrl != null) vehicle.PhotoUrl = dto.PhotoUrl;
+            if (dto.InternalName != null) vehicle.InternalName = dto.InternalName;
+            if (dto.LastServiceDate.HasValue) vehicle.LastServiceDate = dto.LastServiceDate;
             vehicle.UpdatedAt = DateTime.UtcNow;
 
             await _vehicleRepository.UpdateAsync(vehicle);
@@ -147,6 +153,118 @@ namespace DriveOps.Application.Services
         {
             await _vehicleRepository.DeleteAsync(vehicleId);
             await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task<VehicleDefectReportDto> ReportVehicleDefectAsync(ReportVehicleDefectDto dto)
+        {
+            var vehicle = await _vehicleRepository.GetByIdAsync(dto.VehicleId)
+                ?? throw new KeyNotFoundException($"Vehicle {dto.VehicleId} not found.");
+
+            var driver = await _driverRepository.GetByIdAsync(dto.DriverId)
+                ?? throw new KeyNotFoundException($"Driver {dto.DriverId} not found.");
+
+            var report = new DriveOps.Model.Entity.VehicleDefectReport
+            {
+                Id = Guid.NewGuid(),
+                VehicleId = dto.VehicleId,
+                DriverId = dto.DriverId,
+                Title = dto.Title,
+                Description = dto.Description,
+                Severity = dto.Severity,
+                Status = DefectStatus.Reported,
+                ReportedAt = DateTime.UtcNow
+            };
+
+            await _vehicleDefectReportRepository.AddAsync(report);
+            await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.fleet", "vehicle.defect.reported",
+                new VehicleDefectReportedEvent(
+                    report.Id,
+                    vehicle.Id,
+                    vehicle.LicensePlate,
+                    driver.Id,
+                    $"{driver.FirstName} {driver.LastName}",
+                    report.Title,
+                    (int)report.Severity,
+                    report.ReportedAt));
+
+            report.Driver = driver;
+            report.Vehicle = vehicle;
+            return report.ToDto();
+        }
+
+        public async Task<IEnumerable<VehicleDefectReportDto>> GetVehicleDefectsAsync(Guid vehicleId)
+        {
+            var vehicleExists = await _vehicleRepository.ExistsAsync(vehicleId);
+            if (!vehicleExists)
+                throw new KeyNotFoundException($"Vehicle {vehicleId} not found.");
+
+            var reports = await _vehicleDefectReportRepository.GetByVehicleIdAsync(vehicleId);
+            return reports.Select(r => r.ToDto());
+        }
+
+        public async Task<IEnumerable<VehicleDefectReportDto>> GetDefectsAsync(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId)
+        {
+            var reports = await _vehicleDefectReportRepository.GetFilteredAsync(status, severity, vehicleId, driverId);
+            return reports.Select(r => r.ToDto());
+        }
+
+        public async Task<VehicleDefectReportDto> ResolveDefectAsync(Guid defectId, string? resolutionNotes)
+        {
+            var report = await _vehicleDefectReportRepository.GetByIdWithDetailsAsync(defectId)
+                ?? throw new KeyNotFoundException($"Defect report {defectId} not found.");
+
+            if (report.Status == DefectStatus.Resolved)
+                throw new InvalidOperationException("Defect report is already resolved.");
+
+            report.Status = DefectStatus.Resolved;
+            report.ResolvedAt = DateTime.UtcNow;
+            report.ResolutionNotes = resolutionNotes;
+
+            await _vehicleDefectReportRepository.UpdateAsync(report);
+            await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.fleet", "vehicle.defect.resolved",
+                new VehicleDefectResolvedEvent(
+                    report.Id,
+                    report.VehicleId,
+                    report.Vehicle?.LicensePlate ?? string.Empty,
+                    report.DriverId,
+                    report.Driver != null ? $"{report.Driver.FirstName} {report.Driver.LastName}" : string.Empty,
+                    report.Title,
+                    false,
+                    DateTime.UtcNow));
+
+            return report.ToDto();
+        }
+
+        public async Task<VehicleDefectReportDto> ReopenDefectAsync(Guid defectId)
+        {
+            var report = await _vehicleDefectReportRepository.GetByIdWithDetailsAsync(defectId)
+                ?? throw new KeyNotFoundException($"Defect report {defectId} not found.");
+
+            if (report.Status != DefectStatus.Resolved)
+                throw new InvalidOperationException("Only resolved defect reports can be reopened.");
+
+            report.Status = DefectStatus.Reported;
+            report.ResolvedAt = null;
+
+            await _vehicleDefectReportRepository.UpdateAsync(report);
+            await _unitOfWork.SaveChangesAsync();
+
+            await _eventPublisher.PublishAsync("driveops.fleet", "vehicle.defect.resolved",
+                new VehicleDefectResolvedEvent(
+                    report.Id,
+                    report.VehicleId,
+                    report.Vehicle?.LicensePlate ?? string.Empty,
+                    report.DriverId,
+                    report.Driver != null ? $"{report.Driver.FirstName} {report.Driver.LastName}" : string.Empty,
+                    report.Title,
+                    true,
+                    DateTime.UtcNow));
+
+            return report.ToDto();
         }
     }
 }

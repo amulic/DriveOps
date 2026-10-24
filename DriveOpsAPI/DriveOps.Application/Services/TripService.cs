@@ -1,4 +1,5 @@
 using DriveOps.Application.DTOs;
+using DriveOps.Application.Exceptions;
 using DriveOps.Application.Helpers;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
@@ -19,6 +20,7 @@ namespace DriveOps.Application.Services
         private readonly IRoutingService _routingService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEventPublisher _eventPublisher;
+        private readonly IPaymentService _paymentService;
 
         public TripService(
             ITripRepository tripRepository,
@@ -28,7 +30,8 @@ namespace DriveOps.Application.Services
             IVehicleRepository vehicleRepository,
             IRoutingService routingService,
             IUnitOfWork unitOfWork,
-            IEventPublisher eventPublisher)
+            IEventPublisher eventPublisher,
+            IPaymentService paymentService)
         {
             _tripRepository = tripRepository;
             _tripRouteRepository = tripRouteRepository;
@@ -38,6 +41,7 @@ namespace DriveOps.Application.Services
             _routingService = routingService;
             _unitOfWork = unitOfWork;
             _eventPublisher = eventPublisher;
+            _paymentService = paymentService;
         }
 
         public async Task<PaginatedResult<TripDto>> GetAllTripsAsync(int page = 1, int pageSize = 20)
@@ -93,6 +97,19 @@ namespace DriveOps.Application.Services
 
         public async Task<TripDto> RequestTripAsync(CreateTripDto dto)
         {
+            // Single-active-trip rule: a customer with a live trip (Requested →
+            // InProgress) cannot request another until it reaches a terminal state.
+            var activeTrips = await _tripRepository.GetActiveTripsByCustomerIdAsync(dto.CustomerId);
+            if (activeTrips.Any())
+                throw new ActiveTripExistsException(
+                    $"Customer {dto.CustomerId} already has an active trip. Cancel it before requesting a new one.");
+
+            // Card trips need a saved card at request time — the charge at completion is off-session.
+            if (dto.PaymentMethod is ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard
+                && !await _paymentService.CustomerHasSavedCardAsync(dto.CustomerId))
+                throw new InvalidOperationException(
+                    "No saved card found. Add a card (Profile → Payment methods) before requesting a card trip.");
+
             var estimate = await _routingService.GetTripEstimateAsync(
                 dto.PickupLatitude, dto.PickupLongitude,
                 dto.DropoffLatitude, dto.DropoffLongitude,
@@ -215,7 +232,11 @@ namespace DriveOps.Application.Services
                     actualDistance,
                     trip.ActualDuration ?? trip.EstimatedDuration ?? 0,
                     (DriveOps.RealTime.Contracts.Enums.TripType)(int)trip.TripType);
-                trip.PaymentStatus = ModelEnums.PaymentStatus.Completed;
+                // Cash is collected by the driver → settled immediately. Card trips stay Pending
+                // until the off-session charge below resolves (or the customer retries in-app).
+                trip.PaymentStatus = trip.PaymentMethod is ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard
+                    ? ModelEnums.PaymentStatus.Pending
+                    : ModelEnums.PaymentStatus.Completed;
                 trip.UpdatedAt = DateTime.UtcNow;
 
                 if (trip.DriverId.HasValue)
@@ -243,6 +264,10 @@ namespace DriveOps.Application.Services
 
                 await _unitOfWork.SaveChangesAsync();
             });
+
+            // Charge the saved card for card trips. Runs after the completion transaction commits —
+            // a failed charge never rolls back a completed trip; it marks the payment Failed instead.
+            await _paymentService.ChargeCompletedTripAsync(tripId);
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
             var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
@@ -304,7 +329,57 @@ namespace DriveOps.Application.Services
             return result!.ToDto();
         }
 
-        public async Task<TripDto> RateTripAsync(RateTripDto dto)
+        public async Task<TripDto> DeclineTripAsync(Guid tripId, Guid driverId, string? reason)
+        {
+            var trip = await _tripRepository.GetByIdAsync(tripId)
+                ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
+
+            if (trip.TripStatus != ModelEnums.TripStatus.Assigned && trip.TripStatus != ModelEnums.TripStatus.DriverEnRoute)
+                throw new InvalidOperationException("Only an assigned or en-route trip can be declined.");
+
+            if (trip.DriverId != driverId)
+                throw new InvalidOperationException("Trip is not assigned to this driver.");
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                // Keep DriverId/VehicleId on the trip so declines stay countable per driver.
+                trip.TripStatus = ModelEnums.TripStatus.Declined;
+                trip.CancellationReason = reason;
+                trip.UpdatedAt = DateTime.UtcNow;
+
+                var driver = await _driverRepository.GetByIdAsync(driverId);
+                if (driver != null)
+                {
+                    driver.Status = ModelEnums.DriverStatus.Active;
+                    driver.UpdatedAt = DateTime.UtcNow;
+                }
+
+                if (trip.VehicleId.HasValue)
+                {
+                    var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
+                    if (vehicle != null)
+                    {
+                        vehicle.Status = ModelEnums.VehicleStatus.Available;
+                        vehicle.UpdatedAt = DateTime.UtcNow;
+                    }
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+              });
+
+              var result = await _tripRepository.GetWithDetailsAsync(tripId);
+              var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
+              var driver = await _driverRepository.GetByIdAsync(driverId);
+
+              await _eventPublisher.PublishAsync("driveops.trips", "trip.declined",
+                  new TripDeclinedEvent(
+                      tripId, trip.CustomerId, trip.DriverId, reason, DateTime.UtcNow,
+                      customer?.KeycloakId, driver?.KeycloakId));
+
+              return result!.ToDto();
+          }
+
+          public async Task<TripDto> RateTripAsync(RateTripDto dto)
         {
             var trip = await _tripRepository.GetByIdAsync(dto.TripId)
                 ?? throw new KeyNotFoundException($"Trip {dto.TripId} not found.");

@@ -39,6 +39,18 @@ namespace DriveOps.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Trip>> GetActiveTripsByCustomerIdAsync(Guid customerId)
+        {
+            return await _dbSet
+                .Where(t => t.CustomerId == customerId
+                    && (t.TripStatus == TripStatus.Requested
+                        || t.TripStatus == TripStatus.Assigned
+                        || t.TripStatus == TripStatus.DriverEnRoute
+                        || t.TripStatus == TripStatus.InProgress))
+                .OrderByDescending(t => t.RequestedAt)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Trip>> GetByCustomerIdAsync(Guid customerId, int page = 1, int pageSize = 20)
         {
             return await _dbSet

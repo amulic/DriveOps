@@ -168,7 +168,7 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
             columns: const [
               DataColumn(label: Text('Driver')),
               DataColumn(label: Text('Status')),
-              DataColumn(label: Text('Rides')),
+              DataColumn(label: Text('Trips')),
               DataColumn(label: Text('Active Time')),
               DataColumn(label: Text('Earnings')),
               DataColumn(label: Text('')),
@@ -307,6 +307,7 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
   }
 
   Widget _buildMoreActions(Driver driver) {
+    final isPending = driver.status == DriverStatus.pending;
     final isSuspended = driver.status == DriverStatus.suspended;
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, color: Colors.white54),
@@ -326,8 +327,10 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
                 driverName: driver.driverName,
               ),
             );
+          case 'activate':
+            _activateDriver(driver);
           case 'suspend':
-            _toggleSuspend(driver);
+            _suspendDriver(driver);
         }
       },
       itemBuilder: (context) => [
@@ -351,49 +354,85 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
             ],
           ),
         ),
-        PopupMenuItem(
-          value: 'suspend',
-          child: Row(
-            children: [
-              Icon(
-                isSuspended ? Icons.check_circle_outline : Icons.block,
-                color: const Color(0xFFEF4444),
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                isSuspended ? 'Activate' : 'Suspend',
-                style: const TextStyle(color: Color(0xFFEF4444)),
-              ),
-            ],
+        // Approval gate: Pending → Approve, Suspended → Activate (both → Active),
+        // otherwise offer Suspend.
+        if (isPending)
+          const PopupMenuItem(
+            value: 'activate',
+            child: Row(
+              children: [
+                Icon(Icons.verified_user_outlined, color: Color(0xFF22C55E), size: 18),
+                SizedBox(width: 8),
+                Text('Approve', style: TextStyle(color: Color(0xFF22C55E))),
+              ],
+            ),
+          )
+        else if (isSuspended)
+          const PopupMenuItem(
+            value: 'activate',
+            child: Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Color(0xFF22C55E), size: 18),
+                SizedBox(width: 8),
+                Text('Activate', style: TextStyle(color: Color(0xFF22C55E))),
+              ],
+            ),
+          )
+        else
+          const PopupMenuItem(
+            value: 'suspend',
+            child: Row(
+              children: [
+                Icon(Icons.block, color: Color(0xFFEF4444), size: 18),
+                SizedBox(width: 8),
+                Text('Suspend', style: TextStyle(color: Color(0xFFEF4444))),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
 
-  Future<void> _toggleSuspend(Driver driver) async {
+  void _invalidateDriverProviders() {
+    ref.invalidate(driversAsyncProvider);
+    ref.invalidate(filteredDriversProvider);
+    ref.invalidate(activeDriversProvider);
+    ref.invalidate(allDriversProvider);
+  }
+
+  Future<void> _activateDriver(Driver driver) async {
+    final wasPending = driver.status == DriverStatus.pending;
     try {
-      final repo = ref.read(driverRepositoryProvider);
-      if (driver.status == DriverStatus.suspended) {
-        await repo.activateDriver(driver.id);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${driver.driverName} has been activated'),
-            backgroundColor: const Color(0xFF22C55E),
-          ),
-        );
-      } else {
-        await repo.suspendDriver(driver.id);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${driver.driverName} has been suspended'),
-            backgroundColor: const Color(0xFFF59E0B),
-          ),
-        );
-      }
-      ref.invalidate(driversAsyncProvider);
-      ref.invalidate(filteredDriversProvider);
+      await ref.read(driverRepositoryProvider).activateDriver(driver.id);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(wasPending
+              ? '${driver.driverName} has been approved'
+              : '${driver.driverName} has been activated'),
+          backgroundColor: const Color(0xFF22C55E),
+        ),
+      );
+      _invalidateDriverProviders();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Action failed: $e'),
+          backgroundColor: const Color(0xFFEF4444),
+        ),
+      );
+    }
+  }
+
+  Future<void> _suspendDriver(Driver driver) async {
+    try {
+      await ref.read(driverRepositoryProvider).suspendDriver(driver.id);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${driver.driverName} has been suspended'),
+          backgroundColor: const Color(0xFFF59E0B),
+        ),
+      );
+      _invalidateDriverProviders();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

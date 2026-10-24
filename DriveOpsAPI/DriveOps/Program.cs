@@ -45,7 +45,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 // DI - Infrastructure (DbContext, Repositories, External Services)
-builder.Services.AddInfrastructure(connectionString);
+var osrmBaseUrl = builder.Configuration["Osrm:BaseUrl"];
+var nominatimBaseUrl = builder.Configuration["Nominatim:BaseUrl"];
+builder.Services.AddInfrastructure(connectionString, osrmBaseUrl, nominatimBaseUrl);
 
 // DI - RabbitMQ (Event Publishing + Consumers)
 var rabbitHost = builder.Configuration["RabbitMQ:HostName"] ?? "localhost";
@@ -56,6 +58,14 @@ builder.Services.AddRabbitMq(rabbitHost, rabbitPort, rabbitUser, rabbitPass);
 
 // DI - Application (Services)
 builder.Services.AddApplication();
+
+// DI - Payments (Stripe gateway + non-secret options; secrets come from user-secrets/env)
+builder.Services.AddPayments(builder.Configuration["Stripe:SecretKey"]);
+builder.Services.AddSingleton(new DriveOps.Application.Services.PaymentServiceOptions
+{
+    Currency = builder.Configuration["Stripe:Currency"] ?? "eur",
+    WebhookSecret = builder.Configuration["Stripe:WebhookSecret"] ?? ""
+});
 
 // Fare Calculator configuration
 builder.Services.Configure<FareCalculatorOptions>(
@@ -80,15 +90,21 @@ builder.Services.AddAuthentication("Bearer")
        options.Authority = builder.Configuration["Keycloak:Authority"];
        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
-       options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-       {
-           ValidateAudience = false,
-           ValidateIssuer = true,
-           ValidateLifetime = true,
-           ValidateIssuerSigningKey = true,
-           ValidIssuer = builder.Configuration["Keycloak:Authority"],
-           ClockSkew = TimeSpan.Zero
-       };
+         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+         {
+             ValidateAudience = false,
+             ValidateIssuer = true,
+             ValidateLifetime = true,
+             ValidateIssuerSigningKey = true,
+             // Accept tokens issued via localhost (desktop) or the Android emulator loopback alias (mobile dev).
+             ValidIssuers = new[]
+             {
+                 builder.Configuration["Keycloak:Authority"],
+                 builder.Configuration["Keycloak:Authority"]?.Replace("localhost", "10.0.2.2")
+             },
+             ClockSkew = TimeSpan.Zero,
+             RoleClaimType = System.Security.Claims.ClaimTypes.Role
+         };
 
        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
        {
@@ -108,6 +124,26 @@ OnTokenValidated = context =>
                     .CreateLogger("Authentication");
 
                 logger.LogDebug("JWT token validated successfully.");
+
+                // With DefaultMapInboundClaims = false, Keycloak realm roles stay nested in the
+                // "realm_access" claim — expand them into ClaimTypes.Role so [Authorize(Roles=...)] works.
+                var identity = context.Principal?.Identity as System.Security.Claims.ClaimsIdentity;
+                if (identity == null) return Task.CompletedTask;
+
+                var realmAccessClaim = context.Principal!.FindFirst("realm_access");
+                if (realmAccessClaim != null)
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(realmAccessClaim.Value);
+                    if (doc.RootElement.TryGetProperty("roles", out var roles))
+                    {
+                        foreach (var role in roles.EnumerateArray())
+                        {
+                            identity.AddClaim(new System.Security.Claims.Claim(
+                                System.Security.Claims.ClaimTypes.Role, role.GetString() ?? ""));
+                        }
+                    }
+                }
+
                 return Task.CompletedTask;
             }
        };

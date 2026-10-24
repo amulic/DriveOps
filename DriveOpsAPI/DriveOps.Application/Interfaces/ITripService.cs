@@ -15,6 +15,7 @@ namespace DriveOps.Application.Interfaces
         Task<TripDto> StartTripAsync(Guid tripId);
         Task<TripDto> CompleteTripAsync(Guid tripId, decimal actualDistance);
         Task<TripDto> CancelTripAsync(Guid tripId, string? reason);
+        Task<TripDto> DeclineTripAsync(Guid tripId, Guid driverId, string? reason);
         Task<TripDto> RateTripAsync(RateTripDto dto);
         Task<TripEstimateDto> GetTripEstimateAsync(decimal pickupLat, decimal pickupLon, decimal dropoffLat, decimal dropoffLon, TripType tripType);
         Task<IEnumerable<RoutePointDto>> GetTripRouteAsync(Guid tripId);

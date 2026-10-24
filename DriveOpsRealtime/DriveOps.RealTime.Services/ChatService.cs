@@ -171,6 +171,7 @@ public class ChatService : IChatService
             var lastMessage = await _dbContext.ChatMessages
                 .Where(m => m.ConversationId == c.Id)
                 .OrderByDescending(m => m.SentAt)
+                .ThenByDescending(m => m.Seq)
                 .Select(m => new { m.SentAt, m.SenderUserId })
                 .FirstOrDefaultAsync();
 
@@ -211,12 +212,18 @@ public class ChatService : IChatService
         if (!conversation.Participants.Any(p => p.UserId == userId))
             throw new InvalidOperationException("User is not a participant in this conversation.");
 
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+
         var totalCount = await _dbContext.ChatMessages
             .CountAsync(m => m.ConversationId == conversationId);
 
+        // Newest-first (page 1 = most recent page). Seq is the deterministic
+        // tiebreaker for messages sharing the same SentAt tick.
         var messages = await _dbContext.ChatMessages
             .Where(m => m.ConversationId == conversationId)
             .OrderByDescending(m => m.SentAt)
+            .ThenByDescending(m => m.Seq)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

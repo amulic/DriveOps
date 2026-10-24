@@ -21,6 +21,9 @@ public partial class Customer
 
     public int? PreferredPaymentMethod { get; set; }
 
+    /// <summary>Stripe Customer id (cus_...) — created lazily on first card setup.</summary>
+    public string? StripeCustomerId { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

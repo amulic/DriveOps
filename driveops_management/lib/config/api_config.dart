@@ -5,6 +5,7 @@ class ApiConfig {
   static const String driverEndpoint = '/api/driver';
   static const String tripEndpoint = '/api/trip';
   static const String vehicleEndpoint = '/api/vehicle';
+  static const String defectEndpoint = '/api/defects';
 
   static const String notificationHubPath = '/hubs/notification';
   static const String chatHubPath = '/hubs/chat';
@@ -19,6 +20,7 @@ class KeycloakConfig {
   static const String authUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/auth';
   static const String registerUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/registrations';
   static const String endSessionUrl = 'http://localhost:8081/realms/driveops-dev/protocol/openid-connect/logout';
+  static const String accountUrl = 'http://localhost:8081/realms/driveops-dev/account/';
   static const int redirectPort = 42069;
   static const String redirectHost = '127.0.0.1';
   static const String redirectUri = 'http://$redirectHost:$redirectPort/auth/callback';

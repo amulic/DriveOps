@@ -20,6 +20,20 @@ namespace DriveOps.API.Mappings
             EmergencyContactPhone = request.EmergencyContactPhone
         };
 
+        public static OnboardDriverDto ToApplicationDto(this OnboardDriverRequest request) => new()
+        {
+            Username = request.Username,
+            TemporaryPassword = request.TemporaryPassword,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
+            LicenseNumber = request.LicenseNumber,
+            LicenseExpiryDate = request.LicenseExpiryDate,
+            EmergencyContactName = request.EmergencyContactName,
+            EmergencyContactPhone = request.EmergencyContactPhone
+        };
+
         public static UpdateDriverDto ToApplicationDto(this UpdateDriverRequest request, Guid driverId) => new()
         {
             Id = driverId,
@@ -60,7 +74,19 @@ namespace DriveOps.API.Mappings
             IsOnline = dto.IsOnline,
             CurrentLatitude = dto.CurrentLatitude,
             CurrentLongitude = dto.CurrentLongitude,
+            ProfileImageUrl = dto.ProfileImageUrl,
             CreatedAt = dto.CreatedAt
+        };
+
+        public static KeycloakCandidateResponse ToResponse(this PromotionCandidateDto dto) => new()
+        {
+            KeycloakId = dto.KeycloakId,
+            Username = dto.Username,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Email = dto.Email,
+            RealmRoles = dto.RealmRoles,
+            HasDriverProfile = dto.HasDriverProfile
         };
 
         // ── Customer ──
@@ -108,7 +134,10 @@ namespace DriveOps.API.Mappings
             InsuranceExpiryDate = request.InsuranceExpiryDate,
             RegistrationExpiryDate = request.RegistrationExpiryDate,
             FuelType = request.FuelType,
-            SeatingCapacity = request.SeatingCapacity
+            SeatingCapacity = request.SeatingCapacity,
+            PhotoUrl = request.PhotoUrl,
+            InternalName = request.InternalName,
+            LastServiceDate = request.LastServiceDate
         };
 
         public static UpdateVehicleDto ToApplicationDto(this UpdateVehicleRequest request, Guid vehicleId) => new()
@@ -119,7 +148,10 @@ namespace DriveOps.API.Mappings
             InsuranceExpiryDate = request.InsuranceExpiryDate,
             RegistrationExpiryDate = request.RegistrationExpiryDate,
             Status = request.Status,
-            Mileage = request.Mileage
+            Mileage = request.Mileage,
+            PhotoUrl = request.PhotoUrl,
+            InternalName = request.InternalName,
+            LastServiceDate = request.LastServiceDate
         };
 
         public static VehicleResponse ToResponse(this VehicleDto dto) => new()
@@ -140,7 +172,27 @@ namespace DriveOps.API.Mappings
             SeatingCapacity = dto.SeatingCapacity,
             AssignedDriverId = dto.AssignedDriverId,
             AssignedDriverName = dto.AssignedDriverName,
+            PhotoUrl = dto.PhotoUrl,
+            InternalName = dto.InternalName,
+            LastServiceDate = dto.LastServiceDate,
             CreatedAt = dto.CreatedAt
+        };
+
+        public static VehicleDefectReportResponse ToResponse(this VehicleDefectReportDto dto) => new()
+        {
+            Id = dto.Id,
+            VehicleId = dto.VehicleId,
+            VehicleLicensePlate = dto.VehicleLicensePlate,
+            VehicleInternalName = dto.VehicleInternalName,
+            DriverId = dto.DriverId,
+            DriverName = dto.DriverName,
+            Title = dto.Title,
+            Description = dto.Description,
+            Severity = dto.Severity,
+            Status = dto.Status,
+            ReportedAt = dto.ReportedAt,
+            ResolvedAt = dto.ResolvedAt,
+            ResolutionNotes = dto.ResolutionNotes
         };
 
         // ── Trip ──
@@ -154,7 +206,6 @@ namespace DriveOps.API.Mappings
             DropoffLatitude = request.DropoffLatitude,
             DropoffLongitude = request.DropoffLongitude,
             DropoffAddress = request.DropoffAddress,
-            ScheduledAt = request.ScheduledAt,
             PaymentMethod = request.PaymentMethod,
             SpecialInstructions = request.SpecialInstructions
         };
@@ -177,7 +228,6 @@ namespace DriveOps.API.Mappings
             DropoffLongitude = dto.DropoffLongitude,
             DropoffAddress = dto.DropoffAddress,
             RequestedAt = dto.RequestedAt,
-            ScheduledAt = dto.ScheduledAt,
             PickupTime = dto.PickupTime,
             DropoffTime = dto.DropoffTime,
             EstimatedDistance = dto.EstimatedDistance,

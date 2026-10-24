@@ -36,6 +36,47 @@ class CreateDriverRequest {
   }
 }
 
+class OnboardDriverRequest {
+  final String username;
+  final String temporaryPassword;
+  final String firstName;
+  final String lastName;
+  final String email;
+  final String phoneNumber;
+  final String licenseNumber;
+  final DateTime licenseExpiryDate;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
+
+  const OnboardDriverRequest({
+    required this.username,
+    required this.temporaryPassword,
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.phoneNumber,
+    required this.licenseNumber,
+    required this.licenseExpiryDate,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'username': username,
+      'temporaryPassword': temporaryPassword,
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'licenseNumber': licenseNumber,
+      'licenseExpiryDate': licenseExpiryDate.toIso8601String().split('T')[0],
+      if (emergencyContactName != null) 'emergencyContactName': emergencyContactName,
+      if (emergencyContactPhone != null) 'emergencyContactPhone': emergencyContactPhone,
+    };
+  }
+}
+
 class UpdateDriverRequest {
   final String? firstName;
   final String? lastName;

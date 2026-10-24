@@ -43,7 +43,8 @@ public class TripEventConsumer : BackgroundService
             { "realtime.trip.assigned", "trip.assigned" },
             { "realtime.trip.started", "trip.started" },
             { "realtime.trip.completed", "trip.completed" },
-            { "realtime.trip.cancelled", "trip.cancelled" }
+            { "realtime.trip.cancelled", "trip.cancelled" },
+            { "realtime.trip.declined", "trip.declined" }
         };
 
         foreach (var (queue, routingKey) in queues)
@@ -119,6 +120,15 @@ public class TripEventConsumer : BackgroundService
                         if (cancelled.DriverKeycloakId.HasValue)
                             await notifications.SendTripStatusChangedAsync(cancelled.DriverKeycloakId.Value, cancelledDto);
                         await chat.CloseConversationByTripIdAsync(cancelled.TripId);
+                        break;
+
+                    case "trip.declined":
+                        var declined = JsonSerializer.Deserialize<TripDeclinedEvent>(body)!;
+                        var declinedDto = new TripStatusChangedDto(declined.TripId, TripStatus.Declined, declined.CustomerId, declined.DriverId, declined.DeclinedAt);
+                        if (declined.CustomerKeycloakId.HasValue)
+                            await notifications.SendTripStatusChangedToUserAsync(declined.CustomerKeycloakId.Value, declinedDto);
+                        if (declined.DriverKeycloakId.HasValue)
+                            await notifications.SendTripStatusChangedAsync(declined.DriverKeycloakId.Value, declinedDto);
                         break;
                 }
 

@@ -5,6 +5,7 @@ import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/widgets/vehicle_detail_dialog.dart';
 import 'package:driveops_management/features/vehicles/presentation/widgets/assign_driver_dialog.dart';
+import 'package:driveops_management/features/defects/presentation/providers/defects_providers.dart';
 
 class VehiclesScreen extends ConsumerStatefulWidget {
   const VehiclesScreen({super.key});
@@ -17,6 +18,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredVehicles = ref.watch(filteredVehiclesProvider);
+    final defectCounts = ref.watch(openDefectCountsProvider).value ?? const <String, int>{};
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -28,7 +30,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           _buildToolbar(),
           const SizedBox(height: 16),
           Expanded(child: filteredVehicles.when(
-            data: (vehicles) => _buildTable(vehicles),
+            data: (vehicles) => _buildTable(vehicles, defectCounts),
             loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
             error: (error, _) => Center(
               child: Column(
@@ -174,7 +176,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     );
   }
 
-  Widget _buildTable(List<Vehicle> vehicles) {
+  Widget _buildTable(List<Vehicle> vehicles, Map<String, int> defectCounts) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Card(
@@ -200,7 +202,7 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
                 return DataRow(
                   cells: [
                     DataCell(_buildVehicleCell(vehicle)),
-                    DataCell(_buildStatusChip(vehicle.status)),
+                    DataCell(_buildStatusCell(vehicle, defectCounts[vehicle.id] ?? 0)),
                     DataCell(_buildDriverCell(vehicle)),
                     DataCell(_buildFuelChip(vehicle.fuelType)),
                     DataCell(Text(
@@ -315,6 +317,44 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatusCell(Vehicle vehicle, int openDefects) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildStatusChip(vehicle.status),
+        if (openDefects > 0) ...[
+          const SizedBox(width: 6),
+          Tooltip(
+            message: '$openDefects open defect report${openDefects == 1 ? '' : 's'}',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.build, size: 12, color: Color(0xFFEF4444)),
+                  const SizedBox(width: 3),
+                  Text(
+                    '$openDefects',
+                    style: const TextStyle(
+                      color: Color(0xFFEF4444),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 

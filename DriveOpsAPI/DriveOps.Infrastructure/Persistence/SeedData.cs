@@ -17,6 +17,8 @@ public static class SeedData
 
         logger.LogInformation("Seeding database...");
 
+        var now = DateTime.UtcNow;
+
         var customers = new[]
         {
             new Customer
@@ -175,7 +177,9 @@ public static class SeedData
                 Mileage = 45200,
                 FuelType = FuelType.Petrol,
                 SeatingCapacity = 5,
-                AssignedDriverId = drivers[0].Id
+                AssignedDriverId = drivers[0].Id,
+                InternalName = "Taxi no. 12",
+                LastServiceDate = now.AddDays(-40)
             },
             new Vehicle
             {
@@ -193,7 +197,9 @@ public static class SeedData
                 Mileage = 22100,
                 FuelType = FuelType.Hybrid,
                 SeatingCapacity = 5,
-                AssignedDriverId = drivers[1].Id
+                AssignedDriverId = drivers[1].Id,
+                InternalName = "Taxi no. 7",
+                LastServiceDate = now.AddDays(-25)
             },
             new Vehicle
             {
@@ -211,7 +217,9 @@ public static class SeedData
                 Mileage = 18500,
                 FuelType = FuelType.Electric,
                 SeatingCapacity = 5,
-                AssignedDriverId = drivers[2].Id
+                AssignedDriverId = drivers[2].Id,
+                InternalName = "Taxi no. 3",
+                LastServiceDate = now.AddDays(-60)
             },
             new Vehicle
             {
@@ -229,7 +237,9 @@ public static class SeedData
                 Mileage = 38700,
                 FuelType = FuelType.Hybrid,
                 SeatingCapacity = 5,
-                AssignedDriverId = drivers[3].Id
+                AssignedDriverId = drivers[3].Id,
+                InternalName = "Taxi no. 21",
+                LastServiceDate = now.AddDays(-15)
             },
             new Vehicle
             {
@@ -246,13 +256,13 @@ public static class SeedData
                 Status = VehicleStatus.Maintenance,
                 Mileage = 62000,
                 FuelType = FuelType.Petrol,
-                SeatingCapacity = 5
+                SeatingCapacity = 5,
+                InternalName = "Taxi no. 9",
+                LastServiceDate = now.AddDays(-5)
             }
         };
 
         await context.Vehicles.AddRangeAsync(vehicles);
-
-        var now = DateTime.UtcNow;
 
         var trips = new[]
         {
@@ -373,9 +383,50 @@ public static class SeedData
         };
 
         await context.Trips.AddRangeAsync(trips);
+
+        var defectReports = new[]
+        {
+            new VehicleDefectReport
+            {
+                Id = Guid.Parse("f1b2c3d4-0001-4000-8000-000000000001"),
+                VehicleId = vehicles[4].Id,
+                DriverId = drivers[3].Id,
+                Title = "Engine warning light",
+                Description = "Check-engine light came on during a shift; vehicle hesitates under acceleration.",
+                Severity = DefectSeverity.Critical,
+                Status = DefectStatus.Reported,
+                ReportedAt = now.AddDays(-2)
+            },
+            new VehicleDefectReport
+            {
+                Id = Guid.Parse("f1b2c3d4-0002-4000-8000-000000000002"),
+                VehicleId = vehicles[0].Id,
+                DriverId = drivers[0].Id,
+                Title = "Cracked windshield",
+                Description = "Small crack on the passenger side, spreading slowly.",
+                Severity = DefectSeverity.Medium,
+                Status = DefectStatus.Reported,
+                ReportedAt = now.AddDays(-1)
+            },
+            new VehicleDefectReport
+            {
+                Id = Guid.Parse("f1b2c3d4-0003-4000-8000-000000000003"),
+                VehicleId = vehicles[1].Id,
+                DriverId = drivers[1].Id,
+                Title = "Wiper blades worn",
+                Description = "Front wipers smear in heavy rain.",
+                Severity = DefectSeverity.Low,
+                Status = DefectStatus.Resolved,
+                ReportedAt = now.AddDays(-6),
+                ResolvedAt = now.AddDays(-3),
+                ResolutionNotes = "Wiper blades replaced at partner garage."
+            }
+        };
+
+        await context.VehicleDefectReports.AddRangeAsync(defectReports);
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Database seeded with {CustomerCount} customers, {DriverCount} drivers, {VehicleCount} vehicles, {TripCount} trips.",
-            customers.Length, drivers.Length, vehicles.Length, trips.Length);
+        logger.LogInformation("Database seeded with {CustomerCount} customers, {DriverCount} drivers, {VehicleCount} vehicles, {TripCount} trips, {DefectCount} defect reports.",
+            customers.Length, drivers.Length, vehicles.Length, trips.Length, defectReports.Length);
     }
 }

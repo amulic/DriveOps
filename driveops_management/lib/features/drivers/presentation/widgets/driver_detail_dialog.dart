@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
-import 'package:driveops_management/shared/dtos/requests/driver_requests.dart';
 import 'package:driveops_management/features/drivers/presentation/providers/drivers_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
 
@@ -13,6 +12,28 @@ class DriverDetailDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isPending = driver.status == DriverStatus.pending;
+    final isSuspended = driver.status == DriverStatus.suspended;
+    // Approval gate: a Pending driver is approved (→ Active) here; a Suspended
+    // driver is reactivated (→ Active); anyone else can be suspended. Approve and
+    // Activate both call POST /api/driver/{id}/activate.
+    final String primaryLabel;
+    final IconData primaryIcon;
+    final Color primaryColor;
+    if (isPending) {
+      primaryLabel = 'Approve';
+      primaryIcon = Icons.verified_user_outlined;
+      primaryColor = const Color(0xFF22C55E);
+    } else if (isSuspended) {
+      primaryLabel = 'Activate';
+      primaryIcon = Icons.check_circle_outline;
+      primaryColor = const Color(0xFF22C55E);
+    } else {
+      primaryLabel = 'Suspend';
+      primaryIcon = Icons.block_outlined;
+      primaryColor = const Color(0xFFEF4444);
+    }
+
     return Dialog(
       backgroundColor: const Color(0xFF1A1A2E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -94,10 +115,10 @@ class DriverDetailDialog extends ConsumerWidget {
                     Expanded(
                       child: _buildActionButton(
                         context,
-                        label: driver.status == DriverStatus.suspended ? 'Activate' : 'Suspend',
-                        icon: driver.status == DriverStatus.suspended ? Icons.check_circle_outline : Icons.block_outlined,
-                        color: driver.status == DriverStatus.suspended ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
-                        onTap: () => _toggleSuspend(context, ref),
+                        label: primaryLabel,
+                        icon: primaryIcon,
+                        color: primaryColor,
+                        onTap: () => _changeStatus(context, ref),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -363,6 +384,7 @@ class DriverDetailDialog extends ConsumerWidget {
       ref.invalidate(vehiclesAsyncProvider);
       ref.invalidate(filteredVehiclesProvider);
       ref.invalidate(allVehiclesProvider);
+      ref.invalidate(allVehiclesForAssignProvider);
       ref.invalidate(vehiclesNeedingServiceProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -384,14 +406,18 @@ class DriverDetailDialog extends ConsumerWidget {
     }
   }
 
-  Future<void> _toggleSuspend(BuildContext context, WidgetRef ref) async {
+  Future<void> _changeStatus(BuildContext context, WidgetRef ref) async {
+    final wasPending = driver.status == DriverStatus.pending;
+    final activating = wasPending || driver.status == DriverStatus.suspended;
     try {
       final repo = ref.read(driverRepositoryProvider);
-      if (driver.status == DriverStatus.suspended) {
+      if (activating) {
         await repo.activateDriver(driver.id);
         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${driver.driverName} has been activated'),
+            content: Text(wasPending
+                ? '${driver.driverName} has been approved'
+                : '${driver.driverName} has been activated'),
             backgroundColor: const Color(0xFF22C55E),
           ),
         );
@@ -405,6 +431,9 @@ class DriverDetailDialog extends ConsumerWidget {
         );
       }
       ref.invalidate(driversAsyncProvider);
+      ref.invalidate(filteredDriversProvider);
+      ref.invalidate(activeDriversProvider);
+      ref.invalidate(allDriversProvider);
       if (context.mounted) Navigator.of(context).pop();
     } catch (e) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
@@ -650,6 +679,7 @@ Future<void> _assign(BuildContext context, WidgetRef ref, Vehicle v) async {
       await ref.read(vehicleRepositoryProvider).assignVehicle(v.id, driverId);
       ref.invalidate(driversAsyncProvider);
       ref.invalidate(allVehiclesProvider);
+      ref.invalidate(allVehiclesForAssignProvider);
       ref.invalidate(vehiclesAsyncProvider);
       ref.invalidate(filteredVehiclesProvider);
       ref.invalidate(vehiclesNeedingServiceProvider);
@@ -673,7 +703,9 @@ Future<void> _assign(BuildContext context, WidgetRef ref, Vehicle v) async {
   }
 }
 
-final allVehiclesForAssignProvider = FutureProvider<List<Vehicle>>((ref) async {
+// autoDispose so the Assign Vehicle dialog refetches on every open — otherwise a
+// vehicle unassigned/assigned in a previous dialog shows a stale status here.
+final allVehiclesForAssignProvider = FutureProvider.autoDispose<List<Vehicle>>((ref) async {
   final all = await ref.watch(vehicleRepositoryProvider).getAllVehicles();
   return all.where((v) => v.status != VehicleStatus.retired).toList();
 });

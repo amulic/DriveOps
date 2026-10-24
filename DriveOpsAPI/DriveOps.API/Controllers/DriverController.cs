@@ -1,6 +1,8 @@
 using DriveOps.API.ControllerDtos.Request;
 using DriveOps.API.Mappings;
+using DriveOps.Application.Exceptions;
 using DriveOps.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DriveOps.API.Controllers
@@ -73,9 +75,89 @@ namespace DriveOps.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateDriver([FromBody] CreateDriverRequest request)
         {
-            var driver = await _driverService.CreateDriverAsync(request.ToApplicationDto());
-            return CreatedAtAction(nameof(GetDriverById), new { id = driver.Id }, driver.ToResponse());
+            try
+            {
+                var driver = await _driverService.CreateDriverAsync(request.ToApplicationDto());
+                return CreatedAtAction(nameof(GetDriverById), new { id = driver.Id }, driver.ToResponse());
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                return BadRequest(new { message = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage)) });
+            }
         }
+
+        [HttpGet("candidates")]
+        [Authorize(Roles = "admin,dispatcher")]
+        public async Task<IActionResult> GetPromotionCandidates([FromQuery] string? search)
+        {
+            try
+            {
+                var candidates = await _driverService.GetPromotionCandidatesAsync(search ?? string.Empty);
+                return Ok(candidates.Select(c => c.ToResponse()).ToList());
+            }
+            catch (Exception ex) when (IsKeycloakFailure(ex))
+            {
+                return KeycloakError(ex);
+            }
+        }
+
+        [HttpPost("promote")]
+        [Authorize(Roles = "admin,dispatcher")]
+        public async Task<IActionResult> PromoteDriver([FromBody] CreateDriverRequest request)
+        {
+            try
+            {
+                var driver = await _driverService.PromoteDriverAsync(request.ToApplicationDto());
+                return CreatedAtAction(nameof(GetDriverById), new { id = driver.Id }, driver.ToResponse());
+            }
+            catch (KeycloakUserNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (DuplicateDriverException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                return BadRequest(new { message = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage)) });
+            }
+            catch (Exception ex) when (IsKeycloakFailure(ex))
+            {
+                return KeycloakError(ex);
+            }
+        }
+
+        [HttpPost("onboard")]
+        [Authorize(Roles = "admin,dispatcher")]
+        public async Task<IActionResult> OnboardDriver([FromBody] OnboardDriverRequest request)
+        {
+            try
+            {
+                var driver = await _driverService.OnboardDriverAsync(request.ToApplicationDto());
+                return CreatedAtAction(nameof(GetDriverById), new { id = driver.Id }, driver.ToResponse());
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                return BadRequest(new { message = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage)) });
+            }
+            catch (KeycloakUserConflictException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
+            catch (Exception ex) when (IsKeycloakFailure(ex))
+            {
+                return KeycloakError(ex);
+            }
+        }
+
+        // KeycloakAdminService throws InvalidOperationException on non-success admin/token
+        // responses; HttpRequestException = Keycloak unreachable; TaskCanceledException = timeout.
+        private static bool IsKeycloakFailure(Exception ex) =>
+            ex is InvalidOperationException or HttpRequestException or TaskCanceledException;
+
+        private IActionResult KeycloakError(Exception ex) =>
+            StatusCode(502, new { message = $"Keycloak admin service error: {ex.Message}" });
 
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateDriver(Guid id, [FromBody] UpdateDriverRequest request)

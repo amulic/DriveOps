@@ -22,6 +22,7 @@ namespace DriveOps.Application.DTOs
         public bool? IsOnline { get; init; }
         public decimal? CurrentLatitude { get; init; }
         public decimal? CurrentLongitude { get; init; }
+        public string? ProfileImageUrl { get; init; }
         public DateTime? LastLocationUpdate { get; init; }
         public DateTime? CreatedAt { get; init; }
     }
@@ -29,6 +30,20 @@ namespace DriveOps.Application.DTOs
     public class CreateDriverDto
     {
         public Guid KeycloakId { get; set; }
+        public string FirstName { get; set; } = null!;
+        public string LastName { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string PhoneNumber { get; set; } = null!;
+        public string LicenseNumber { get; set; } = null!;
+        public DateOnly LicenseExpiryDate { get; set; }
+        public string? EmergencyContactName { get; set; }
+        public string? EmergencyContactPhone { get; set; }
+    }
+
+    public class OnboardDriverDto
+    {
+        public string Username { get; set; } = null!;
+        public string TemporaryPassword { get; set; } = null!;
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
         public string Email { get; set; } = null!;

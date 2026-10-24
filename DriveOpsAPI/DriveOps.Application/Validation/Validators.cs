@@ -49,6 +49,27 @@ public class CreateDriverDtoValidator : AbstractValidator<CreateDriverDto>
     }
 }
 
+public class OnboardDriverDtoValidator : AbstractValidator<OnboardDriverDto>
+{
+    public OnboardDriverDtoValidator()
+    {
+        RuleFor(x => x.Username).NotEmpty().MinimumLength(3).MaximumLength(50);
+        RuleFor(x => x.TemporaryPassword).NotEmpty().MinimumLength(8).MaximumLength(128)
+            .WithMessage("Temporary password must be at least 8 characters.");
+        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(255);
+        RuleFor(x => x.PhoneNumber).NotEmpty().MaximumLength(20);
+        RuleFor(x => x.LicenseNumber).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.LicenseExpiryDate)
+            .NotEmpty()
+            .Must(d => d >= DateOnly.FromDateTime(DateTime.UtcNow))
+            .WithMessage("License must not be expired.");
+        RuleFor(x => x.EmergencyContactPhone)
+            .MaximumLength(20).When(x => x.EmergencyContactPhone != null);
+    }
+}
+
 public class CreateVehicleDtoValidator : AbstractValidator<CreateVehicleDto>
 {
     public CreateVehicleDtoValidator()

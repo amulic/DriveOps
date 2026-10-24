@@ -295,28 +295,6 @@ class AuthService {
     return _secureStorage.read(key: _accessTokenKey);
   }
 
-  Future<String?> getKeycloakSub() async {
-    final cached = await _secureStorage.read(key: _keycloakSubKey);
-    if (cached != null) return cached;
-
-    final token = await getAccessToken();
-    if (token == null) return null;
-
-    try {
-      final parts = token.split('.');
-      if (parts.length != 3) return null;
-      final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
-      final data = jsonDecode(payload) as Map<String, dynamic>;
-      final sub = data['sub'] as String?;
-      if (sub != null) {
-        await _secureStorage.write(key: _keycloakSubKey, value: sub);
-      }
-      return sub;
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<AuthResult> register() async {
     if (_isLoggingIn) {
       return const AuthResult(success: false, error: 'Login already in progress');

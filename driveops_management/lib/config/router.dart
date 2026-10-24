@@ -5,9 +5,10 @@ import 'package:driveops_management/features/auth/presentation/login_screen.dart
 import 'package:driveops_management/features/auth/presentation/unauthorized_screen.dart';
 import 'package:driveops_management/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:driveops_management/features/drivers/presentation/drivers_screen.dart';
-import 'package:driveops_management/features/rides/presentation/rides_screen.dart';
+import 'package:driveops_management/features/trips/presentation/trips_screen.dart';
 import 'package:driveops_management/features/messages/presentation/messages_screen.dart';
 import 'package:driveops_management/features/vehicles/presentation/vehicles_screen.dart';
+import 'package:driveops_management/features/defects/presentation/defects_screen.dart';
 import 'package:driveops_management/features/profile/presentation/profile_screen.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
 import 'package:driveops_management/shared/providers/fleet_update_provider.dart';
@@ -67,9 +68,9 @@ GoRouter createAppRouter(WidgetRef ref) {
             ),
           ),
           GoRoute(
-            path: '/rides',
+            path: '/trips',
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: RidesScreen(),
+              child: TripsScreen(),
             ),
           ),
           GoRoute(
@@ -82,6 +83,12 @@ GoRouter createAppRouter(WidgetRef ref) {
             path: '/vehicles',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: VehiclesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/defects',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: DefectsScreen(),
             ),
           ),
           GoRoute(
