@@ -365,4 +365,7 @@ FodyWeavers.xsd
 # vscode
 .vscode/*
 
+# Sandbox launcher runtime artifacts (stripe listen log contains the whsec_ secret)
+.sandbox/
+
 *.md

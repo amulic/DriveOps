@@ -185,10 +185,19 @@ namespace DriveOps.Infrastructure.Payments
                 if (stripeEvent.Data?.Object is not PaymentIntent intent)
                     return new GatewayWebhookEvent(stripeEvent.Type, "", null);
 
+                Guid? tripId = null;
+                if (intent.Metadata != null
+                    && intent.Metadata.TryGetValue("tripId", out var rawTripId)
+                    && Guid.TryParse(rawTripId, out var parsedTripId))
+                {
+                    tripId = parsedTripId;
+                }
+
                 return new GatewayWebhookEvent(
                     stripeEvent.Type,
                     intent.Id,
-                    intent.LastPaymentError?.Message);
+                    intent.LastPaymentError?.Message,
+                    tripId);
             }
             catch (StripeException ex)
             {

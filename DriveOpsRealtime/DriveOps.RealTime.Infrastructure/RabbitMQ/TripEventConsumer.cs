@@ -93,12 +93,23 @@ public class TripEventConsumer : BackgroundService
                         {
                             _logger.LogWarning("Trip {TripId} assigned event missing KeycloakIds, skipping notification", assigned.TripId);
                         }
+
+                        // The driver is only in their personal user-{keycloakId} group — driver-{id}
+                        // is only joined while online, so it is not a reliable assignment channel.
+                        if (assigned.DriverKeycloakId.HasValue)
+                        {
+                            await notifications.SendTripStatusChangedToUserAsync(assigned.DriverKeycloakId.Value,
+                                new TripStatusChangedDto(assigned.TripId, TripStatus.Assigned, assigned.CustomerId, assigned.DriverId, assigned.AssignedAt));
+                        }
                         break;
 
                     case "trip.started":
                         var started = JsonSerializer.Deserialize<TripStartedEvent>(body)!;
                         var startedDto = new TripStatusChangedDto(started.TripId, TripStatus.InProgress, started.CustomerId, started.DriverId, started.PickupTime);
-                        await notifications.SendTripStatusChangedAsync(started.DriverKeycloakId ?? started.DriverId, startedDto);
+                        if (started.DriverKeycloakId.HasValue)
+                            await notifications.SendTripStatusChangedToUserAsync(started.DriverKeycloakId.Value, startedDto);
+                        else
+                            await notifications.SendTripStatusChangedAsync(started.DriverId, startedDto);
                         if (started.CustomerKeycloakId.HasValue)
                             await notifications.SendTripStatusChangedToUserAsync(started.CustomerKeycloakId.Value, startedDto);
                         break;
@@ -106,7 +117,10 @@ public class TripEventConsumer : BackgroundService
                     case "trip.completed":
                         var completed = JsonSerializer.Deserialize<TripCompletedEvent>(body)!;
                         var completedDto = new TripStatusChangedDto(completed.TripId, TripStatus.Completed, completed.CustomerId, completed.DriverId, completed.DropoffTime);
-                        await notifications.SendTripStatusChangedAsync(completed.DriverId, completedDto);
+                        if (completed.DriverKeycloakId.HasValue)
+                            await notifications.SendTripStatusChangedToUserAsync(completed.DriverKeycloakId.Value, completedDto);
+                        else
+                            await notifications.SendTripStatusChangedAsync(completed.DriverId, completedDto);
                         if (completed.CustomerKeycloakId.HasValue)
                             await notifications.SendTripStatusChangedToUserAsync(completed.CustomerKeycloakId.Value, completedDto);
                         await chat.CloseConversationByTripIdAsync(completed.TripId);
@@ -118,7 +132,9 @@ public class TripEventConsumer : BackgroundService
                         if (cancelled.CustomerKeycloakId.HasValue)
                             await notifications.SendTripStatusChangedToUserAsync(cancelled.CustomerKeycloakId.Value, cancelledDto);
                         if (cancelled.DriverKeycloakId.HasValue)
-                            await notifications.SendTripStatusChangedAsync(cancelled.DriverKeycloakId.Value, cancelledDto);
+                            await notifications.SendTripStatusChangedToUserAsync(cancelled.DriverKeycloakId.Value, cancelledDto);
+                        else if (cancelled.DriverId.HasValue)
+                            await notifications.SendTripStatusChangedAsync(cancelled.DriverId.Value, cancelledDto);
                         await chat.CloseConversationByTripIdAsync(cancelled.TripId);
                         break;
 
@@ -128,7 +144,9 @@ public class TripEventConsumer : BackgroundService
                         if (declined.CustomerKeycloakId.HasValue)
                             await notifications.SendTripStatusChangedToUserAsync(declined.CustomerKeycloakId.Value, declinedDto);
                         if (declined.DriverKeycloakId.HasValue)
-                            await notifications.SendTripStatusChangedAsync(declined.DriverKeycloakId.Value, declinedDto);
+                            await notifications.SendTripStatusChangedToUserAsync(declined.DriverKeycloakId.Value, declinedDto);
+                        else if (declined.DriverId.HasValue)
+                            await notifications.SendTripStatusChangedAsync(declined.DriverId.Value, declinedDto);
                         break;
                 }
 

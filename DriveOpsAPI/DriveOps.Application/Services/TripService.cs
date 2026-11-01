@@ -6,6 +6,7 @@ using DriveOps.Application.Mappings;
 using DriveOps.Model.Entity;
 using DriveOps.RealTime.Contracts.Enums;
 using DriveOps.RealTime.Contracts.Events;
+using Microsoft.Extensions.Logging;
 using ModelEnums = DriveOps.Model.Enums;
 
 namespace DriveOps.Application.Services
@@ -21,6 +22,7 @@ namespace DriveOps.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEventPublisher _eventPublisher;
         private readonly IPaymentService _paymentService;
+        private readonly ILogger<TripService> _logger;
 
         public TripService(
             ITripRepository tripRepository,
@@ -31,7 +33,8 @@ namespace DriveOps.Application.Services
             IRoutingService routingService,
             IUnitOfWork unitOfWork,
             IEventPublisher eventPublisher,
-            IPaymentService paymentService)
+            IPaymentService paymentService,
+            ILogger<TripService> logger)
         {
             _tripRepository = tripRepository;
             _tripRouteRepository = tripRouteRepository;
@@ -42,6 +45,7 @@ namespace DriveOps.Application.Services
             _unitOfWork = unitOfWork;
             _eventPublisher = eventPublisher;
             _paymentService = paymentService;
+            _logger = logger;
         }
 
         public async Task<PaginatedResult<TripDto>> GetAllTripsAsync(int page = 1, int pageSize = 20)
@@ -267,16 +271,35 @@ namespace DriveOps.Application.Services
 
             // Charge the saved card for card trips. Runs after the completion transaction commits —
             // a failed charge never rolls back a completed trip; it marks the payment Failed instead.
-            await _paymentService.ChargeCompletedTripAsync(tripId);
+            // Any unexpected post-commit failure is logged, never surfaced as a 500 for an
+            // operation that has already been committed.
+            try
+            {
+                await _paymentService.ChargeCompletedTripAsync(tripId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Post-commit card charge failed for completed trip {TripId}", tripId);
+            }
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
             var customer = await _customerRepository.GetByIdAsync(trip.CustomerId);
+            var driver = trip.DriverId.HasValue
+                ? await _driverRepository.GetByIdAsync(trip.DriverId.Value)
+                : null;
 
-            await _eventPublisher.PublishAsync("driveops.trips", "trip.completed",
-                new TripCompletedEvent(
-                    tripId, trip.CustomerId, trip.DriverId!.Value,
-                    actualDistance, trip.ActualFare ?? 0, trip.DropoffTime ?? DateTime.UtcNow,
-                    customer?.KeycloakId));
+            try
+            {
+                await _eventPublisher.PublishAsync("driveops.trips", "trip.completed",
+                    new TripCompletedEvent(
+                        tripId, trip.CustomerId, trip.DriverId!.Value,
+                        actualDistance, trip.ActualFare ?? 0, trip.DropoffTime ?? DateTime.UtcNow,
+                        customer?.KeycloakId, driver?.KeycloakId));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to publish trip.completed for trip {TripId}", tripId);
+            }
 
             return result!.ToDto();
         }

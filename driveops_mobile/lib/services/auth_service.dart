@@ -183,7 +183,17 @@ class AuthService {
         EndSessionRequest(
           idTokenHint: idToken,
           postLogoutRedirectUrl: KeycloakConfig.postLogoutRedirectUri,
-          issuer: KeycloakConfig.authority,
+          // Explicit endpoints instead of `issuer:`: the flutter_appauth
+          // Android plugin never applies allowInsecureConnections on the
+          // endSession discovery path (it reads a field that only the
+          // authorize/token handlers set), so issuer-based discovery crashes
+          // with "only https connections are permitted" on the plain-HTTP dev
+          // Keycloak. Passing serviceConfiguration skips discovery entirely.
+          serviceConfiguration: AuthorizationServiceConfiguration(
+            authorizationEndpoint: KeycloakConfig.authUrl,
+            tokenEndpoint: KeycloakConfig.tokenUrl,
+            endSessionEndpoint: KeycloakConfig.endSessionUrl,
+          ),
           allowInsecureConnections: true,
         ),
       );

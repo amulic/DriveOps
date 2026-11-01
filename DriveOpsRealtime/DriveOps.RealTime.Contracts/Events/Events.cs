@@ -48,7 +48,8 @@ public record TripCompletedEvent(
     decimal ActualDistance,
     decimal ActualFare,
     DateTime DropoffTime,
-    Guid? CustomerKeycloakId = null
+    Guid? CustomerKeycloakId = null,
+    Guid? DriverKeycloakId = null
 );
 
 public record TripCancelledEvent(

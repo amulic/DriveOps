@@ -161,8 +161,17 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
       child: Card(
         color: const Color(0xFF252538),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        clipBehavior: Clip.antiAlias,
         child: SingleChildScrollView(
-          child: DataTable(
+          // Horizontal scroll keeps a too-wide table usable instead of
+          // overflowing; ConstrainedBox keeps it full-width when there is room.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: DataTable(
             columnSpacing: 24,
             horizontalMargin: 20,
             columns: const [
@@ -197,6 +206,10 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
                 ],
               );
             }).toList(),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

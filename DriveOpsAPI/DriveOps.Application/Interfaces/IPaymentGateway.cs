@@ -50,8 +50,12 @@ namespace DriveOps.Application.Interfaces
 
     public record GatewayPaymentIntentSession(string PaymentIntentId, string ClientSecret, string EphemeralKey, string CustomerId);
 
-    /// <summary>Normalized webhook event. Type is "payment_intent.succeeded" or "payment_intent.payment_failed".</summary>
-    public record GatewayWebhookEvent(string Type, string PaymentIntentId, string? FailureMessage);
+    /// <summary>
+    /// Normalized webhook event. Type is "payment_intent.succeeded" or "payment_intent.payment_failed".
+    /// <see cref="TripId"/> is read from the PaymentIntent's <c>metadata.tripId</c> so the webhook
+    /// can reconcile a charge whose ledger row was never persisted.
+    /// </summary>
+    public record GatewayWebhookEvent(string Type, string PaymentIntentId, string? FailureMessage, Guid? TripId = null);
 
     public class PaymentGatewayException : Exception
     {

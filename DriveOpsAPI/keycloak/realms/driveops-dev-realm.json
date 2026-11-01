@@ -240,6 +240,18 @@
         "description": "Customer role for the mobile app"
       },
       {
+        "name": "offline_access",
+        "description": "${role_offline-access}",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma-authorization}",
+        "composite": false,
+        "clientRole": false
+      },
+      {
         "name": "default-roles-driveops-dev",
         "description": "${role_default-roles}",
         "composite": true,

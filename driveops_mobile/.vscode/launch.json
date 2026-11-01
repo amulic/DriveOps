@@ -1,0 +1,16 @@
+{
+    // Mirrors scripts/start-sandbox.ps1 so IDE runs behave the same as the
+    // sandbox launcher: Stripe publishable key + API host via adb reverse.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "driveops_mobile (sandbox)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define-from-file=stripe_keys.json",
+                "--dart-define=API_HOST=localhost"
+            ]
+        }
+    ]
+}

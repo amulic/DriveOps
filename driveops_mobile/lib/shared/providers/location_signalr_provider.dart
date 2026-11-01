@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_mobile/services/auth_service.dart';
 import 'package:driveops_mobile/services/location_signalr_service.dart';
@@ -19,7 +22,13 @@ final locationSignalrConnectionProvider = Provider<void>((ref) {
 
   if (authState.value?.isAuthenticated == true) {
     AuthService().getAccessToken().then((t) {
-      if (t != null) signalr.connect(t);
+      if (t != null) {
+        // Error-safe: a failed hub connect must never surface as an
+        // unhandled exception (SignalR reconnects on its own schedule).
+        unawaited(signalr.connect(t).catchError((Object e) {
+          debugPrint('[SignalR] Location hub connect failed: $e');
+        }));
+      }
     });
   } else {
     signalr.disconnect();
