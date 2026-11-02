@@ -16,15 +16,17 @@ class VehicleApiService {
   VehicleApiService(this._api);
 
   Future<List<Vehicle>> getAllVehicles() async {
-    final response = await _api.get(ApiConfig.vehicleEndpoint);
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => Vehicle.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get(ApiConfig.vehicleEndpoint, queryParameters: {'pageSize': 100});
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => Vehicle.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<List<Vehicle>> getAvailableVehicles() async {
-    final response = await _api.get('${ApiConfig.vehicleEndpoint}/available');
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => Vehicle.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get('${ApiConfig.vehicleEndpoint}/available', queryParameters: {'pageSize': 100});
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => Vehicle.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<Vehicle> getVehicle(String id) async {
@@ -73,8 +75,12 @@ class VehicleApiService {
   }
 
   Future<List<DefectReport>> getVehicleDefects(String vehicleId) async {
-    final response = await _api.get('${ApiConfig.vehicleEndpoint}/$vehicleId/defects');
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => DefectReport.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get(
+      '${ApiConfig.vehicleEndpoint}/$vehicleId/defects',
+      queryParameters: {'pageSize': 100},
+    );
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => DefectReport.fromJson(json as Map<String, dynamic>)).toList();
   }
 }

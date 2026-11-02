@@ -13,4 +13,11 @@ namespace DriveOps.Application.DTOs
         string PaymentIntentClientSecret,
         string EphemeralKey,
         string GatewayCustomerId);
+
+    public record RefundResultDto(
+        Guid PaymentId,
+        string RefundId,
+        decimal Amount,
+        decimal TotalRefunded,
+        bool FullyRefunded);
 }

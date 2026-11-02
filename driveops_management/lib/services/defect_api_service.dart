@@ -26,16 +26,22 @@ class DefectApiService {
         'severity': ?severity,
         'vehicleId': ?vehicleId,
         'driverId': ?driverId,
+        'pageSize': 100,
       },
     );
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => DefectReport.fromJson(json as Map<String, dynamic>)).toList();
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => DefectReport.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<List<DefectReport>> getVehicleDefects(String vehicleId) async {
-    final response = await _api.get('${ApiConfig.vehicleEndpoint}/$vehicleId/defects');
-    final List<dynamic> data = response.data as List<dynamic>;
-    return data.map((json) => DefectReport.fromJson(json as Map<String, dynamic>)).toList();
+    final response = await _api.get(
+      '${ApiConfig.vehicleEndpoint}/$vehicleId/defects',
+      queryParameters: {'pageSize': 100},
+    );
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items.map((json) => DefectReport.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   Future<DefectReport> resolveDefect(String id, {String? resolutionNotes}) async {

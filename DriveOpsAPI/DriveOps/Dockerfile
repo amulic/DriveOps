@@ -1,25 +1,20 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER app
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
-
+# Build context is the repository root (see DriveOpsAPI/docker-compose.yml).
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["DriveOps/DriveOps.csproj", "DriveOps/"]
-RUN dotnet restore "./DriveOps/DriveOps.csproj"
-COPY . .
-WORKDIR "/src/DriveOps"
-RUN dotnet build "./DriveOps.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./DriveOps.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+COPY DriveOpsAPI/DriveOps/DriveOps.csproj DriveOpsAPI/DriveOps/
+COPY DriveOpsAPI/DriveOps.API/DriveOps.API.csproj DriveOpsAPI/DriveOps.API/
+COPY DriveOpsAPI/DriveOps.Application/DriveOps.Application.csproj DriveOpsAPI/DriveOps.Application/
+COPY DriveOpsAPI/DriveOps.Infrastructure/DriveOps.Infrastructure.csproj DriveOpsAPI/DriveOps.Infrastructure/
+COPY DriveOpsAPI/DriveOps.Model/DriveOps.Model.csproj DriveOpsAPI/DriveOps.Model/
+COPY DriveOpsRealtime/DriveOps.RealTime.Contracts/DriveOps.RealTime.Contracts.csproj DriveOpsRealtime/DriveOps.RealTime.Contracts/
+RUN dotnet restore DriveOpsAPI/DriveOps/DriveOps.csproj
 
-FROM base AS final
+COPY DriveOpsAPI/ DriveOpsAPI/
+COPY DriveOpsRealtime/DriveOps.RealTime.Contracts/ DriveOpsRealtime/DriveOps.RealTime.Contracts/
+RUN dotnet publish DriveOpsAPI/DriveOps/DriveOps.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "DriveOps.dll"]

@@ -6,6 +6,8 @@ class RecommendedDriver {
   final double? currentLatitude;
   final double? currentLongitude;
   final double? distanceKm;
+  final double? distanceScore;
+  final double? ratingScore;
   final double score;
   final String? vehicleId;
   final String? vehiclePlate;
@@ -18,6 +20,8 @@ class RecommendedDriver {
     this.currentLatitude,
     this.currentLongitude,
     this.distanceKm,
+    this.distanceScore,
+    this.ratingScore,
     required this.score,
     this.vehicleId,
     this.vehiclePlate,
@@ -32,6 +36,8 @@ class RecommendedDriver {
       currentLatitude: (json['currentLatitude'] as num?)?.toDouble(),
       currentLongitude: (json['currentLongitude'] as num?)?.toDouble(),
       distanceKm: (json['distanceKm'] as num?)?.toDouble(),
+      distanceScore: (json['distanceScore'] as num?)?.toDouble(),
+      ratingScore: (json['ratingScore'] as num?)?.toDouble(),
       score: (json['score'] as num).toDouble(),
       vehicleId: json['vehicleId'] as String?,
       vehiclePlate: json['vehiclePlate'] as String?,

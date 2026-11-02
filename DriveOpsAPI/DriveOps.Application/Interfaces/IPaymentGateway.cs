@@ -38,6 +38,14 @@ namespace DriveOps.Application.Interfaces
             string idempotencyKey, IDictionary<string, string> metadata);
 
         /// <summary>
+        /// Refunds (fully or partially) a captured PaymentIntent. Amount null = full refund.
+        /// Returns the provider refund id (re_...) and the refunded amount in major units.
+        /// </summary>
+        Task<GatewayRefundResult> RefundAsync(
+            string paymentIntentId, decimal? amount, string currency,
+            string idempotencyKey, IDictionary<string, string> metadata);
+
+        /// <summary>
         /// Verifies the webhook signature and returns the typed event.
         /// Throws <see cref="PaymentGatewayException"/> when the signature is invalid.
         /// </summary>
@@ -49,6 +57,8 @@ namespace DriveOps.Application.Interfaces
     public record GatewaySavedCard(string Id, string Brand, string Last4, int ExpMonth, int ExpYear);
 
     public record GatewayPaymentIntentSession(string PaymentIntentId, string ClientSecret, string EphemeralKey, string CustomerId);
+
+    public record GatewayRefundResult(string RefundId, decimal Amount, string Status);
 
     /// <summary>
     /// Normalized webhook event. Type is "payment_intent.succeeded" or "payment_intent.payment_failed".

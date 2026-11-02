@@ -260,6 +260,88 @@ namespace DriveOps.Application.Services
             });
         }
 
+        public async Task<RefundResultDto> RefundTripPaymentAsync(Guid tripId, decimal? amount, string? reason)
+        {
+            var trip = await _tripRepository.GetByIdAsync(tripId)
+                ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
+
+            if (trip.TripStatus != ModelEnums.TripStatus.Completed
+                || trip.PaymentMethod is not (ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard)
+                || trip.PaymentStatus != ModelEnums.PaymentStatus.Completed)
+                throw new InvalidOperationException(
+                    "Only a completed card trip with a completed payment can be refunded.");
+
+            var payments = await _paymentRepository.GetByTripIdAsync(tripId);
+            var charge = payments.FirstOrDefault(p =>
+                    p.Status == ModelEnums.PaymentStatus.Completed && p.TransactionId != null)
+                ?? throw new InvalidOperationException("No completed card charge was found for this trip.");
+
+            // Refund against the amount actually charged (ledger), never against ActualFare blindly.
+            var totalRefunded = payments
+                .Where(p => p.Status == ModelEnums.PaymentStatus.Refunded)
+                .Sum(p => p.Amount);
+            var remaining = charge.Amount - totalRefunded;
+            if (remaining <= 0)
+                throw new InvalidOperationException("This payment has already been fully refunded.");
+
+            decimal refundAmount;
+            if (amount.HasValue)
+            {
+                if (amount.Value <= 0 || amount.Value > remaining)
+                    throw new InvalidOperationException(
+                        $"Refund amount must be greater than 0 and at most {remaining:0.00}.");
+                refundAmount = amount.Value;
+            }
+            else
+            {
+                refundAmount = remaining;
+            }
+
+            // Provider call BEFORE the DB transaction: a decline leaves nothing persisted,
+            // so the operator can retry safely.
+            var metadata = new Dictionary<string, string> { ["tripId"] = tripId.ToString() };
+            if (!string.IsNullOrWhiteSpace(reason))
+                metadata["reason"] = reason!;
+
+            var refund = await _gateway.RefundAsync(
+                charge.TransactionId!, refundAmount, _options.Currency,
+                $"refund-{tripId}-{Guid.NewGuid():N}", metadata);
+
+            var fullyRefunded = totalRefunded + refund.Amount >= charge.Amount;
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                // Append-only ledger: the original charge row is never mutated.
+                await _paymentRepository.AddAsync(new Payment
+                {
+                    Id = Guid.NewGuid(),
+                    TripId = tripId,
+                    Amount = refund.Amount,
+                    Method = charge.Method,
+                    Status = ModelEnums.PaymentStatus.Refunded,
+                    TransactionId = refund.RefundId,
+                    ProcessedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                if (fullyRefunded)
+                {
+                    trip.PaymentStatus = ModelEnums.PaymentStatus.Refunded;
+                    trip.UpdatedAt = DateTime.UtcNow;
+                    await _tripRepository.UpdateAsync(trip);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+            });
+
+            return new RefundResultDto(
+                charge.Id,
+                refund.RefundId,
+                refund.Amount,
+                totalRefunded + refund.Amount,
+                fullyRefunded);
+        }
+
         public async Task<bool> CustomerHasSavedCardAsync(Guid customerId)
         {
             var customer = await _customerRepository.GetByIdAsync(customerId);

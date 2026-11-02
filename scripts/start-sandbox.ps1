@@ -101,6 +101,10 @@ if (-not (Test-Path $adb)) { $adb = 'adb' }
 Write-Host '  docker / dotnet / flutter / stripe / adb OK' -ForegroundColor DarkGray
 
 # ---------- 2. Sandbox guard ----------
+$envFile = Join-Path $root 'DriveOpsAPI\.env'
+if (-not (Test-Path $envFile)) {
+    throw "DriveOpsAPI/.env is missing. Extract .env-tajne.zip (password: fit) into DriveOpsAPI/ before starting the sandbox."
+}
 if (-not (Test-Path $keysFile)) {
     throw "$keysFile missing. Create it with: { `"STRIPE_PUBLISHABLE_KEY`": `"pk_test_...`" }"
 }
@@ -175,7 +179,7 @@ Write-Host "  webhook secret captured and saved ($($whsec.Substring(0,12))...)" 
 # into the same obj/ folder; launching them concurrently races on that DLL (CS2012 file lock).
 Write-Step 'Starting DriveOpsAPI (:5032)'
 Start-Process pwsh -ArgumentList @('-NoExit', '-Command', "dotnet run --project `"$apiProject`"") | Out-Null
-Wait-HttpOk 'http://localhost:5032/api/test/public'
+Wait-HttpOk 'http://localhost:5032/swagger/index.html'
 Write-Host '  API responding on :5032' -ForegroundColor DarkGray
 
 Write-Step 'Starting DriveOpsRealtime (:5033)'

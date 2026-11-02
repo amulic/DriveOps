@@ -32,6 +32,7 @@ abstract class TripRepository {
   Future<List<Trip>> getActiveTripsByDriver(String driverId);
   Future<Trip> assignDriver(String tripId, String driverId, String vehicleId);
   Future<Trip> cancelTrip(String tripId, {String? reason});
+  Future<Map<String, dynamic>> refundTripPayment(String tripId, {double? amount, String? reason});
   Future<List<RoutePoint>> getTripRoute(String tripId);
   Future<List<RecommendedDriver>> getRecommendedDrivers(String tripId, {int count = 5});
 }

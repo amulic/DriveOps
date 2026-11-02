@@ -17,10 +17,16 @@ public class RealTimeDbContextFactory : IDesignTimeDbContextFactory<RealTimeDbCo
             .SetBasePath(basePath)
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddEnvironmentVariables()
             .Build();
 
-        var connectionString = config.GetConnectionString("DefaultConnection")
-            ?? "Server=localhost;Port=3306;Database=driveops_realtime;User=driveops_realtime;Password=driveops_realtime;";
+        var connectionString = config.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+            connectionString = Environment.GetEnvironmentVariable("DRIVEOPS_REALTIME_CONNECTION");
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException(
+                "Connection string 'DefaultConnection' not found. Set ConnectionStrings__DefaultConnection " +
+                "or DRIVEOPS_REALTIME_CONNECTION (see .env.example).");
 
         var optionsBuilder = new DbContextOptionsBuilder<RealTimeDbContext>();
         var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));

@@ -29,16 +29,31 @@ namespace DriveOps.Application.Services
             return vehicle?.ToDto();
         }
 
-        public async Task<IEnumerable<VehicleDto>> GetAllVehiclesAsync()
+        public async Task<PaginatedResult<VehicleDto>> GetAllVehiclesAsync(int page = 1, int pageSize = 20)
         {
-            var vehicles = await _vehicleRepository.GetAllAsync();
-            return vehicles.Select(v => v.ToDto());
+            var vehicles = await _vehicleRepository.GetAllAsync(page, pageSize);
+            var total = await _vehicleRepository.CountAsync();
+            return new PaginatedResult<VehicleDto>
+            {
+                Items = vehicles.Select(v => v.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
-        public async Task<IEnumerable<VehicleDto>> GetAvailableVehiclesAsync()
+        public async Task<PaginatedResult<VehicleDto>> GetAvailableVehiclesAsync(int page = 1, int pageSize = 20)
         {
-            var vehicles = await _vehicleRepository.GetAvailableVehiclesAsync();
-            return vehicles.Select(v => v.ToDto());
+            var vehicles = await _vehicleRepository.GetAvailableVehiclesAsync(page, pageSize);
+            var total = await _vehicleRepository.CountAsync(v =>
+                v.Status == VehicleStatus.Available && v.AssignedDriverId == null);
+            return new PaginatedResult<VehicleDto>
+            {
+                Items = vehicles.Select(v => v.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<VehicleDto> CreateVehicleAsync(CreateVehicleDto dto)
@@ -194,20 +209,34 @@ namespace DriveOps.Application.Services
             return report.ToDto();
         }
 
-        public async Task<IEnumerable<VehicleDefectReportDto>> GetVehicleDefectsAsync(Guid vehicleId)
+        public async Task<PaginatedResult<VehicleDefectReportDto>> GetVehicleDefectsAsync(Guid vehicleId, int page = 1, int pageSize = 20)
         {
             var vehicleExists = await _vehicleRepository.ExistsAsync(vehicleId);
             if (!vehicleExists)
                 throw new KeyNotFoundException($"Vehicle {vehicleId} not found.");
 
-            var reports = await _vehicleDefectReportRepository.GetByVehicleIdAsync(vehicleId);
-            return reports.Select(r => r.ToDto());
+            var reports = await _vehicleDefectReportRepository.GetByVehicleIdAsync(vehicleId, page, pageSize);
+            var total = await _vehicleDefectReportRepository.CountByVehicleIdAsync(vehicleId);
+            return new PaginatedResult<VehicleDefectReportDto>
+            {
+                Items = reports.Select(r => r.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
-        public async Task<IEnumerable<VehicleDefectReportDto>> GetDefectsAsync(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId)
+        public async Task<PaginatedResult<VehicleDefectReportDto>> GetDefectsAsync(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId, int page = 1, int pageSize = 20)
         {
-            var reports = await _vehicleDefectReportRepository.GetFilteredAsync(status, severity, vehicleId, driverId);
-            return reports.Select(r => r.ToDto());
+            var reports = await _vehicleDefectReportRepository.GetFilteredAsync(status, severity, vehicleId, driverId, page, pageSize);
+            var total = await _vehicleDefectReportRepository.CountFilteredAsync(status, severity, vehicleId, driverId);
+            return new PaginatedResult<VehicleDefectReportDto>
+            {
+                Items = reports.Select(r => r.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<VehicleDefectReportDto> ResolveDefectAsync(Guid defectId, string? resolutionNotes)

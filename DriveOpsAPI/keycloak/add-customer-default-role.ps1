@@ -13,18 +13,25 @@
 # NOTE: the admin token is obtained from the MASTER realm (same pattern as
 # enable-backend-service-account.ps1) — the realm-imported 'admin' user of driveops-dev
 # lacks realm-management permissions.
+#
+# Secrets are NOT stored in this file. The admin password is read from the
+# KC_BOOTSTRAP_ADMIN_PASSWORD environment variable (or pass -AdminPassword).
 
 param(
     [string]$BaseUrl = "http://localhost:8081",
     [string]$Realm = "driveops-dev",
     [string]$AdminRealm = "master",
     [string]$AdminUsername = "admin",
-    [string]$AdminPassword = "admin",
+    [string]$AdminPassword = $env:KC_BOOTSTRAP_ADMIN_PASSWORD,
     [string]$CustomerRoleName = "customer"
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+
+if (-not $AdminPassword) {
+    throw "AdminPassword not provided. Set the KC_BOOTSTRAP_ADMIN_PASSWORD environment variable (or pass -AdminPassword)."
+}
 
 Write-Host "== DriveOps: add '$CustomerRoleName' to default roles on $BaseUrl (realm $Realm) =="
 

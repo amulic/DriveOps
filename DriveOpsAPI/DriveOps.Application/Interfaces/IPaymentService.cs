@@ -40,5 +40,13 @@ namespace DriveOps.Application.Interfaces
 
         /// <summary>True when the customer has a gateway customer with at least one saved card.</summary>
         Task<bool> CustomerHasSavedCardAsync(Guid customerId);
+
+        /// <summary>
+        /// Refunds a completed card trip against the actual amount charged (the succeeded
+        /// ledger row), fully or partially. Writes a new Refunded ledger row; a full refund
+        /// flips the trip PaymentStatus to Refunded. Throws
+        /// <see cref="PaymentGatewayException"/> when the provider declines.
+        /// </summary>
+        Task<RefundResultDto> RefundTripPaymentAsync(Guid tripId, decimal? amount, string? reason);
     }
 }

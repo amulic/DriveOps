@@ -10,13 +10,20 @@ namespace DriveOps.Infrastructure.Repositories
     {
         public VehicleDefectReportRepository(ApplicationDbContext context) : base(context) { }
 
-        public async Task<IEnumerable<VehicleDefectReport>> GetByVehicleIdAsync(Guid vehicleId)
+        public async Task<IEnumerable<VehicleDefectReport>> GetByVehicleIdAsync(Guid vehicleId, int page, int pageSize)
         {
             return await _dbSet
                 .Include(r => r.Driver)
                 .Where(r => r.VehicleId == vehicleId)
                 .OrderByDescending(r => r.ReportedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+        }
+
+        public async Task<int> CountByVehicleIdAsync(Guid vehicleId)
+        {
+            return await _dbSet.CountAsync(r => r.VehicleId == vehicleId);
         }
 
         public async Task<VehicleDefectReport?> GetByIdWithDetailsAsync(Guid id)
@@ -27,7 +34,23 @@ namespace DriveOps.Infrastructure.Repositories
                 .FirstOrDefaultAsync(r => r.Id == id);
         }
 
-        public async Task<IEnumerable<VehicleDefectReport>> GetFilteredAsync(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId)
+        public async Task<IEnumerable<VehicleDefectReport>> GetFilteredAsync(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId, int page, int pageSize)
+        {
+            return await FilteredQuery(status, severity, vehicleId, driverId)
+                // Open (non-resolved) reports first, then newest first.
+                .OrderBy(r => r.Status == DefectStatus.Resolved)
+                .ThenByDescending(r => r.ReportedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountFilteredAsync(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId)
+        {
+            return await FilteredQuery(status, severity, vehicleId, driverId).CountAsync();
+        }
+
+        private IQueryable<VehicleDefectReport> FilteredQuery(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId)
         {
             var query = _dbSet
                 .Include(r => r.Driver)
@@ -43,11 +66,7 @@ namespace DriveOps.Infrastructure.Repositories
             if (driverId.HasValue)
                 query = query.Where(r => r.DriverId == driverId.Value);
 
-            // Open (non-resolved) reports first, then newest first.
-            return await query
-                .OrderBy(r => r.Status == DefectStatus.Resolved)
-                .ThenByDescending(r => r.ReportedAt)
-                .ToListAsync();
+            return query;
         }
     }
 }

@@ -168,6 +168,11 @@ class _DriverCard extends StatelessWidget {
                       _meta(Icons.directions_car, driver.vehiclePlate!),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  _explain(driver),
+                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                ),
                 const SizedBox(height: 6),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(2),
@@ -203,6 +208,17 @@ class _DriverCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Explainable recommendation: shows the score components behind the rank.
+  String _explain(RecommendedDriver d) {
+    final proximity = d.distanceScore != null
+        ? '${(d.distanceScore! * 100).round()}% proximity '
+            '(${d.distanceKm!.toStringAsFixed(1)} km)'
+        : 'no GPS';
+    final rating = '${((d.ratingScore ?? 0) * 100).round()}% rating '
+        '(${(d.rating ?? 5).toStringAsFixed(1)}★)';
+    return 'Why: $proximity · $rating → score ${d.score.toStringAsFixed(2)}';
   }
 
   Widget _meta(IconData icon, String text) {

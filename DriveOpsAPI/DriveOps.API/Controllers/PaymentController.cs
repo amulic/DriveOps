@@ -1,3 +1,5 @@
+using DriveOps.API.ControllerDtos.Request;
+using DriveOps.API.Helpers;
 using DriveOps.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +44,7 @@ namespace DriveOps.API.Controllers
             }
         }
 
-        /// <summary>Lists the customer's saved cards.</summary>
+        /// <summary>Lists the customer's saved cards (Stripe-bounded list, no pagination).</summary>
         [HttpGet("methods")]
         public async Task<IActionResult> GetSavedCards()
         {
@@ -115,6 +117,33 @@ namespace DriveOps.API.Controllers
         }
 
         /// <summary>
+        /// Refunds a completed card trip against the actually charged amount (management only).
+        /// A null amount refunds the remaining charged amount; a full refund flips the trip
+        /// to Refunded.
+        /// </summary>
+        [HttpPost("trips/{tripId:guid}/refund")]
+        [Authorize(Roles = "admin,dispatcher")]
+        public async Task<IActionResult> RefundTripPayment(Guid tripId, [FromBody] RefundTripRequest request)
+        {
+            try
+            {
+                return Ok(await _paymentService.RefundTripPaymentAsync(tripId, request.Amount, request.Reason));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (PaymentGatewayException ex)
+            {
+                return StatusCode(502, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Stripe webhook receiver. Anonymous (Stripe calls it) but signature-verified against
         /// Stripe:WebhookSecret. Always 200s events that are valid but not actionable.
         /// </summary>
@@ -142,8 +171,11 @@ namespace DriveOps.API.Controllers
             }
         }
 
-        // DefaultMapInboundClaims = false keeps the claim name as "sub".
-        private bool TryGetSub(out Guid keycloakId) =>
-            Guid.TryParse(User.FindFirst("sub")?.Value, out keycloakId);
+        private bool TryGetSub(out Guid keycloakId)
+        {
+            var id = User.GetKeycloakId();
+            keycloakId = id ?? Guid.Empty;
+            return id.HasValue;
+        }
     }
 }

@@ -93,10 +93,17 @@ namespace DriveOps.Application.Services
             };
         }
 
-        public async Task<IEnumerable<TripDto>> GetActiveTripsForDriverAsync(Guid driverId)
+        public async Task<PaginatedResult<TripDto>> GetActiveTripsForDriverAsync(Guid driverId, int page = 1, int pageSize = 20)
         {
-            var trips = await _tripRepository.GetActiveTripsByDriverIdAsync(driverId);
-            return trips.Select(t => t.ToDto());
+            var trips = await _tripRepository.GetActiveTripsByDriverIdAsync(driverId, page, pageSize);
+            var total = await _tripRepository.CountActiveTripsByDriverIdAsync(driverId);
+            return new PaginatedResult<TripDto>
+            {
+                Items = trips.Select(t => t.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<TripDto> RequestTripAsync(CreateTripDto dto)
@@ -440,10 +447,17 @@ namespace DriveOps.Application.Services
                 (DriveOps.RealTime.Contracts.Enums.TripType)(int)tripType);
         }
 
-        public async Task<IEnumerable<RoutePointDto>> GetTripRouteAsync(Guid tripId)
+        public async Task<PaginatedResult<RoutePointDto>> GetTripRouteAsync(Guid tripId, int page = 1, int pageSize = 500)
         {
-            var routePoints = await _tripRouteRepository.GetByTripIdAsync(tripId);
-            return routePoints.Select(r => r.ToDto());
+            var routePoints = await _tripRouteRepository.GetByTripIdAsync(tripId, page, pageSize);
+            var total = await _tripRouteRepository.CountByTripIdAsync(tripId);
+            return new PaginatedResult<RoutePointDto>
+            {
+                Items = routePoints.Select(r => r.ToDto()).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task AddRoutePointsAsync(Guid tripId, IEnumerable<RoutePointDto> points)

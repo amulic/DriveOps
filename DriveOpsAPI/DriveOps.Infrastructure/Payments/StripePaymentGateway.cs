@@ -176,6 +176,31 @@ namespace DriveOps.Infrastructure.Payments
             }
         }
 
+        public async Task<GatewayRefundResult> RefundAsync(
+            string paymentIntentId, decimal? amount, string currency,
+            string idempotencyKey, IDictionary<string, string> metadata)
+        {
+            try
+            {
+                var refund = await new RefundService(_client).CreateAsync(new RefundCreateOptions
+                {
+                    PaymentIntent = paymentIntentId,
+                    Amount = amount.HasValue ? ToMinorUnits(amount.Value) : null,
+                    Reason = "requested_by_customer",
+                    Metadata = new Dictionary<string, string>(metadata)
+                }, new RequestOptions { IdempotencyKey = idempotencyKey });
+
+                return new GatewayRefundResult(
+                    refund.Id,
+                    refund.Amount / 100m,
+                    refund.Status ?? "succeeded");
+            }
+            catch (StripeException ex)
+            {
+                throw Wrap(ex, "refund payment");
+            }
+        }
+
         public GatewayWebhookEvent ConstructWebhookEvent(string rawBody, string signatureHeader, string webhookSecret)
         {
             try

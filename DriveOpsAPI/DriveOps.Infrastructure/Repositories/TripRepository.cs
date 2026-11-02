@@ -27,7 +27,7 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet.CountAsync();
         }
 
-        public async Task<IEnumerable<Trip>> GetActiveTripsByDriverIdAsync(Guid driverId)
+        public async Task<IEnumerable<Trip>> GetActiveTripsByDriverIdAsync(Guid driverId, int page, int pageSize)
         {
             return await _dbSet
                 .Include(t => t.Customer)
@@ -36,7 +36,16 @@ namespace DriveOps.Infrastructure.Repositories
                     && t.TripStatus != TripStatus.Completed
                     && t.TripStatus != TripStatus.Cancelled)
                 .OrderByDescending(t => t.RequestedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+        }
+
+        public async Task<int> CountActiveTripsByDriverIdAsync(Guid driverId)
+        {
+            return await _dbSet.CountAsync(t => t.DriverId == driverId
+                && t.TripStatus != TripStatus.Completed
+                && t.TripStatus != TripStatus.Cancelled);
         }
 
         public async Task<IEnumerable<Trip>> GetActiveTripsByCustomerIdAsync(Guid customerId)

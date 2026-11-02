@@ -1,0 +1,12 @@
+**/bin
+**/obj
+**/.git
+**/.vs
+**/.dart_tool
+driveops_*/build
+.sandbox
+
+# Never bake runtime secrets into build layers
+**/.env
+**/.env.*
+**/.env-tajne.zip
