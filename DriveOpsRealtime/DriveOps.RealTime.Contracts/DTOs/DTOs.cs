@@ -65,7 +65,17 @@ public record NotificationDto(
     string Type,
     string Title,
     string Message,
+    Guid? TripId,
+    bool IsRead,
     DateTime Timestamp
+);
+
+public record PagedNotificationsDto(
+    int TotalCount,
+    int UnreadCount,
+    int Page,
+    int PageSize,
+    IEnumerable<NotificationDto> Items
 );
 
 public record FleetUpdateDto(

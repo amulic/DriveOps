@@ -68,6 +68,27 @@ public class TripEventConsumer : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var notifications = scope.ServiceProvider.GetRequiredService<INotificationHubService>();
                 var chat = scope.ServiceProvider.GetRequiredService<IChatService>();
+                var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+                // Persisting a notification must never NACK an event whose
+                // real-time pushes already succeeded, so failures are logged
+                // and swallowed per recipient.
+                async Task PersistAsync(string type, string title, string message, Guid tripId, params Guid?[] recipients)
+                {
+                    foreach (var recipient in recipients)
+                    {
+                        if (!recipient.HasValue) continue;
+                        try
+                        {
+                            await notificationService.CreateAsync(recipient.Value, type, title, message, tripId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to persist {Type} notification for user {UserId} (trip {TripId})",
+                                type, recipient, tripId);
+                        }
+                    }
+                }
 
                 switch (ea.RoutingKey)
                 {
@@ -101,6 +122,11 @@ public class TripEventConsumer : BackgroundService
                             await notifications.SendTripStatusChangedToUserAsync(assigned.DriverKeycloakId.Value,
                                 new TripStatusChangedDto(assigned.TripId, TripStatus.Assigned, assigned.CustomerId, assigned.DriverId, assigned.AssignedAt));
                         }
+
+                        await PersistAsync("TripAssigned", "New trip assigned",
+                            "You have been assigned a new trip.", assigned.TripId, assigned.DriverKeycloakId);
+                        await PersistAsync("TripAssigned", "Driver assigned",
+                            $"{assigned.DriverName} is on the way to pick you up.", assigned.TripId, assigned.CustomerKeycloakId);
                         break;
 
                     case "trip.started":
@@ -112,6 +138,9 @@ public class TripEventConsumer : BackgroundService
                             await notifications.SendTripStatusChangedAsync(started.DriverId, startedDto);
                         if (started.CustomerKeycloakId.HasValue)
                             await notifications.SendTripStatusChangedToUserAsync(started.CustomerKeycloakId.Value, startedDto);
+
+                        await PersistAsync("TripStarted", "Trip started",
+                            "Your trip has started.", started.TripId, started.CustomerKeycloakId);
                         break;
 
                     case "trip.completed":
@@ -123,6 +152,12 @@ public class TripEventConsumer : BackgroundService
                             await notifications.SendTripStatusChangedAsync(completed.DriverId, completedDto);
                         if (completed.CustomerKeycloakId.HasValue)
                             await notifications.SendTripStatusChangedToUserAsync(completed.CustomerKeycloakId.Value, completedDto);
+
+                        await PersistAsync("TripCompleted", "Trip completed",
+                            "Your trip is complete. Thanks for riding with DriveOps.", completed.TripId, completed.CustomerKeycloakId);
+                        await PersistAsync("TripCompleted", "Trip completed",
+                            "The trip has been marked complete.", completed.TripId, completed.DriverKeycloakId);
+
                         await chat.CloseConversationByTripIdAsync(completed.TripId);
                         break;
 
@@ -135,6 +170,18 @@ public class TripEventConsumer : BackgroundService
                             await notifications.SendTripStatusChangedToUserAsync(cancelled.DriverKeycloakId.Value, cancelledDto);
                         else if (cancelled.DriverId.HasValue)
                             await notifications.SendTripStatusChangedAsync(cancelled.DriverId.Value, cancelledDto);
+
+                        var cancelCustomerMessage = string.IsNullOrWhiteSpace(cancelled.Reason)
+                            ? "Your trip was cancelled."
+                            : $"Your trip was cancelled: {cancelled.Reason}";
+                        var cancelDriverMessage = string.IsNullOrWhiteSpace(cancelled.Reason)
+                            ? "The trip was cancelled."
+                            : $"The trip was cancelled: {cancelled.Reason}";
+                        await PersistAsync("TripCancelled", "Trip cancelled",
+                            cancelCustomerMessage, cancelled.TripId, cancelled.CustomerKeycloakId);
+                        await PersistAsync("TripCancelled", "Trip cancelled",
+                            cancelDriverMessage, cancelled.TripId, cancelled.DriverKeycloakId);
+
                         await chat.CloseConversationByTripIdAsync(cancelled.TripId);
                         break;
 
@@ -147,6 +194,9 @@ public class TripEventConsumer : BackgroundService
                             await notifications.SendTripStatusChangedToUserAsync(declined.DriverKeycloakId.Value, declinedDto);
                         else if (declined.DriverId.HasValue)
                             await notifications.SendTripStatusChangedAsync(declined.DriverId.Value, declinedDto);
+
+                        await PersistAsync("TripDeclined", "Driver declined",
+                            "The driver declined your trip request. Please try again.", declined.TripId, declined.CustomerKeycloakId);
                         break;
                 }
 

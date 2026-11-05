@@ -5,6 +5,7 @@ import 'package:driveops_mobile/features/driver/home/presentation/widgets/driver
 import 'package:driveops_mobile/features/driver/home/presentation/widgets/trips_pie_chart.dart';
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
+import 'package:driveops_mobile/shared/widgets/notification_bell.dart';
 
 class DriverHomeScreen extends ConsumerWidget {
   const DriverHomeScreen({super.key});
@@ -20,6 +21,7 @@ class DriverHomeScreen extends ConsumerWidget {
         backgroundColor: const Color(0xFF1A1A2E),
         title: const Text('Home'),
         actions: [
+          const NotificationBell(),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',

@@ -9,6 +9,7 @@ public static class ServicesExtensions
     {
         services.AddScoped<IConnectionMappingService, ConnectionMappingService>();
         services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         return services;
     }

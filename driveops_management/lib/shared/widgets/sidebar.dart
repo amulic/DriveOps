@@ -76,6 +76,13 @@ class Sidebar extends ConsumerWidget {
                   onTap: () => context.go('/defects'),
                   badge: openDefects > 0 ? '$openDefects' : null,
                 ),
+                _SidebarTabButton(
+                  icon: Icons.assessment_rounded,
+                  label: 'Reports',
+                  route: '/reports',
+                  isSelected: currentRoute == '/reports',
+                  onTap: () => context.go('/reports'),
+                ),
               ],
             ),
           ),

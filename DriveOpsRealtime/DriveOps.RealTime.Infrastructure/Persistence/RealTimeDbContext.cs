@@ -12,6 +12,7 @@ public class RealTimeDbContext : DbContext
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<DriverLocationCache> DriverLocationCaches => Set<DriverLocationCache>();
     public DbSet<UserConnection> UserConnections => Set<UserConnection>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

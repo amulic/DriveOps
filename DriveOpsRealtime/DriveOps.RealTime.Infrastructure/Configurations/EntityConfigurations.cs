@@ -72,3 +72,17 @@ public class UserConnectionConfiguration : IEntityTypeConfiguration<UserConnecti
         builder.HasIndex(u => u.UserId);
     }
 }
+
+public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
+{
+    public void Configure(EntityTypeBuilder<Notification> builder)
+    {
+        builder.HasKey(n => n.Id);
+        builder.Property(n => n.Id).ValueGeneratedOnAdd();
+        builder.Property(n => n.Type).IsRequired().HasMaxLength(50);
+        builder.Property(n => n.Title).IsRequired().HasMaxLength(200);
+        builder.Property(n => n.Message).IsRequired().HasMaxLength(1000);
+        builder.HasIndex(n => new { n.UserId, n.IsRead });
+        builder.HasIndex(n => new { n.UserId, n.CreatedAt });
+    }
+}

@@ -9,6 +9,7 @@ import 'package:driveops_mobile/features/driver/pending_approval_screen.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
 import 'package:driveops_mobile/shared/providers/location_signalr_provider.dart';
+import 'package:driveops_mobile/shared/providers/notifications_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
 /// Driver area shell — hosts the 5-tab bottom navigation:
@@ -67,6 +68,10 @@ class DriverShell extends ConsumerWidget {
     ref.watch(locationSignalrConnectionProvider);
     ref.watch(driverTripPushProvider);
     ref.watch(driverLocationStreamingProvider);
+
+    // Persisted-notification inbox: refresh whenever the server pushes a
+    // SystemNotification (works while any driver tab is open).
+    ref.watch(notificationPushListenerProvider);
 
     // Instant assignment alert: the server pushes TripStatusChanged(Assigned)
     // to user-{keycloakId}, so no client-side polling delay.

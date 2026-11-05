@@ -6,6 +6,7 @@ import 'package:driveops_mobile/features/customer/widgets/customer_onboarding_fo
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
 import 'package:driveops_mobile/shared/providers/location_signalr_provider.dart';
 import 'package:driveops_mobile/shared/providers/notification_signalr_provider.dart';
+import 'package:driveops_mobile/shared/providers/notifications_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
 /// Wraps every customer screen: resolves the local Customer profile
@@ -90,6 +91,7 @@ class CustomerGate extends ConsumerWidget {
         ref.watch(chatSignalrConnectionProvider);
         ref.watch(locationSignalrConnectionProvider);
         ref.watch(customerTripPushProvider);
+        ref.watch(notificationPushListenerProvider);
 
         return child;
       },
