@@ -1,4 +1,5 @@
 using DriveOps.API.ControllerDtos.Request;
+using DriveOps.API.Helpers;
 using DriveOps.API.Mappings;
 using DriveOps.Application.Interfaces;
 using DriveOps.Model.Enums;
@@ -27,10 +28,14 @@ namespace DriveOps.API.Controllers
             [FromQuery] string? status,
             [FromQuery] DefectSeverity? severity,
             [FromQuery] Guid? vehicleId,
-            [FromQuery] Guid? driverId)
+            [FromQuery] Guid? driverId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
-            var reports = await _vehicleService.GetDefectsAsync(status, severity, vehicleId, driverId);
-            return Ok(reports.Select(r => r.ToResponse()));
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var reports = await _vehicleService.GetDefectsAsync(status, severity, vehicleId, driverId, page, pageSize);
+            return Ok(reports.MapPage(r => r.ToResponse()));
         }
 
         [HttpPost("{id:guid}/resolve")]

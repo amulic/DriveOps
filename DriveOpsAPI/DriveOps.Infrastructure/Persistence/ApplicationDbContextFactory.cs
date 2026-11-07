@@ -30,8 +30,13 @@ namespace DriveOps.Infrastructure.Persistence
                 .AddEnvironmentVariables()
                 .Build();
 
-            var connectionString = config.GetConnectionString("DefaultConnection")
-                                   ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            var connectionString = config.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+                connectionString = Environment.GetEnvironmentVariable("DRIVEOPS_API_CONNECTION");
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new InvalidOperationException(
+                    "Connection string 'DefaultConnection' not found. Set ConnectionStrings__DefaultConnection " +
+                    "or DRIVEOPS_API_CONNECTION (see .env.example).");
 
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
             var mysqlServerVersion = new MySqlServerVersion(new Version(8, 0, 36));

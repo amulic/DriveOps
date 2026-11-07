@@ -33,9 +33,12 @@ namespace DriveOps.Infrastructure.Persistence
         {
             if (!optionsBuilder.IsConfigured)
             {
-                var fallbackConnectionString = "Server=localhost;Port=3306;Database=driveops_api;User=driveops_api;Password=driveops_api;";
-                var mysqlServerVersion = new MySqlServerVersion(new Version(8, 0, 36));
-                optionsBuilder.UseMySql(fallbackConnectionString, mysqlServerVersion);
+                // No credential fallback: the connection string comes from
+                // ConnectionStrings:DefaultConnection (env: ConnectionStrings__DefaultConnection
+                // or DRIVEOPS_API_CONNECTION loaded from .env).
+                throw new InvalidOperationException(
+                    "ApplicationDbContext is not configured. Set 'ConnectionStrings:DefaultConnection' " +
+                    "(environment variable ConnectionStrings__DefaultConnection or DRIVEOPS_API_CONNECTION).");
             }
         }
 

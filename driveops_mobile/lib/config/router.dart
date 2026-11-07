@@ -29,7 +29,9 @@ class _RouterRefreshNotifier extends ChangeNotifier {
 GoRouter createAppRouter(WidgetRef ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/driver/home',
+    // Neutral entry point: the auth check runs against the splash screen and
+    // the redirect below routes the user to their role's home once resolved.
+    initialLocation: '/',
     refreshListenable: _RouterRefreshNotifier(ref),
     redirect: (context, state) {
       final authState = ref.read(authProvider);
@@ -37,21 +39,31 @@ GoRouter createAppRouter(WidgetRef ref) {
       if (authState.isLoading) return null;
 
       final user = authState.value?.user;
-      final isAuth = user != null;
-      final loggingIn = state.matchedLocation == '/login';
-      final onUnauthorized = state.matchedLocation == '/unauthorized';
-
-      if (!isAuth && !loggingIn) return '/login';
-
-      if (isAuth && (loggingIn || state.matchedLocation == '/')) {
-        return _homeForRole(user.userType);
+      if (user == null) {
+        return state.matchedLocation == '/login' ? null : '/login';
       }
 
-      if (isAuth && onUnauthorized) return _homeForRole(user.userType);
+      // Every location is role-checked, not just /, /login and /unauthorized:
+      // a cold start must never strand a restored customer session in the
+      // driver area (or vice versa) — see initialLocation above.
+      final home = _homeForRole(user.userType);
+      final onUnauthorized = state.matchedLocation == '/unauthorized';
 
-      return null;
+      switch (user.userType) {
+        case UserType.admin:
+        case UserType.dispatcher:
+          return onUnauthorized ? null : home;
+        case UserType.driver:
+          return state.matchedLocation.startsWith('/driver') ? null : home;
+        case UserType.customer:
+          return state.matchedLocation.startsWith('/customer') ? null : home;
+      }
     },
     routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const _SplashScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
@@ -140,5 +152,21 @@ String _homeForRole(UserType type) {
     case UserType.admin:
     case UserType.dispatcher:
       return '/unauthorized';
+  }
+}
+
+/// Shown at `/` while the persisted session is resolved, so a cold start never
+/// flashes a role area (previously the driver shell) before auth completes.
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFF0F0F1A),
+      body: Center(
+        child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
+      ),
+    );
   }
 }

@@ -32,7 +32,8 @@ namespace DriveOps.Infrastructure.Services
             _realm = authority.Split('/').Last();
 
             _clientId = configuration["Keycloak:AdminClientId"] ?? "driveops-backend";
-            _clientSecret = configuration["Keycloak:AdminClientSecret"] ?? "driveops-backend-secret-dev";
+            // No secret fallback — supply Keycloak:AdminClientSecret via env/.env.
+            _clientSecret = configuration["Keycloak:AdminClientSecret"] ?? string.Empty;
         }
 
         public async Task<List<KeycloakUserDto>> SearchUsersAsync(string search)

@@ -1,10 +1,12 @@
 using DriveOps.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DriveOps.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class GeocodeController : ControllerBase
     {
         private readonly IGeocodingService _geocodingService;
@@ -14,6 +16,7 @@ namespace DriveOps.API.Controllers
             _geocodingService = geocodingService;
         }
 
+        // Already bounded by a clamped limit (1–10), so no pagination envelope is needed.
         [HttpGet("search")]
         public async Task<IActionResult> Search([FromQuery] string? q, [FromQuery] int limit = 5)
         {

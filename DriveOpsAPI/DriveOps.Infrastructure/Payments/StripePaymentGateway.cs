@@ -176,6 +176,31 @@ namespace DriveOps.Infrastructure.Payments
             }
         }
 
+        public async Task<GatewayRefundResult> RefundAsync(
+            string paymentIntentId, decimal? amount, string currency,
+            string idempotencyKey, IDictionary<string, string> metadata)
+        {
+            try
+            {
+                var refund = await new RefundService(_client).CreateAsync(new RefundCreateOptions
+                {
+                    PaymentIntent = paymentIntentId,
+                    Amount = amount.HasValue ? ToMinorUnits(amount.Value) : null,
+                    Reason = "requested_by_customer",
+                    Metadata = new Dictionary<string, string>(metadata)
+                }, new RequestOptions { IdempotencyKey = idempotencyKey });
+
+                return new GatewayRefundResult(
+                    refund.Id,
+                    refund.Amount / 100m,
+                    refund.Status ?? "succeeded");
+            }
+            catch (StripeException ex)
+            {
+                throw Wrap(ex, "refund payment");
+            }
+        }
+
         public GatewayWebhookEvent ConstructWebhookEvent(string rawBody, string signatureHeader, string webhookSecret)
         {
             try
@@ -185,10 +210,19 @@ namespace DriveOps.Infrastructure.Payments
                 if (stripeEvent.Data?.Object is not PaymentIntent intent)
                     return new GatewayWebhookEvent(stripeEvent.Type, "", null);
 
+                Guid? tripId = null;
+                if (intent.Metadata != null
+                    && intent.Metadata.TryGetValue("tripId", out var rawTripId)
+                    && Guid.TryParse(rawTripId, out var parsedTripId))
+                {
+                    tripId = parsedTripId;
+                }
+
                 return new GatewayWebhookEvent(
                     stripeEvent.Type,
                     intent.Id,
-                    intent.LastPaymentError?.Message);
+                    intent.LastPaymentError?.Message,
+                    tripId);
             }
             catch (StripeException ex)
             {
@@ -201,7 +235,7 @@ namespace DriveOps.Infrastructure.Payments
             var key = await new EphemeralKeyService(_client).CreateAsync(new EphemeralKeyCreateOptions
             {
                 Customer = gatewayCustomerId,
-                // Ephemeral keys require an explicit Stripe-Version for the mobile SDK.
+                // explicit Stripe-Version for the mobile SDK.
                 StripeVersion = StripeConfiguration.ApiVersion
             });
             return key.Secret;

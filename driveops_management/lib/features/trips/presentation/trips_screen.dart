@@ -156,35 +156,36 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
       const MapEntry('No Driver', TripStatus.noDriverAvailable),
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: filters.map((entry) {
-          final isSelected = selectedStatus == entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(entry.key),
-              selected: isSelected,
-              onSelected: (_) {
-                ref.read(tripsStatusFilterProvider.notifier).update(
-                    isSelected ? null : entry.value);
-              },
-              selectedColor: const Color(0xFF3B82F6).withValues(alpha: 0.2),
-              backgroundColor: const Color(0xFF252538),
-              side: BorderSide(
-                color: isSelected
-                    ? const Color(0xFF3B82F6)
-                    : Colors.white.withValues(alpha: 0.1),
-              ),
-              labelStyle: TextStyle(
-                color: isSelected ? const Color(0xFF3B82F6) : Colors.white70,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 13,
-              ),
-            ),
-          );
-        }).toList(),
+    // Dropdown instead of chips: a horizontal scroll view inside the toolbar
+    // Row gets unbounded width and overflows (esp. with the details panel open).
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF252538),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<TripStatus?>(
+          value: selectedStatus,
+          hint: const Text(
+            'Status',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          dropdownColor: const Color(0xFF252538),
+          icon: const Icon(Icons.keyboard_arrow_down,
+              color: Colors.white54, size: 18),
+          style: const TextStyle(color: Colors.white70, fontSize: 13),
+          items: filters
+              .map((entry) => DropdownMenuItem<TripStatus?>(
+                    value: entry.value,
+                    child: Text(entry.key),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            ref.read(tripsStatusFilterProvider.notifier).update(value);
+          },
+        ),
       ),
     );
   }
@@ -197,8 +198,17 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
       child: Card(
         color: const Color(0xFF252538),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        clipBehavior: Clip.antiAlias,
         child: SingleChildScrollView(
-          child: DataTable(
+          // Horizontal scroll keeps a too-wide table usable instead of
+          // overflowing; ConstrainedBox keeps it full-width when there is room.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: DataTable(
             columnSpacing: 24,
             horizontalMargin: 20,
             showCheckboxColumn: false,
@@ -228,6 +238,10 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
                 ],
               );
             }).toList(),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

@@ -24,7 +24,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "admin",
+          "value": "${SEED_PASSWORD_ADMIN}",
           "temporary": false
         }
       ],
@@ -41,7 +41,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "dispatcher",
+          "value": "${SEED_PASSWORD_DISPATCHER}",
           "temporary": false
         }
       ],
@@ -58,7 +58,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "testuser",
+          "value": "${SEED_PASSWORD_TESTUSER}",
           "temporary": false
         }
       ],
@@ -76,7 +76,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "marcusjohnson",
+          "value": "${SEED_PASSWORD_MARCUSJOHNSON}",
           "temporary": false
         }
       ],
@@ -94,7 +94,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "sarahwilliams",
+          "value": "${SEED_PASSWORD_SARAHWILLIAMS}",
           "temporary": false
         }
       ],
@@ -112,7 +112,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "davidchen",
+          "value": "${SEED_PASSWORD_DAVIDCHEN}",
           "temporary": false
         }
       ],
@@ -130,7 +130,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "emilyrodriguez",
+          "value": "${SEED_PASSWORD_EMILYRODRIGUEZ}",
           "temporary": false
         }
       ],
@@ -148,7 +148,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "jamesbrown",
+          "value": "${SEED_PASSWORD_JAMESBROWN}",
           "temporary": false
         }
       ],
@@ -166,7 +166,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "johndoe",
+          "value": "${SEED_PASSWORD_JOHNDOE}",
           "temporary": false
         }
       ],
@@ -184,7 +184,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "janesmith",
+          "value": "${SEED_PASSWORD_JANESMITH}",
           "temporary": false
         }
       ],
@@ -202,7 +202,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "bobwilson",
+          "value": "${SEED_PASSWORD_BOBWILSON}",
           "temporary": false
         }
       ],
@@ -240,6 +240,18 @@
         "description": "Customer role for the mobile app"
       },
       {
+        "name": "offline_access",
+        "description": "${role_offline-access}",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "uma_authorization",
+        "description": "${role_uma-authorization}",
+        "composite": false,
+        "clientRole": false
+      },
+      {
         "name": "default-roles-driveops-dev",
         "description": "${role_default-roles}",
         "composite": true,
@@ -267,7 +279,7 @@
       "description": "Backend API service client",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "driveops-backend-secret-dev",
+      "secret": "${DRIVEOPS_BACKEND_CLIENT_SECRET}",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true,

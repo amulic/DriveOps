@@ -10,21 +10,32 @@
 # these settings (serviceAccountsEnabled + serviceAccountsClientRoles).
 #
 # NOTE: the admin token is obtained from the MASTER realm (KC_BOOTSTRAP_ADMIN_USERNAME/PASSWORD
-# in docker-compose.yml). The realm-imported 'admin' user of driveops-dev is a plain realm role
+# in .env). The realm-imported 'admin' user of driveops-dev is a plain realm role
 # without realm-management permissions and gets 403 on admin REST calls.
+#
+# Secrets are NOT stored in this file. They are read from the environment
+# (KC_BOOTSTRAP_ADMIN_PASSWORD, DRIVEOPS_BACKEND_CLIENT_SECRET); pass the
+# parameters explicitly to override.
 
 param(
     [string]$BaseUrl = "http://localhost:8081",
     [string]$Realm = "driveops-dev",
     [string]$AdminRealm = "master",
     [string]$AdminUsername = "admin",
-    [string]$AdminPassword = "admin",
+    [string]$AdminPassword = $env:KC_BOOTSTRAP_ADMIN_PASSWORD,
     [string]$BackendClientId = "driveops-backend",
-    [string]$BackendClientSecret = "driveops-backend-secret-dev"
+    [string]$BackendClientSecret = $env:DRIVEOPS_BACKEND_CLIENT_SECRET
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+
+if (-not $AdminPassword) {
+    throw "AdminPassword not provided. Set the KC_BOOTSTRAP_ADMIN_PASSWORD environment variable (or pass -AdminPassword)."
+}
+if (-not $BackendClientSecret) {
+    throw "BackendClientSecret not provided. Set the DRIVEOPS_BACKEND_CLIENT_SECRET environment variable (or pass -BackendClientSecret)."
+}
 
 function Get-AdminToken {
     param([string]$Username, [string]$Password)

@@ -6,8 +6,9 @@ class ApiConfig {
   static const String tripEndpoint = '/api/trip';
   static const String vehicleEndpoint = '/api/vehicle';
   static const String defectEndpoint = '/api/defects';
+  static const String paymentEndpoint = '/api/payment';
 
-  static const String notificationHubPath = '/hubs/notification';
+  static const String notificationHubPath = '/hubs/notifications';
   static const String chatHubPath = '/hubs/chat';
 }
 

@@ -15,12 +15,19 @@ namespace DriveOps.Infrastructure.Repositories
             return Task.CompletedTask;
         }
 
-        public async Task<IEnumerable<TripRoute>> GetByTripIdAsync(Guid tripId)
+        public async Task<IEnumerable<TripRoute>> GetByTripIdAsync(Guid tripId, int page, int pageSize)
         {
             return await _dbSet
                 .Where(r => r.TripId == tripId)
                 .OrderBy(r => r.Timestamp)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+        }
+
+        public async Task<int> CountByTripIdAsync(Guid tripId)
+        {
+            return await _dbSet.CountAsync(r => r.TripId == tripId);
         }
     }
 }

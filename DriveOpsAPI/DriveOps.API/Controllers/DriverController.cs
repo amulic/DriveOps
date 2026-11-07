@@ -1,4 +1,5 @@
 using DriveOps.API.ControllerDtos.Request;
+using DriveOps.API.Helpers;
 using DriveOps.API.Mappings;
 using DriveOps.Application.Exceptions;
 using DriveOps.Application.Interfaces;
@@ -9,6 +10,7 @@ namespace DriveOps.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class DriverController : ControllerBase
     {
         private readonly IDriverService _driverService;
@@ -19,6 +21,7 @@ namespace DriveOps.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> GetAllDrivers(
             [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
@@ -35,12 +38,18 @@ namespace DriveOps.API.Controllers
             if (driver == null)
                 return NotFound();
 
+            if (!User.IsInManagementRole() && driver.KeycloakId != User.GetKeycloakId())
+                return Forbid();
+
             return Ok(driver.ToResponse());
         }
 
         [HttpGet("keycloak/{keycloakId:guid}")]
         public async Task<IActionResult> GetDriverByKeycloakId(Guid keycloakId)
         {
+            if (!User.IsInManagementRole() && keycloakId != User.GetKeycloakId())
+                return Forbid();
+
             var driver = await _driverService.GetDriverByKeycloakIdAsync(keycloakId);
             if (driver == null)
                 return NotFound();
@@ -49,6 +58,7 @@ namespace DriveOps.API.Controllers
         }
 
         [HttpGet("available")]
+        [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> GetAvailableDrivers(
             [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
@@ -59,6 +69,7 @@ namespace DriveOps.API.Controllers
         }
 
         [HttpGet("nearby")]
+        [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> GetNearbyDrivers(
             [FromQuery] decimal latitude,
             [FromQuery] decimal longitude,
@@ -73,6 +84,7 @@ namespace DriveOps.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> CreateDriver([FromBody] CreateDriverRequest request)
         {
             try
@@ -86,6 +98,7 @@ namespace DriveOps.API.Controllers
             }
         }
 
+        // Keycloak-side search is hard-capped at 20 results, so no pagination is needed.
         [HttpGet("candidates")]
         [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> GetPromotionCandidates([FromQuery] string? search)
@@ -160,6 +173,7 @@ namespace DriveOps.API.Controllers
             StatusCode(502, new { message = $"Keycloak admin service error: {ex.Message}" });
 
         [HttpPut("{id:guid}")]
+        [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> UpdateDriver(Guid id, [FromBody] UpdateDriverRequest request)
         {
             var driver = await _driverService.UpdateDriverAsync(request.ToApplicationDto(id));
@@ -169,6 +183,10 @@ namespace DriveOps.API.Controllers
         [HttpPatch("{id:guid}/location")]
         public async Task<IActionResult> UpdateLocation(Guid id, [FromBody] UpdateDriverLocationRequest request)
         {
+            var forbidden = await ForbidUnlessSelfOrManagementAsync(id);
+            if (forbidden != null)
+                return forbidden;
+
             await _driverService.UpdateDriverLocationAsync(request.ToApplicationDto(id));
             return NoContent();
         }
@@ -176,11 +194,16 @@ namespace DriveOps.API.Controllers
         [HttpPatch("{id:guid}/status")]
         public async Task<IActionResult> SetOnlineStatus(Guid id, [FromBody] SetDriverStatusRequest request)
         {
+            var forbidden = await ForbidUnlessSelfOrManagementAsync(id);
+            if (forbidden != null)
+                return forbidden;
+
             await _driverService.SetDriverOnlineStatusAsync(id, request.IsOnline);
             return NoContent();
         }
 
         [HttpPost("{id:guid}/suspend")]
+        [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> SuspendDriver(Guid id)
         {
             await _driverService.SuspendDriverAsync(id);
@@ -188,10 +211,23 @@ namespace DriveOps.API.Controllers
         }
 
         [HttpPost("{id:guid}/activate")]
+        [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> ActivateDriver(Guid id)
         {
             await _driverService.ActivateDriverAsync(id);
             return NoContent();
+        }
+
+        private async Task<IActionResult?> ForbidUnlessSelfOrManagementAsync(Guid driverId)
+        {
+            if (User.IsInManagementRole())
+                return null;
+
+            var driver = await _driverService.GetDriverByIdAsync(driverId);
+            if (driver == null)
+                return NotFound();
+
+            return driver.KeycloakId == User.GetKeycloakId() ? null : Forbid();
         }
     }
 }

@@ -87,6 +87,11 @@ namespace DriveOps.Application.Services
 
             var payment = new Payment
             {
+                // Client-side id: EF treats an empty key with the (UUID()) DB default as
+                // store-generated, and Pomelo can't retrieve server-generated Guids
+                // (renders broken `WHERE ROW_COUNT() = 1 AND ;` SQL). All entities set
+                // their id client-side — see MappingExtensions/TripRoute.
+                Id = Guid.NewGuid(),
                 TripId = trip.Id,
                 Amount = fare,
                 Method = trip.PaymentMethod.Value,
@@ -159,6 +164,7 @@ namespace DriveOps.Application.Services
             // Ledger row for the retry attempt; the webhook flips it once the app confirms.
             await _paymentRepository.AddAsync(new Payment
             {
+                Id = Guid.NewGuid(),
                 TripId = trip.Id,
                 Amount = fare,
                 Method = trip.PaymentMethod.Value,
@@ -182,11 +188,55 @@ namespace DriveOps.Application.Services
             if (evt.Type is not ("payment_intent.succeeded" or "payment_intent.payment_failed"))
                 return; // Not an event we act on — acknowledge with 200.
 
+            var succeeded = evt.Type == "payment_intent.succeeded";
+
             var payment = await _paymentRepository.GetByTransactionIdAsync(evt.PaymentIntentId);
             if (payment == null)
-                return; // Unknown intent (not created by us) — acknowledge with 200.
+            {
+                // The charge succeeded but no ledger row was persisted (e.g. the process
+                // crashed after charging, before SaveChanges). Reconcile from the
+                // PaymentIntent's metadata.tripId so the trip does not stay Pending.
+                if (!evt.TripId.HasValue)
+                    return; // Unknown intent (not created by us) — acknowledge with 200.
 
-            var succeeded = evt.Type == "payment_intent.succeeded";
+                var orphanTrip = await _tripRepository.GetByIdAsync(evt.TripId.Value);
+                if (orphanTrip == null)
+                    return; // Unknown trip — acknowledge with 200.
+
+                await _unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
+                    // Re-check inside the transaction; a concurrent delivery may have won.
+                    if (await _paymentRepository.GetByTransactionIdAsync(evt.PaymentIntentId) != null)
+                        return;
+                    if (orphanTrip.PaymentStatus == ModelEnums.PaymentStatus.Completed)
+                        return; // Already final — idempotent.
+
+                    var reconciled = new Payment
+                    {
+                        Id = Guid.NewGuid(),
+                        TripId = orphanTrip.Id,
+                        Amount = orphanTrip.ActualFare ?? 0,
+                        Method = orphanTrip.PaymentMethod ?? ModelEnums.PaymentMethod.CreditCard,
+                        Status = succeeded ? ModelEnums.PaymentStatus.Completed : ModelEnums.PaymentStatus.Failed,
+                        TransactionId = evt.PaymentIntentId,
+                        ProcessedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    if (!succeeded && evt.FailureMessage != null)
+                        reconciled.FailureReason = evt.FailureMessage.Length <= 500 ? evt.FailureMessage : evt.FailureMessage[..500];
+
+                    await _paymentRepository.AddAsync(reconciled);
+
+                    orphanTrip.PaymentStatus = succeeded
+                        ? ModelEnums.PaymentStatus.Completed
+                        : ModelEnums.PaymentStatus.Failed;
+                    orphanTrip.UpdatedAt = DateTime.UtcNow;
+                    await _tripRepository.UpdateAsync(orphanTrip);
+                    await _unitOfWork.SaveChangesAsync();
+                });
+                return;
+            }
+
             if (payment.Status == ModelEnums.PaymentStatus.Completed && succeeded)
                 return; // Idempotent — already final.
 
@@ -208,6 +258,88 @@ namespace DriveOps.Application.Services
 
                 await _unitOfWork.SaveChangesAsync();
             });
+        }
+
+        public async Task<RefundResultDto> RefundTripPaymentAsync(Guid tripId, decimal? amount, string? reason)
+        {
+            var trip = await _tripRepository.GetByIdAsync(tripId)
+                ?? throw new KeyNotFoundException($"Trip {tripId} not found.");
+
+            if (trip.TripStatus != ModelEnums.TripStatus.Completed
+                || trip.PaymentMethod is not (ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard)
+                || trip.PaymentStatus != ModelEnums.PaymentStatus.Completed)
+                throw new InvalidOperationException(
+                    "Only a completed card trip with a completed payment can be refunded.");
+
+            var payments = await _paymentRepository.GetByTripIdAsync(tripId);
+            var charge = payments.FirstOrDefault(p =>
+                    p.Status == ModelEnums.PaymentStatus.Completed && p.TransactionId != null)
+                ?? throw new InvalidOperationException("No completed card charge was found for this trip.");
+
+            // Refund against the amount actually charged (ledger), never against ActualFare blindly.
+            var totalRefunded = payments
+                .Where(p => p.Status == ModelEnums.PaymentStatus.Refunded)
+                .Sum(p => p.Amount);
+            var remaining = charge.Amount - totalRefunded;
+            if (remaining <= 0)
+                throw new InvalidOperationException("This payment has already been fully refunded.");
+
+            decimal refundAmount;
+            if (amount.HasValue)
+            {
+                if (amount.Value <= 0 || amount.Value > remaining)
+                    throw new InvalidOperationException(
+                        $"Refund amount must be greater than 0 and at most {remaining:0.00}.");
+                refundAmount = amount.Value;
+            }
+            else
+            {
+                refundAmount = remaining;
+            }
+
+            // Provider call BEFORE the DB transaction: a decline leaves nothing persisted,
+            // so the operator can retry safely.
+            var metadata = new Dictionary<string, string> { ["tripId"] = tripId.ToString() };
+            if (!string.IsNullOrWhiteSpace(reason))
+                metadata["reason"] = reason!;
+
+            var refund = await _gateway.RefundAsync(
+                charge.TransactionId!, refundAmount, _options.Currency,
+                $"refund-{tripId}-{Guid.NewGuid():N}", metadata);
+
+            var fullyRefunded = totalRefunded + refund.Amount >= charge.Amount;
+
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                // Append-only ledger: the original charge row is never mutated.
+                await _paymentRepository.AddAsync(new Payment
+                {
+                    Id = Guid.NewGuid(),
+                    TripId = tripId,
+                    Amount = refund.Amount,
+                    Method = charge.Method,
+                    Status = ModelEnums.PaymentStatus.Refunded,
+                    TransactionId = refund.RefundId,
+                    ProcessedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                if (fullyRefunded)
+                {
+                    trip.PaymentStatus = ModelEnums.PaymentStatus.Refunded;
+                    trip.UpdatedAt = DateTime.UtcNow;
+                    await _tripRepository.UpdateAsync(trip);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+            });
+
+            return new RefundResultDto(
+                charge.Id,
+                refund.RefundId,
+                refund.Amount,
+                totalRefunded + refund.Amount,
+                fullyRefunded);
         }
 
         public async Task<bool> CustomerHasSavedCardAsync(Guid customerId)

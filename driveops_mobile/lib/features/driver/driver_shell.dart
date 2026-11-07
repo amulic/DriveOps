@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:driveops_mobile/features/chat/presentation/providers/chat_signalr_provider.dart';
@@ -8,6 +9,7 @@ import 'package:driveops_mobile/features/driver/pending_approval_screen.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
 import 'package:driveops_mobile/shared/providers/location_signalr_provider.dart';
+import 'package:driveops_mobile/shared/providers/notifications_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
 
 /// Driver area shell — hosts the 5-tab bottom navigation:
@@ -37,6 +39,15 @@ class DriverShell extends ConsumerWidget {
     );
   }
 
+  void _showNewTripAlert(BuildContext context) {
+    SystemSound.play(SystemSoundType.alert);
+    HapticFeedback.mediumImpact();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('New trip assigned to you')));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Resolves the domain driver record (and warms the cache for all tabs).
@@ -57,6 +68,17 @@ class DriverShell extends ConsumerWidget {
     ref.watch(locationSignalrConnectionProvider);
     ref.watch(driverTripPushProvider);
     ref.watch(driverLocationStreamingProvider);
+
+    // Persisted-notification inbox: refresh whenever the server pushes a
+    // SystemNotification (works while any driver tab is open).
+    ref.watch(notificationPushListenerProvider);
+
+    // Instant assignment alert: the server pushes TripStatusChanged(Assigned)
+    // to user-{keycloakId}, so no client-side polling delay.
+    ref.listen(driverNewTripAlertProvider, (previous, next) {
+      if (next == null) return;
+      _showNewTripAlert(context);
+    });
 
     final unread = ref.watch(totalUnreadProvider);
 

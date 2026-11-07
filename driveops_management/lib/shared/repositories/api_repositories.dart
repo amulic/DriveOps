@@ -224,6 +224,14 @@ class ApiTripRepository implements TripRepository {
     return trip;
   }
 
+  @override
+  Future<Map<String, dynamic>> refundTripPayment(String tripId, {double? amount, String? reason}) async {
+    final result = await _api.refundTripPayment(tripId, amount: amount, reason: reason);
+    await _cache.remove(CacheService.tripsAll);
+    await _cache.remove(CacheService.trip(tripId));
+    return result;
+  }
+
   // Route breadcrumbs and recommendations are live data — not cached.
   @override
   Future<List<RoutePoint>> getTripRoute(String tripId) {

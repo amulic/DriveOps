@@ -228,8 +228,23 @@ final tripDistanceTrackerProvider =
 // Trip actions surfaced to the map screen
 // ---------------------------------------------------------------------------
 
+/// Set to a timestamp whenever an `assigned` TripStatusChanged push arrives.
+/// `DriverShell` listens and surfaces a snackbar + alert sound + haptic.
+class DriverNewTripAlertNotifier extends Notifier<DateTime?> {
+  @override
+  DateTime? build() => null;
+
+  void trigger() => state = DateTime.now();
+}
+
+final driverNewTripAlertProvider =
+    NotifierProvider<DriverNewTripAlertNotifier, DateTime?>(
+        DriverNewTripAlertNotifier.new);
+
 /// Listens for server-pushed trip status changes (assignments/cancellations
 /// made elsewhere) and refreshes the active-trip + history providers.
+/// Assignment pushes also raise [driverNewTripAlertProvider] so the driver is
+/// alerted instantly instead of waiting for the ≤30 s poll.
 final driverTripPushProvider = Provider<void>((ref) {
   ref.watch(notificationSignalrConnectionProvider);
   final signalr = ref.watch(notificationSignalrServiceProvider);
@@ -237,6 +252,25 @@ final driverTripPushProvider = Provider<void>((ref) {
   void handler(List<dynamic>? args) {
     ref.invalidate(driverActiveTripProvider);
     ref.invalidate(driverTripsProvider);
+
+    if (args == null || args.isEmpty) return;
+    final data = args.first;
+    if (data is! Map) return;
+
+    final rawStatus = data['newStatus'];
+    TripStatus? status;
+    if (rawStatus is int) {
+      status = TripStatus.fromInt(rawStatus);
+    } else if (rawStatus is String) {
+      status = TripStatus.values.firstWhere(
+        (s) => s.name.toLowerCase() == rawStatus.toLowerCase(),
+        orElse: () => TripStatus.requested,
+      );
+    }
+
+    if (status == TripStatus.assigned) {
+      ref.read(driverNewTripAlertProvider.notifier).trigger();
+    }
   }
 
   signalr.on('TripStatusChanged', handler);

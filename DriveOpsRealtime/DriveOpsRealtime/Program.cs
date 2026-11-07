@@ -10,16 +10,29 @@ using System.IdentityModel.Tokens.Jwt;
 
 JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
+// Local dev: load secrets from DriveOpsAPI/.env into the environment before config is built.
+DotEnvLoader.Load();
+
+// Realtime-specific alias so both services can share one .env (they use different databases).
+if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection"))
+    && Environment.GetEnvironmentVariable("DRIVEOPS_REALTIME_CONNECTION") is { Length: > 0 } realtimeConnection)
+{
+    Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", realtimeConnection);
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Connection strings and config
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' is not configured. Provide DriveOpsAPI/.env " +
+        "(DRIVEOPS_REALTIME_CONNECTION) or set ConnectionStrings__DefaultConnection.");
 
 var rabbitHost = builder.Configuration["RabbitMQ:HostName"] ?? "localhost";
 var rabbitPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
 var rabbitUser = builder.Configuration["RabbitMQ:UserName"] ?? "guest";
-var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "";
 
 // SignalR
 builder.Services.AddSignalR();
@@ -42,10 +55,24 @@ builder.Services.AddRealTimeHubs();
 
 
 // Keycloak JWT Auth
+var keycloakAuthority = builder.Configuration["Keycloak:Authority"];
+// Extra issuers for container-to-container calls (Keycloak reachable as "keycloak:8080"
+// inside compose while clients still receive "localhost:8081" tokens).
+var extraValidIssuers = builder.Configuration.GetSection("Keycloak:ValidIssuers").Get<string[]>() ?? [];
+var validIssuers = new[]
+    {
+        keycloakAuthority,
+        keycloakAuthority?.Replace("localhost", "10.0.2.2")
+    }
+    .Where(issuer => !string.IsNullOrWhiteSpace(issuer))
+    .Concat(extraValidIssuers)
+    .Distinct()
+    .ToArray();
+
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
-        options.Authority = builder.Configuration["Keycloak:Authority"];
+        options.Authority = keycloakAuthority;
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
@@ -54,12 +81,9 @@ builder.Services.AddAuthentication("Bearer")
             ValidateIssuer = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            // Accept tokens issued via localhost (desktop) or the Android emulator loopback alias (mobile dev).
-            ValidIssuers = new[]
-            {
-                builder.Configuration["Keycloak:Authority"],
-                builder.Configuration["Keycloak:Authority"]?.Replace("localhost", "10.0.2.2")
-            },
+            // Accept tokens issued via localhost (desktop), the Android emulator loopback
+            // alias (mobile dev), and any configured container-network issuers.
+            ValidIssuers = validIssuers,
             ClockSkew = TimeSpan.Zero,
             RoleClaimType = System.Security.Claims.ClaimTypes.Role
         };

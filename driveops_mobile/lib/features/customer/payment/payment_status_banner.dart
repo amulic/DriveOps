@@ -43,8 +43,8 @@ class _PaymentStatusBannerState extends ConsumerState<PaymentStatusBanner> {
           const SnackBar(content: Text('Payment successful. Thank you!')),
         );
       }
-    } catch (e) {
-      final message = paymentErrorMessage(e);
+    } catch (e, st) {
+      final message = paymentErrorMessage(e, st);
       if (message != null && mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(message)));

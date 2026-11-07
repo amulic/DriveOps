@@ -28,6 +28,41 @@ class TripDetailsPanel extends ConsumerWidget {
         trip.tripStatus == TripStatus.inProgress;
   }
 
+  bool _canRefund(Trip trip) {
+    return trip.paymentStatus == PaymentStatus.completed &&
+        (trip.paymentMethod == PaymentMethod.creditCard ||
+            trip.paymentMethod == PaymentMethod.debitCard);
+  }
+
+  Future<void> _refundTrip(BuildContext context, WidgetRef ref, Trip trip) async {
+    final request = await showDialog<_RefundRequest>(
+      context: context,
+      builder: (_) => _RefundDialog(trip: trip),
+    );
+    if (request == null) return;
+
+    try {
+      final result = await ref
+          .read(tripRepositoryProvider)
+          .refundTripPayment(trip.id, amount: request.amount);
+      ref.invalidate(tripsAsyncProvider);
+      ref.invalidate(selectedTripProvider);
+      if (context.mounted) {
+        final amount =
+            (result['amount'] as num?)?.toDouble() ?? request.amount ?? 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Refunded €${amount.toStringAsFixed(2)}')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to refund payment: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _cancelTrip(BuildContext context, WidgetRef ref, Trip trip) async {
     final reason = await CancelTripDialog.show(context);
     if (reason == null) return;
@@ -160,7 +195,8 @@ class TripDetailsPanel extends ConsumerWidget {
                       if (trip.paymentMethod != null)
                         _buildInfoRow('Method', _enumName(trip.paymentMethod!)),
                       if (trip.paymentStatus != null)
-                        _buildInfoRow('Status', _enumName(trip.paymentStatus!)),
+                        _buildPaymentStatusRow(trip.paymentStatus!),
+                      if (_canRefund(trip)) _buildRefundButton(context, ref, trip),
                     ]),
                   if (trip.customerRating != null || trip.driverRating != null)
                     _buildInfoSection('Ratings', [
@@ -260,6 +296,63 @@ class TripDetailsPanel extends ConsumerWidget {
     );
   }
 
+  Widget _buildPaymentStatusRow(PaymentStatus status) {
+    if (status == PaymentStatus.refunded) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(
+              width: 100,
+              child: Text(
+                'Status',
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Text(
+                'Refunded',
+                style: TextStyle(
+                  color: Color(0xFFEF4444),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return _buildInfoRow('Status', _enumName(status));
+  }
+
+  Widget _buildRefundButton(BuildContext context, WidgetRef ref, Trip trip) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFFF59E0B),
+            side: const BorderSide(color: Color(0xFFF59E0B)),
+          ),
+          onPressed: () => _refundTrip(context, ref, trip),
+          icon: const Icon(Icons.undo, size: 16),
+          label: const Text('Refund'),
+        ),
+      ),
+    );
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -327,6 +420,93 @@ class TripDetailsPanel extends ConsumerWidget {
         label,
         style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w500),
       ),
+    );
+  }
+}
+
+/// Refund confirmation outcome. A null [amount] means "refund in full".
+class _RefundRequest {
+  final double? amount;
+  const _RefundRequest(this.amount);
+}
+
+class _RefundDialog extends StatefulWidget {
+  final Trip trip;
+
+  const _RefundDialog({required this.trip});
+
+  @override
+  State<_RefundDialog> createState() => _RefundDialogState();
+}
+
+class _RefundDialogState extends State<_RefundDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _controller = TextEditingController();
+
+  double get _charged => widget.trip.actualFare ?? widget.trip.estimatedFare ?? 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    final raw = _controller.text.trim();
+    Navigator.of(context).pop(
+      _RefundRequest(
+        raw.isEmpty ? null : double.parse(raw.replaceAll(',', '.')),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Refund payment'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Charged amount: €${_charged.toStringAsFixed(2)}'),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _controller,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Amount (leave empty for full refund)',
+                prefixText: '€ ',
+              ),
+              validator: (value) {
+                final raw = value?.trim() ?? '';
+                if (raw.isEmpty) return null;
+                final parsed = double.tryParse(raw.replaceAll(',', '.'));
+                if (parsed == null || parsed <= 0) return 'Enter a valid amount';
+                if (parsed > _charged) {
+                  return 'Cannot exceed €${_charged.toStringAsFixed(2)}';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'This action cannot be undone.',
+              style: TextStyle(fontSize: 12, color: Colors.white54),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Refund')),
+      ],
     );
   }
 }

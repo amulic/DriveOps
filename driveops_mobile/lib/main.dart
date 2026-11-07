@@ -12,6 +12,13 @@ void main() async {
   if (StripeConfig.isConfigured) {
     Stripe.publishableKey = StripeConfig.publishableKey;
     await Stripe.instance.applySettings();
+  } else {
+    // Without it the PaymentSheet throws deep inside flutter_stripe — say so now.
+    debugPrint('==============================================================');
+    debugPrint('STRIPE_PUBLISHABLE_KEY not set — card payments will fail.');
+    debugPrint('Run with --dart-define-from-file=stripe_keys.json');
+    debugPrint('(or scripts/start-sandbox.ps1, which passes it automatically).');
+    debugPrint('==============================================================');
   }
   runApp(const ProviderScope(child: DriveOpsMobileApp()));
 }

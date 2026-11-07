@@ -1,6 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:driveops_mobile/config/stripe_config.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
 import 'package:driveops_mobile/services/payment_api_service.dart';
@@ -23,6 +26,14 @@ class PaymentActions {
   /// Opens the PaymentSheet in setup mode to save a new card.
   /// Returns true when a card was saved; false when the user cancelled.
   Future<bool> addCard() async {
+    // Fail fast with an actionable error instead of the cryptic plugin failure
+    // when the app was launched without --dart-define-from-file=stripe_keys.json.
+    if (!StripeConfig.isConfigured) {
+      throw const StripeConfigException(
+          'Stripe publishable key missing. Run with '
+          '--dart-define-from-file=stripe_keys.json (or scripts/start-sandbox.ps1).');
+    }
+
     final api = _ref.read(paymentApiServiceProvider);
     final session = await api.createSetupSession();
 
@@ -90,13 +101,47 @@ class PaymentActions {
 final paymentActionsProvider =
     Provider<PaymentActions>((ref) => PaymentActions(ref));
 
-/// Maps a [StripeException] to a user-friendly message, or null when it was
+/// Maps a payment failure to a user-friendly message, or null when it was
 /// just the user cancelling the sheet (not an error worth a snackbar).
-String? paymentErrorMessage(Object error) {
+/// API errors surface the server's `{message}` body and HTTP status instead
+/// of the old one-size-fits-all "Payment failed".
+String? paymentErrorMessage(Object error, [StackTrace? stackTrace]) {
+  debugPrint('[Payment] error: $error');
+  if (stackTrace != null) debugPrint('[Payment] stack: $stackTrace');
+  if (error is StripeConfigException) {
+    // Thrown when Stripe.publishableKey was never set — the app was launched
+    // without --dart-define-from-file=stripe_keys.json (see main.dart).
+    return "Payments aren't configured in this build (missing Stripe "
+        'publishable key). Run the app with '
+        '--dart-define-from-file=stripe_keys.json or via '
+        'scripts/start-sandbox.ps1.';
+  }
+  if (error is MissingPluginException) {
+    // The stripe plugin isn't registered in the running build — happens after
+    // a hot restart/reload; only a full `flutter run` registers native plugins.
+    return "Stripe isn't available in this build. Do a full flutter run — "
+        "a hot restart doesn't register native plugins.";
+  }
   if (error is StripeException) {
     final code = error.error.code;
     if (code == FailureCode.Canceled) return null;
-    return error.error.localizedMessage ?? 'Payment failed. Please try again.';
+    final detail = error.error.localizedMessage ?? error.error.message;
+    if (detail != null && detail.isNotEmpty) return detail;
+    return 'Payment failed (${error.error.stripeErrorCode ?? code.name}). '
+        'Please try again.';
   }
-  return 'Payment failed. Please try again.';
+  if (error is DioException) {
+    final response = error.response;
+    if (response == null) {
+      return 'Could not reach the server. Check your connection and try again.';
+    }
+    final data = response.data;
+    final serverMessage =
+        data is Map<String, dynamic> ? data['message'] as String? : null;
+    if (serverMessage != null && serverMessage.isNotEmpty) {
+      return serverMessage;
+    }
+    return 'Payment failed (HTTP ${response.statusCode}). Please try again.';
+  }
+  return 'Payment failed. Please try again. (${error.runtimeType})';
 }

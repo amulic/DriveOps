@@ -9,6 +9,7 @@ import 'package:driveops_management/features/trips/presentation/trips_screen.dar
 import 'package:driveops_management/features/messages/presentation/messages_screen.dart';
 import 'package:driveops_management/features/vehicles/presentation/vehicles_screen.dart';
 import 'package:driveops_management/features/defects/presentation/defects_screen.dart';
+import 'package:driveops_management/features/reports/presentation/reports_screen.dart';
 import 'package:driveops_management/features/profile/presentation/profile_screen.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
 import 'package:driveops_management/shared/providers/fleet_update_provider.dart';
@@ -16,7 +17,8 @@ import 'package:driveops_management/features/messages/presentation/providers/cha
 import 'package:driveops_management/shared/widgets/sidebar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _shellNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 GoRouter createAppRouter(WidgetRef ref) {
   return GoRouter(
@@ -32,16 +34,14 @@ GoRouter createAppRouter(WidgetRef ref) {
         if (!isAuthorizedRole) return '/unauthorized';
         return '/dashboard';
       }
-      if (isAuth && !isAuthorizedRole && !onUnauthorized) return '/unauthorized';
+      if (isAuth && !isAuthorizedRole && !onUnauthorized)
+        return '/unauthorized';
       if (isAuth && isAuthorizedRole && onUnauthorized) return '/dashboard';
       return null;
     },
     refreshListenable: _RouterRefreshNotifier(ref),
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/unauthorized',
         builder: (context, state) {
@@ -57,45 +57,43 @@ GoRouter createAppRouter(WidgetRef ref) {
         routes: [
           GoRoute(
             path: '/dashboard',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: DashboardScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: DashboardScreen()),
           ),
           GoRoute(
             path: '/drivers',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: DriversScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: DriversScreen()),
           ),
           GoRoute(
             path: '/trips',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: TripsScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: TripsScreen()),
           ),
           GoRoute(
             path: '/messages',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: MessagesScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: MessagesScreen()),
           ),
           GoRoute(
             path: '/vehicles',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: VehiclesScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: VehiclesScreen()),
           ),
           GoRoute(
             path: '/defects',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: DefectsScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: DefectsScreen()),
+          ),
+          GoRoute(
+            path: '/reports',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ReportsScreen()),
           ),
           GoRoute(
             path: '/profile',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ProfileScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ProfileScreen()),
           ),
         ],
       ),

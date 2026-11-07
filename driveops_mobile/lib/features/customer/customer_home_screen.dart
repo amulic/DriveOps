@@ -6,6 +6,7 @@ import 'package:driveops_mobile/features/customer/providers/customer_providers.d
 import 'package:driveops_mobile/features/customer/widgets/customer_gate.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
+import 'package:driveops_mobile/shared/widgets/notification_bell.dart';
 import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
 /// Customer welcome screen — "Welcome, {firstName}" with the two entry points
@@ -37,6 +38,7 @@ class _CustomerWelcome extends ConsumerWidget {
         backgroundColor: const Color(0xFF1A1A2E),
         title: Text('Welcome${firstName.isNotEmpty ? ', $firstName' : ''}'),
         actions: [
+          const NotificationBell(),
           IconButton(
             icon: const Icon(Icons.person_outline),
             tooltip: 'Your profile',

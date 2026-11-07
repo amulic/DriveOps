@@ -26,8 +26,8 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
           const SnackBar(content: Text('Card saved.')),
         );
       }
-    } catch (e) {
-      final message = paymentErrorMessage(e);
+    } catch (e, st) {
+      final message = paymentErrorMessage(e, st);
       if (message != null && mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(message)));
@@ -87,7 +87,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
         ),
-        error: (e, _) => Center(
+        error: (e, st) => Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
             child: Column(
@@ -96,10 +96,10 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                 const Icon(Icons.error_outline,
                     color: Color(0xFFEF4444), size: 40),
                 const SizedBox(height: 16),
-                const Text(
-                  'Failed to load your cards.',
+                Text(
+                  'Failed to load your cards.\n${paymentErrorMessage(e, st) ?? 'Unexpected error.'}',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white54, fontSize: 14),
+                  style: const TextStyle(color: Colors.white54, fontSize: 14),
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton(

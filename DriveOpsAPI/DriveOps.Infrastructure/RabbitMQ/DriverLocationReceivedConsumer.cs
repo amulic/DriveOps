@@ -67,10 +67,20 @@ public class DriverLocationReceivedConsumer : BackgroundService
                 await _channel.BasicAckAsync(ea.DeliveryTag, false);
                 _logger.LogDebug("Persisted location for driver {DriverId}", locationEvent.DriverId);
             }
+            catch (KeyNotFoundException ex)
+            {
+                // Permanent condition — the driver id is stale (e.g. DB reseeded while an
+                // app keeps streaming GPS). Retrying can never succeed, and fresh updates
+                // keep arriving anyway, so drop the message instead of requeue-looping.
+                _logger.LogWarning("Dropping location update for unknown driver: {Message}", ex.Message);
+                await _channel.BasicAckAsync(ea.DeliveryTag, false);
+            }
             catch (Exception ex)
             {
+                // Transient failure — dead-letter (requeue: false) like TripEventConsumer;
+                // requeue: true would hot-loop a poison message forever.
                 _logger.LogError(ex, "Error processing driver location event");
-                await _channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                await _channel.BasicNackAsync(ea.DeliveryTag, false, false);
             }
         };
 

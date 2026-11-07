@@ -26,6 +26,7 @@ class DriverVehicleScreen extends ConsumerWidget {
         onRefresh: () async {
           await ref.read(cacheServiceProvider).remove(CacheService.vehiclesAll);
           ref.invalidate(driverVehicleProvider);
+          ref.invalidate(vehicleDefectsProvider);
         },
         child: vehicleAsync.when(
           loading: () => const Center(

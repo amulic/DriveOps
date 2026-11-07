@@ -17,10 +17,24 @@ namespace DriveOps.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Vehicle>> GetAvailableVehiclesAsync()
+        public async Task<IEnumerable<Vehicle>> GetAllAsync(int page, int pageSize)
         {
             return await _dbSet
+                .Include(v => v.AssignedDriver)
+                .OrderBy(v => v.LicensePlate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Vehicle>> GetAvailableVehiclesAsync(int page, int pageSize)
+        {
+            return await _dbSet
+                .Include(v => v.AssignedDriver)
                 .Where(v => v.Status == VehicleStatus.Available && v.AssignedDriverId == null)
+                .OrderBy(v => v.LicensePlate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 

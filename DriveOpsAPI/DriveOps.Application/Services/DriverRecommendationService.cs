@@ -64,6 +64,8 @@ namespace DriveOps.Application.Services
                         CurrentLatitude = d.CurrentLatitude,
                         CurrentLongitude = d.CurrentLongitude,
                         DistanceKm = distanceKm,
+                        DistanceScore = distanceKm.HasValue ? distanceScore : null,
+                        RatingScore = ratingScore,
                         Score = score
                     };
                 })
