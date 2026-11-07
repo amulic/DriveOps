@@ -235,7 +235,7 @@ namespace DriveOps.Infrastructure.Payments
             var key = await new EphemeralKeyService(_client).CreateAsync(new EphemeralKeyCreateOptions
             {
                 Customer = gatewayCustomerId,
-                // Ephemeral keys require an explicit Stripe-Version for the mobile SDK.
+                // explicit Stripe-Version for the mobile SDK.
                 StripeVersion = StripeConfiguration.ApiVersion
             });
             return key.Secret;

@@ -89,7 +89,7 @@ namespace DriveOps.Infrastructure.Services
         }
 
         // OSRM response models (internal)
-        private class OsrmResponse
+        private record OsrmResponse
         {
             [JsonPropertyName("code")]
             public string? Code { get; set; }
@@ -98,7 +98,7 @@ namespace DriveOps.Infrastructure.Services
             public List<OsrmRoute>? Routes { get; set; }
         }
 
-        private class OsrmRoute
+        private record OsrmRoute
         {
             [JsonPropertyName("distance")]
             public double Distance { get; set; }
@@ -110,7 +110,7 @@ namespace DriveOps.Infrastructure.Services
             public OsrmGeometry? Geometry { get; set; }
         }
 
-        private class OsrmGeometry
+        private record OsrmGeometry
         {
             [JsonPropertyName("type")]
             public string? Type { get; set; }
