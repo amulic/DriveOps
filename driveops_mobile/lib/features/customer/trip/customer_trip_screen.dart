@@ -12,6 +12,7 @@ import 'package:driveops_mobile/shared/providers/auth_provider.dart';
 import 'package:driveops_mobile/shared/widgets/map/drive_ops_map.dart';
 import 'package:driveops_mobile/shared/widgets/map/map_markers.dart';
 import 'package:driveops_mobile/shared/widgets/map/map_utils.dart';
+import 'package:driveops_mobile/shared/widgets/notification_bell.dart';
 import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
 /// The customer's live trip: status, route summary, driver/vehicle once
@@ -27,7 +28,22 @@ class CustomerTripScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFF0F0F1A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A2E),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to home',
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go('/customer'),
+        ),
         title: const Text('Current trip'),
+        actions: [
+          const NotificationBell(),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign out',
+            onPressed: () => ref.read(authProvider.notifier).logout(),
+          ),
+        ],
       ),
       body: activeTripAsync.when(
         loading: () => const Center(
@@ -90,6 +106,16 @@ class _NoActiveTrip extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.go('/customer'),
+              icon: const Icon(Icons.home_outlined),
+              label: const Text('Back to home'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white70,
+                side: const BorderSide(color: Colors.white24),
               ),
             ),
           ],
