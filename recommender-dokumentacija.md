@@ -122,3 +122,103 @@ prikazuje „no GPS“.
   vrijeme vožnje; OSRM se koristi za estimate fare/distance, ali ne u samom skoru.
 - Fallback na sve dostupne vozače može vratiti kandidate dalje od 10 km; to je
   namjerno (dostupnost ispred radijusa), ali UI to jasno prikazuje kroz `distanceKm`.
+
+## 8. Glavna logika (tok izvršavanja)
+
+Implementacija je u `DriverRecommendationService.GetRecommendedDriversAsync`
+(`DriveOpsAPI/DriveOps.Application/Services/DriverRecommendationService.cs`), a
+poziva se iz `TripController.GetRecommendedDrivers` na ruti
+`GET /api/trip/{id}/recommended-drivers?count=5` (samo role `admin` i `dispatcher`).
+
+### 8.1 Koraci algoritma
+
+1. **Učitaj vožnju** — `ITripRepository.GetByIdAsync(tripId)`. Ako vožnja ne
+   postoji, servis baca `KeyNotFoundException` (kontroler → 404).
+2. **Provjeri stanje** — preporuka je dozvoljena samo za `TripStatus.Requested` i
+   `TripStatus.NoDriverAvailable`; inače `InvalidOperationException` (kontroler → 400).
+3. **Pripremi filter radijusa** — `SearchRadiusKm = 10`. Repozitorij
+   `GetNearbyDriversAsync` prvo radi **bounding-box prefiltar** (gruba aproksimacija
+   `0.009° ≈ 1 km`, longituda korigovana sa `cos(latitude)`), a zatim servis računa
+   **tačnu Haversine udaljenost** (`GeoHelper.DistanceKm`).
+4. **Učitaj kandidate** — `GetNearbyDriversAsync` vraća samo `IsOnline == true`,
+   `Status == Active`, sa postavljenim koordinatama, unutar bounding boxa, najviše
+   `pageSize = 50` vozača. Vozači bez GPS-a i vozači koji nisu aktivni/online su
+   isključeni već u SQL upitu.
+5. **Fallback** — ako lista kandidata iz koraka 4 nije prazna, koristi se ona. Ako
+   jeste prazna, poziva se `GetAvailableDriversAsync()` (svi online/aktivni vozači,
+   takođe do 50) i nastavlja se sa tom listom.
+6. **Bodovanje** — za svakog kandidata (`Select`):
+   - ako ima koordinate: `distanceKm = Haversine(...)`,
+     `distanceScore = max(0, 1 − distanceKm / 10)`;
+   - ako nema koordinata: `distanceKm = null`, `DistanceScore = null` (u praksi se
+     ne pojavljuje jer `GetNearbyDriversAsync` zahtijeva koordinate, ali fallback
+     `GetAvailableDriversAsync` može vratiti vozača bez GPS-a);
+   - `ratingScore = (Rating ?? 5.0) / 5.0`;
+   - `score = 0.6 · distanceScore + 0.4 · ratingScore`.
+7. **Sortiraj i ograniči** — `OrderByDescending(Score).Take(count)`. Kontroler
+   prosljeđuje `Math.Clamp(count, 1, 20)`, pa je izlaz između 1 i 20 kandidata
+   (default 5).
+8. **Obogati vozilom** — za svakog vraćenog kandidata poziva se
+   `GetWithVehiclesAsync(driverId)` i bira prvo vozilo sa
+   `VehicleStatus.Available`; ako ga nema, `VehicleId`/`VehiclePlate` ostaju `null`.
+9. **Vrati DTO listu** — `RecommendedDriverDto` nosi `DistanceKm`, `DistanceScore`,
+   `RatingScore`, `Score`, `VehicleId` i `VehiclePlate` (vidi sekciju 6).
+
+### 8.2 Pseudokod
+
+```text
+GetRecommendedDriversAsync(tripId, count):
+    trip = tripRepo.GetByIdAsync(tripId) or throw NotFound
+
+    if trip.TripStatus not in {Requested, NoDriverAvailable}:
+        throw InvalidOperation("Trip is not in an assignable state.")
+
+    candidates = driverRepo.GetNearbyDriversAsync(
+        trip.PickupLatitude, trip.PickupLongitude, radiusKm = 10)
+
+    if candidates is empty:
+        candidates = driverRepo.GetAvailableDriversAsync()
+
+    scored = []
+    for driver in candidates:
+        distanceKm = null
+        distanceScore = 0
+
+        if driver.CurrentLatitude != null and driver.CurrentLongitude != null:
+            distanceKm = Haversine(driver.location, trip.pickup)
+            distanceScore = max(0, 1 - distanceKm / 10)
+
+        ratingScore = (driver.Rating ?? 5.0) / 5.0
+        score = 0.6 * distanceScore + 0.4 * ratingScore
+
+        scored.add(RecommendedDriverDto(driver, distanceKm,
+                    distanceScore or null, ratingScore, score))
+
+    scored = scored.OrderByDescending(Score).Take(count)
+
+    for dto in scored:
+        driver = driverRepo.GetWithVehiclesAsync(dto.DriverId)
+        vehicle = driver.Vehicles.FirstOrDefault(v => v.Status == Available)
+        if vehicle != null:
+            dto.VehicleId = vehicle.Id
+            dto.VehiclePlate = vehicle.LicensePlate
+
+    return scored
+```
+
+### 8.3 Napomene o implementaciji
+
+- **Nema keširanja** — svaki poziv ponovo čita bazu, pa je preporuka uvijek nad
+  svježim lokacijama i statusima.
+- **Dva nivoa filtriranja udaljenosti** — bounding box u repozitoriju je samo
+  jeftin prefiltar; konačna udaljenost i `distanceScore` uvijek se računaju tačno
+  Haversine formulom u servisu.
+- **Maksimalno 50 kandidata po upitu** — i `GetNearbyDriversAsync` i
+  `GetAvailableDriversAsync` koriste default `pageSize = 50`. U rijetkim slučajevima
+  sa više dostupnih vozača, ostatak se ne razmatra.
+- **N+1 upit za vozila** — `GetWithVehiclesAsync` se poziva u petlji za svakog
+  vraćenog kandidata; prihvatanje ovog troška je namjerno jer je `count` mali
+  (default 5), a pojednostavljuje obogaćivanje vozilom.
+- **Fallback ne ponavlja radijus** — kada se koristi `GetAvailableDriversAsync`,
+  kandidati mogu biti i dalje od 10 km; tada `distanceScore` može biti 0, ali
+  kandidat ostaje u listi (dostupnost ispred radijusa).
