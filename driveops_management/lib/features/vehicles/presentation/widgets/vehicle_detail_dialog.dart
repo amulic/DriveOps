@@ -6,6 +6,7 @@ import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
 import 'package:driveops_management/features/drivers/presentation/providers/drivers_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/widgets/assign_driver_dialog.dart';
+import 'package:driveops_management/features/vehicles/presentation/widgets/vehicle_form_dialog.dart';
 import 'package:driveops_management/features/defects/presentation/providers/defects_providers.dart';
 import 'package:driveops_management/features/defects/presentation/widgets/defect_chips.dart';
 import 'package:driveops_management/features/defects/presentation/widgets/defect_detail_dialog.dart';
@@ -135,6 +136,28 @@ class VehicleDetailDialog extends ConsumerWidget {
                           onTap: () => _showAssignDriver(context),
                         ),
                       ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        label: 'Edit Vehicle',
+                        icon: Icons.edit_outlined,
+                        color: const Color(0xFF3B82F6),
+                        onTap: () => _edit(context, ref),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildActionButton(
+                        label: 'Delete Vehicle',
+                        icon: Icons.delete_outline,
+                        color: const Color(0xFFEF4444),
+                        onTap: () => _delete(context, ref),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -368,6 +391,81 @@ class VehicleDetailDialog extends ConsumerWidget {
       context: context,
       builder: (context) => AssignDriverDialog(vehicle: vehicle),
     );
+  }
+
+  Future<void> _edit(BuildContext context, WidgetRef ref) async {
+    final saved = await showDialog<Vehicle>(
+      context: context,
+      builder: (context) => VehicleFormDialog(vehicle: vehicle),
+    );
+    if (saved != null && context.mounted) {
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context).pop();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('${saved.licensePlate} has been updated'),
+          backgroundColor: const Color(0xFF22C55E),
+        ),
+      );
+    }
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Text('Delete Vehicle', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to delete ${vehicle.make} ${vehicle.model} '
+          '(${vehicle.licensePlate})? This cannot be undone.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(vehicleRepositoryProvider).deleteVehicle(vehicle.id);
+      ref.invalidate(vehiclesAsyncProvider);
+      ref.invalidate(filteredVehiclesProvider);
+      ref.invalidate(allVehiclesProvider);
+      ref.invalidate(vehiclesNeedingServiceProvider);
+      ref.invalidate(driversAsyncProvider);
+      if (context.mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        Navigator.of(context).pop();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('${vehicle.licensePlate} has been deleted'),
+            backgroundColor: const Color(0xFF22C55E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _unassign(BuildContext context, WidgetRef ref) async {

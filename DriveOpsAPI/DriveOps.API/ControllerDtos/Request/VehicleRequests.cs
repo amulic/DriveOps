@@ -22,6 +22,13 @@ namespace DriveOps.API.ControllerDtos.Request
 
     public class UpdateVehicleRequest
     {
+        public string? LicensePlate { get; set; }
+        public string? Make { get; set; }
+        public string? Model { get; set; }
+        public int? Year { get; set; }
+        public string? Vin { get; set; }
+        public FuelType? FuelType { get; set; }
+        public int? SeatingCapacity { get; set; }
         public string? Color { get; set; }
         public string? InsurancePolicyNumber { get; set; }
         public DateOnly? InsuranceExpiryDate { get; set; }

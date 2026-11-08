@@ -88,6 +88,24 @@ function Wait-HttpOk([string]$Url, [int]$TimeoutSec = 180) {
     }
     throw "Timed out waiting for $Url"
 }
+function Wait-ContainerHealthy([string]$Name, [int]$TimeoutSec = 180) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
+        $state = docker inspect -f '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{end}}' $Name 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Container '$Name' was not found. Is the compose stack up?"
+        }
+        $status, $health = $state -split '\|', 2
+        if ($status -eq 'exited' -or $status -eq 'dead') {
+            $tail = (docker logs $Name --tail 40 2>&1 | Out-String).Trim()
+            throw "Container '$Name' exited during startup. Last logs:`n$tail"
+        }
+        if ($status -eq 'running' -and ($health -eq '' -or $health -eq 'healthy')) { return }
+        Start-Sleep -Milliseconds 500
+    }
+    $tail = (docker logs $Name --tail 40 2>&1 | Out-String).Trim()
+    throw "Container '$Name' did not become healthy within ${TimeoutSec}s. Last logs:`n$tail"
+}
 
 # ---------- 1. Prereqs ----------
 Write-Step 'Checking prerequisites'
@@ -137,6 +155,10 @@ foreach ($p in 5032, 5033) {
 Write-Step 'Starting infrastructure (docker compose)'
 docker compose -f $composeFile up -d | Out-Null
 Wait-Port 3306 'MySQL'
+# Wait-Port only proves *something* accepts TCP; the MySQL entrypoint can die
+# (e.g. a CRLF init script on Windows) right after. Assert the container's real
+# health so a crash surfaces its logs here instead of timing out on Keycloak.
+Wait-ContainerHealthy 'mysql'
 Wait-Port 5672 'RabbitMQ'
 Wait-Port 8081 'Keycloak' -TimeoutSec 180
 try {

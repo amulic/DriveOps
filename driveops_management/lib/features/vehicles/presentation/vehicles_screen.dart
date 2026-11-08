@@ -4,6 +4,7 @@ import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/widgets/vehicle_detail_dialog.dart';
+import 'package:driveops_management/features/vehicles/presentation/widgets/vehicle_form_dialog.dart';
 import 'package:driveops_management/features/vehicles/presentation/widgets/assign_driver_dialog.dart';
 import 'package:driveops_management/features/defects/presentation/providers/defects_providers.dart';
 
@@ -83,9 +84,42 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
               ),
             ),
           ),
+          const Spacer(),
+          OutlinedButton.icon(
+            onPressed: _showVehicleForm,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Add Vehicle'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF3B82F6),
+              side: const BorderSide(color: Color(0xFF3B82F6)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _showVehicleForm({Vehicle? vehicle}) async {
+    final saved = await showDialog<Vehicle>(
+      context: context,
+      builder: (context) => VehicleFormDialog(vehicle: vehicle),
+    );
+    if (saved != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            vehicle == null
+                ? '${saved.licensePlate} has been added'
+                : '${saved.licensePlate} has been updated',
+          ),
+          backgroundColor: const Color(0xFF22C55E),
+        ),
+      );
+    }
   }
 
   Widget _buildToolbar() {
@@ -421,6 +455,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
               context: context,
               builder: (context) => VehicleDetailDialog(vehicle: vehicle),
             );
+          case 'edit':
+            _showVehicleForm(vehicle: vehicle);
           case 'assign':
             showDialog(
               context: context,
@@ -428,6 +464,8 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
             );
           case 'unassign':
             _unassignVehicle(vehicle);
+          case 'delete':
+            _deleteVehicle(vehicle);
         }
       },
       itemBuilder: (context) => [
@@ -438,6 +476,16 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
               Icon(Icons.visibility, color: Colors.white54, size: 18),
               SizedBox(width: 8),
               Text('View Details', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit, color: Colors.white54, size: 18),
+              SizedBox(width: 8),
+              Text('Edit Details', style: TextStyle(color: Colors.white)),
             ],
           ),
         ),
@@ -466,8 +514,73 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
               ],
             ),
           ),
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 18),
+              SizedBox(width: 8),
+              Text('Delete Vehicle', style: TextStyle(color: Color(0xFFEF4444))),
+            ],
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _deleteVehicle(Vehicle vehicle) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Text('Delete Vehicle', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to delete ${vehicle.make} ${vehicle.model} '
+          '(${vehicle.licensePlate})? This cannot be undone.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(vehicleRepositoryProvider).deleteVehicle(vehicle.id);
+      ref.invalidate(vehiclesAsyncProvider);
+      ref.invalidate(filteredVehiclesProvider);
+      ref.invalidate(allVehiclesProvider);
+      ref.invalidate(vehiclesNeedingServiceProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${vehicle.licensePlate} has been deleted'),
+            backgroundColor: const Color(0xFF22C55E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _unassignVehicle(Vehicle vehicle) async {

@@ -303,18 +303,39 @@ class ApiVehicleRepository implements VehicleRepository {
   }
 
   @override
+  Future<Vehicle> createVehicle(CreateVehicleRequest request) async {
+    final vehicle = await _api.createVehicle(request);
+    await _invalidateVehicleCaches(vehicle.id);
+    return vehicle;
+  }
+
+  @override
+  Future<Vehicle> updateVehicle(String id, UpdateVehicleRequest request) async {
+    final vehicle = await _api.updateVehicle(id, request);
+    await _invalidateVehicleCaches(id);
+    return vehicle;
+  }
+
+  @override
+  Future<void> deleteVehicle(String id) async {
+    await _api.deleteVehicle(id);
+    await _invalidateVehicleCaches(id);
+  }
+
+  @override
   Future<Vehicle> assignVehicle(String vehicleId, String driverId) async {
     final vehicle = await _api.assignVehicle(vehicleId, AssignVehicleRequest(driverId: driverId));
-    await _cache.remove(CacheService.vehiclesAll);
-    await _cache.remove(CacheService.vehiclesAvailable);
-    await _cache.remove(CacheService.vehicle(vehicleId));
-    await _cache.remove(CacheService.vehiclesNeedingService);
+    await _invalidateVehicleCaches(vehicleId);
     return vehicle;
   }
 
   @override
   Future<void> unassignVehicle(String vehicleId) async {
     await _api.unassignVehicle(vehicleId);
+    await _invalidateVehicleCaches(vehicleId);
+  }
+
+  Future<void> _invalidateVehicleCaches(String vehicleId) async {
     await _cache.remove(CacheService.vehiclesAll);
     await _cache.remove(CacheService.vehiclesAvailable);
     await _cache.remove(CacheService.vehicle(vehicleId));

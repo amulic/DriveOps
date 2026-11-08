@@ -143,6 +143,13 @@ namespace DriveOps.API.Mappings
         public static UpdateVehicleDto ToApplicationDto(this UpdateVehicleRequest request, Guid vehicleId) => new()
         {
             Id = vehicleId,
+            LicensePlate = request.LicensePlate,
+            Make = request.Make,
+            Model = request.Model,
+            Year = request.Year,
+            Vin = request.Vin,
+            FuelType = request.FuelType,
+            SeatingCapacity = request.SeatingCapacity,
             Color = request.Color,
             InsurancePolicyNumber = request.InsurancePolicyNumber,
             InsuranceExpiryDate = request.InsuranceExpiryDate,

@@ -47,6 +47,7 @@ class UpdateVehicleRequest {
   final String? make;
   final String? model;
   final int? year;
+  final String? vin;
   final String? color;
   final String? insurancePolicyNumber;
   final DateTime? insuranceExpiryDate;
@@ -59,6 +60,7 @@ class UpdateVehicleRequest {
     this.make,
     this.model,
     this.year,
+    this.vin,
     this.color,
     this.insurancePolicyNumber,
     this.insuranceExpiryDate,
@@ -73,6 +75,7 @@ class UpdateVehicleRequest {
       if (make != null) 'make': make,
       if (model != null) 'model': model,
       if (year != null) 'year': year,
+      if (vin != null) 'vin': vin,
       if (color != null) 'color': color,
       if (insurancePolicyNumber != null) 'insurancePolicyNumber': insurancePolicyNumber,
       if (insuranceExpiryDate != null)

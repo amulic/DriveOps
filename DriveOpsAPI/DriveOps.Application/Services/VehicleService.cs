@@ -77,7 +77,29 @@ namespace DriveOps.Application.Services
             var vehicle = await _vehicleRepository.GetByIdAsync(dto.Id)
                   ?? throw new KeyNotFoundException($"Vehicle {dto.Id} not found.");
 
-            // crap
+            if (!string.IsNullOrWhiteSpace(dto.LicensePlate)
+                && !string.Equals(dto.LicensePlate, vehicle.LicensePlate, StringComparison.OrdinalIgnoreCase))
+            {
+                var existingPlate = await _vehicleRepository.GetByLicensePlateAsync(dto.LicensePlate);
+                if (existingPlate != null && existingPlate.Id != vehicle.Id)
+                    throw new InvalidOperationException($"Vehicle with license plate '{dto.LicensePlate}' already exists.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.Vin)
+                && !string.Equals(dto.Vin, vehicle.Vin, StringComparison.OrdinalIgnoreCase))
+            {
+                var existingVin = await _vehicleRepository.GetByVinAsync(dto.Vin);
+                if (existingVin != null && existingVin.Id != vehicle.Id)
+                    throw new InvalidOperationException($"Vehicle with VIN '{dto.Vin}' already exists.");
+            }
+
+            if (dto.LicensePlate != null) vehicle.LicensePlate = dto.LicensePlate;
+            if (dto.Make != null) vehicle.Make = dto.Make;
+            if (dto.Model != null) vehicle.Model = dto.Model;
+            if (dto.Year.HasValue) vehicle.Year = dto.Year.Value;
+            if (dto.Vin != null) vehicle.Vin = dto.Vin;
+            if (dto.FuelType.HasValue) vehicle.FuelType = dto.FuelType.Value;
+            if (dto.SeatingCapacity.HasValue) vehicle.SeatingCapacity = dto.SeatingCapacity;
             if (dto.Color != null) vehicle.Color = dto.Color;
             if (dto.InsurancePolicyNumber != null) vehicle.InsurancePolicyNumber = dto.InsurancePolicyNumber;
             if (dto.InsuranceExpiryDate.HasValue) vehicle.InsuranceExpiryDate = dto.InsuranceExpiryDate.Value;

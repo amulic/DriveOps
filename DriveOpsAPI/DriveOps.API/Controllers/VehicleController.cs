@@ -55,16 +55,34 @@ namespace DriveOps.API.Controllers
         [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> CreateVehicle([FromBody] CreateVehicleRequest request)
         {
-            var vehicle = await _vehicleService.CreateVehicleAsync(request.ToApplicationDto());
-            return CreatedAtAction(nameof(GetVehicleById), new { id = vehicle.Id }, vehicle.ToResponse());
+            try
+            {
+                var vehicle = await _vehicleService.CreateVehicleAsync(request.ToApplicationDto());
+                return CreatedAtAction(nameof(GetVehicleById), new { id = vehicle.Id }, vehicle.ToResponse());
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut("{id:guid}")]
         [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> UpdateVehicle(Guid id, [FromBody] UpdateVehicleRequest request)
         {
-            var vehicle = await _vehicleService.UpdateVehicleAsync(request.ToApplicationDto(id));
-            return Ok(vehicle.ToResponse());
+            try
+            {
+                var vehicle = await _vehicleService.UpdateVehicleAsync(request.ToApplicationDto(id));
+                return Ok(vehicle.ToResponse());
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("{id:guid}/assign")]
