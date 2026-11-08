@@ -132,13 +132,10 @@ poziva se iz `TripController.GetRecommendedDrivers` na ruti
 
 ### 8.1 Koraci algoritma
 
-1. **Učitaj vožnju** — `ITripRepository.GetByIdAsync(tripId)`. Ako vožnja ne
-   postoji, servis baca `KeyNotFoundException` (kontroler → 404).
-2. **Provjeri stanje** — preporuka je dozvoljena samo za `TripStatus.Requested` i
-   `TripStatus.NoDriverAvailable`; inače `InvalidOperationException` (kontroler → 400).
+1. **Učitaj vožnju**
+2. **Provjeri stanje**
 3. **Pripremi filter radijusa** — `SearchRadiusKm = 10`. Repozitorij
-   `GetNearbyDriversAsync` prvo radi **bounding-box prefiltar** (gruba aproksimacija
-   `0.009° ≈ 1 km`, longituda korigovana sa `cos(latitude)`), a zatim servis računa
+   `GetNearbyDriversAsync` prvo radi **bounding-box prefiltriranje** a zatim servis računa
    **tačnu Haversine udaljenost** (`GeoHelper.DistanceKm`).
 4. **Učitaj kandidate** — `GetNearbyDriversAsync` vraća samo `IsOnline == true`,
    `Status == Active`, sa postavljenim koordinatama, unutar bounding boxa, najviše
