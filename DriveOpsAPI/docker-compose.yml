@@ -6,7 +6,7 @@ services:
       - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: driveops_api
+      MYSQL_DATABASE: 200081_api
       MYSQL_USER: driveops_api
       MYSQL_PASSWORD: ${DRIVEOPS_API_DB_PASSWORD}
     command: --default-authentication-plugin=mysql_native_password
@@ -85,7 +85,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=driveops_api;User=driveops_api;Password=${DRIVEOPS_API_DB_PASSWORD};
+      ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=200081_api;User=driveops_api;Password=${DRIVEOPS_API_DB_PASSWORD};
       Keycloak__Authority: http://keycloak:8080/realms/driveops-dev
       Keycloak__AdminBaseUrl: http://keycloak:8080
       Keycloak__AdminClientSecret: ${DRIVEOPS_BACKEND_CLIENT_SECRET}
@@ -116,7 +116,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=driveops_realtime;User=driveops_realtime;Password=${DRIVEOPS_REALTIME_DB_PASSWORD};
+      ConnectionStrings__DefaultConnection: Server=mysql;Port=3306;Database=200081_realtime;User=driveops_realtime;Password=${DRIVEOPS_REALTIME_DB_PASSWORD};
       Keycloak__Authority: http://keycloak:8080/realms/driveops-dev
       Keycloak__ValidIssuers__0: http://localhost:8081/realms/driveops-dev
       Keycloak__ValidIssuers__1: http://keycloak:8080/realms/driveops-dev

@@ -15,7 +15,7 @@ skora (blizina i rejting), a management UI ih prikazuje kao liniju „Why: …�
 
 ## 2. Ulazni podaci
 
-Svi signali se čitaju iz MySQL baze (`driveops_api`), iz tabele `Drivers`:
+Svi signali se čitaju iz MySQL baze (`200081_api`), iz tabele `Drivers`:
 
 | Signal | Kolona | Gdje se upisuje u aplikaciji |
 |---|---|---|
