@@ -59,6 +59,11 @@ namespace DriveOps.RealTime.Hubs;
 
         public async Task JoinConversation(Guid conversationId)
         {
+            var userId = GetUserId();
+            var isParticipant = await _chatService.IsParticipantAsync(conversationId, userId);
+            if (!isParticipant)
+                throw new HubException("Access denied. You are not a participant in this conversation.");
+
             await Groups.AddToGroupAsync(Context.ConnectionId, $"conversation-{conversationId}");
         }
 
@@ -77,6 +82,9 @@ namespace DriveOps.RealTime.Hubs;
         {
             var userId = GetUserId();
             var conversation = await _chatService.GetConversationAsync(conversationId, userId);
+            if (conversation == null)
+                throw new HubException("Access denied. Conversation not found or you are not a participant.");
+
             await Clients.Caller.SendAsync("ConversationLoaded", conversation);
         }
 

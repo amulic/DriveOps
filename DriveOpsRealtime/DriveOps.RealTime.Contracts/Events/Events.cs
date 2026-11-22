@@ -86,7 +86,7 @@ public record TripRouteUpdatedEvent(Guid TripId, IEnumerable<RoutePointEvent> Po
 public record RoutePointEvent(decimal Latitude, decimal Longitude, DateTime Timestamp);
 
 public record DriverLocationReceivedEvent(
-    Guid DriverId,
+    Guid DriverKeycloakId,
     decimal Latitude,
     decimal Longitude,
     DateTime Timestamp

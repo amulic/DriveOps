@@ -94,8 +94,12 @@ public class ChatService : IChatService
 
         if (conversation == null) return null;
 
+        // Only participants may read conversation details; membership is granted
+        // exclusively through trip assignment or creation of a direct conversation.
         var participant = conversation.Participants.FirstOrDefault(p => p.UserId == userId);
-        var unreadCount = participant?.LastReadAt != null
+        if (participant == null) return null;
+
+        var unreadCount = participant.LastReadAt != null
             ? conversation.Messages.Count(m => m.SentAt > participant.LastReadAt && m.SenderUserId != userId)
             : conversation.Messages.Count(m => m.SenderUserId != userId);
 
@@ -108,6 +112,10 @@ public class ChatService : IChatService
             conversation.Participants.Select(p => p.UserId),
             unreadCount);
     }
+
+    public Task<bool> IsParticipantAsync(Guid conversationId, Guid userId) =>
+        _dbContext.ConversationParticipants
+            .AnyAsync(p => p.ConversationId == conversationId && p.UserId == userId);
 
     public async Task<ConversationDto?> GetOrCreateTripConversationAsync(Guid tripId, Guid customerId, Guid driverId)
     {

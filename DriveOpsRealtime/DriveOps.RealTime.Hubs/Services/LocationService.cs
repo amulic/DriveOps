@@ -85,39 +85,20 @@ namespace DriveOps.RealTime.Hubs.Services;
                 .SendAsync("ReceiveTripRoute", routeEvent.TripId, routeEvent.Points);
         }
 
-        public async Task UpdateDriverLocationFromClientAsync(Guid driverId, decimal latitude, decimal longitude)
+        public async Task UpdateDriverLocationFromClientAsync(Guid userKeycloakId, decimal latitude, decimal longitude)
         {
-            var cache = await _dbContext.DriverLocationCaches.FindAsync(driverId);
-            if (cache == null)
-            {
-                cache = new DriverLocationCache
-                {
-                    DriverId = driverId,
-                    Latitude = latitude,
-                    Longitude = longitude,
-                    IsOnline = true,
-                    LastUpdated = DateTime.UtcNow
-                };
-                _dbContext.DriverLocationCaches.Add(cache);
-            }
-            else
-            {
-                cache.Latitude = latitude;
-                cache.Longitude = longitude;
-                cache.LastUpdated = DateTime.UtcNow;
-            }
-            await _dbContext.SaveChangesAsync();
-
-            if (cache.ActiveTripId.HasValue)
-            {
-                await _locationHub.Clients
-                    .Group($"trip-location-{cache.ActiveTripId.Value}")
-                    .SendAsync("ReceiveDriverLocation", driverId, latitude, longitude, DateTime.UtcNow);
-            }
-
+            // The Realtime service has no driver directory, so it cannot map the
+            // authenticated Keycloak user to the internal driver id. It only forwards
+            // the raw fix; the API resolves the identity, persists the location and
+            // publishes DriverLocationUpdatedEvent (internal id + active trip), which
+            // this service consumes to update the cache and fan out to trip groups.
             await _eventPublisher.PublishAsync("driveops.realtime", "driver.location.received",
-                new DriverLocationReceivedEvent(driverId, latitude, longitude, DateTime.UtcNow));
+                new DriverLocationReceivedEvent(userKeycloakId, latitude, longitude, DateTime.UtcNow));
         }
+
+        public Task<bool> CanAccessTripLocationAsync(Guid tripId, Guid userId) =>
+            _dbContext.Conversations
+                .AnyAsync(c => c.TripId == tripId && c.Participants.Any(p => p.UserId == userId));
 
         public async Task<IEnumerable<DriverLocationDto>> GetNearbyDriversAsync(decimal latitude, decimal longitude, decimal radiusKm)
         {

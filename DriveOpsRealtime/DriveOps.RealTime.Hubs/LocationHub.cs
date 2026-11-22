@@ -33,12 +33,20 @@ namespace DriveOps.RealTime.Hubs
 
         public async Task SendDriverLocation(decimal latitude, decimal longitude)
         {
+            if (!Context.User?.IsInRole("driver") ?? true)
+                throw new HubException("Access denied. Driver role required.");
+
             var userId = GetUserId();
             await _locationService.UpdateDriverLocationFromClientAsync(userId, latitude, longitude);
         }
 
         public async Task SubscribeToTripLocation(Guid tripId)
         {
+            var userId = GetUserId();
+            var isStaff = IsInManagementRole();
+            if (!isStaff && !await _locationService.CanAccessTripLocationAsync(tripId, userId))
+                throw new HubException("Access denied. You are not a participant in this trip.");
+
             await Groups.AddToGroupAsync(Context.ConnectionId, $"trip-location-{tripId}");
         }
 
@@ -49,9 +57,15 @@ namespace DriveOps.RealTime.Hubs
 
         public async Task GetNearbyDrivers(decimal latitude, decimal longitude, decimal radiusKm)
         {
+            if (!IsInManagementRole())
+                throw new HubException("Access denied. Management role required.");
+
             var drivers = await _locationService.GetNearbyDriversAsync(latitude, longitude, radiusKm);
             await Clients.Caller.SendAsync("NearbyDrivers", drivers);
         }
+
+        private bool IsInManagementRole() =>
+            Context.User?.IsInRole("admin") == true || Context.User?.IsInRole("dispatcher") == true;
 
         private Guid GetUserId()
         {

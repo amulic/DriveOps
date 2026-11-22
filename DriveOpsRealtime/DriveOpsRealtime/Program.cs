@@ -34,6 +34,9 @@ var rabbitPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
 var rabbitUser = builder.Configuration["RabbitMQ:UserName"] ?? "guest";
 var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "";
 
+// API base URL used to resolve Keycloak user -> internal driver profile.
+var apiBaseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5032";
+
 // SignalR
 builder.Services.AddSignalR();
 
@@ -51,7 +54,7 @@ builder.Services.AddRealTimeInfrastructure(connectionString, rabbitHost, rabbitP
 builder.Services.AddRealTimeServices();
 
 // DI - Hub services (NotificationHubService, LocationService)
-builder.Services.AddRealTimeHubs();
+builder.Services.AddRealTimeHubs(apiBaseUrl);
 
 
 // Keycloak JWT Auth

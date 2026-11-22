@@ -46,14 +46,21 @@ class SignalrService {
 
     _connection!.onreconnected(({connectionId}) {
       _connectionStateController.add(HubConnectionState.Connected);
+      // A reconnect creates a new connection id and the server drops all group
+      // memberships, so re-join the fleet dashboard group to keep updates flowing.
+      _joinFleetDashboard();
     });
 
     await _connection!.start();
     _connectionStateController.add(HubConnectionState.Connected);
 
-    // Join admin dashboard group
+    // Join the fleet dashboard group
+    await _joinFleetDashboard();
+  }
+
+  Future<void> _joinFleetDashboard() async {
     try {
-      await _connection!.invoke('JoinAdminDashboard');
+      await _connection?.invoke('JoinAdminDashboard');
     } catch (e) {
       if (kDebugMode) {
         print('[SignalR] Failed to join admin dashboard: $e');

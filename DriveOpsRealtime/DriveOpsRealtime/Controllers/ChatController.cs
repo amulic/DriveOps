@@ -102,6 +102,7 @@ public class ChatController : ControllerBase
     }
 
     [HttpPost("conversations/{id:guid}/join")]
+    [Authorize(Roles = "admin,dispatcher")]
     public async Task<IActionResult> JoinConversation(Guid id)
     {
         var userId = GetUserId();

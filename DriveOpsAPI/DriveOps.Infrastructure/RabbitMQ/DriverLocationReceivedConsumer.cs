@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using DriveOps.Application.DTOs;
 using DriveOps.Application.Interfaces;
+using DriveOps.Model.Enums;
 using DriveOps.RealTime.Contracts.Events;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -57,15 +58,34 @@ public class DriverLocationReceivedConsumer : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var driverService = scope.ServiceProvider.GetRequiredService<IDriverService>();
 
+                // The Realtime hub sends the authenticated Keycloak user id; resolve it
+                // to the internal driver id before touching the driver profile.
+                var driver = await driverService.GetDriverByKeycloakIdAsync(locationEvent.DriverKeycloakId);
+                if (driver == null)
+                {
+                    _logger.LogWarning("Dropping location update for unknown driver keycloak id {KeycloakId}",
+                        locationEvent.DriverKeycloakId);
+                    await _channel.BasicAckAsync(ea.DeliveryTag, false);
+                    return;
+                }
+
+                if (driver.Status is not (DriverStatus.Active or DriverStatus.OnTrip))
+                {
+                    _logger.LogWarning("Dropping location update for driver {DriverId} with status {Status}",
+                        driver.Id, driver.Status);
+                    await _channel.BasicAckAsync(ea.DeliveryTag, false);
+                    return;
+                }
+
                 await driverService.UpdateDriverLocationAsync(new UpdateDriverLocationDto
                 {
-                    DriverId = locationEvent.DriverId,
+                    DriverId = driver.Id,
                     Latitude = locationEvent.Latitude,
                     Longitude = locationEvent.Longitude
                 });
 
                 await _channel.BasicAckAsync(ea.DeliveryTag, false);
-                _logger.LogDebug("Persisted location for driver {DriverId}", locationEvent.DriverId);
+                _logger.LogDebug("Persisted location for driver {DriverId}", driver.Id);
             }
             catch (KeyNotFoundException ex)
             {
