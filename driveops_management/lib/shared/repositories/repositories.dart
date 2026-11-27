@@ -1,6 +1,7 @@
 import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/vehicle_service_record.dart';
 import 'package:driveops_management/shared/models/route_point.dart';
 import 'package:driveops_management/shared/models/recommended_driver.dart';
 import 'package:driveops_management/shared/models/keycloak_candidate.dart';
@@ -48,6 +49,10 @@ abstract class VehicleRepository {
   Future<void> deleteVehicle(String id);
   Future<Vehicle> assignVehicle(String vehicleId, String driverId);
   Future<void> unassignVehicle(String vehicleId);
+  Future<List<VehicleServiceRecord>> getServiceRecords(String vehicleId);
+  Future<VehicleServiceRecord> addServiceRecord(
+      String vehicleId, CreateVehicleServiceRecordRequest request);
+  Future<List<VehicleServiceReminder>> getServiceReminders();
 }
 
 abstract class DefectRepository {

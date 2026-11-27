@@ -25,9 +25,11 @@ namespace DriveOps.Infrastructure.DependencyInjection
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<IVehicleRepository, VehicleRepository>();
             services.AddScoped<IVehicleDefectReportRepository, VehicleDefectReportRepository>();
+            services.AddScoped<IVehicleServiceRecordRepository, VehicleServiceRecordRepository>();
             services.AddScoped<ITripRepository, TripRepository>();
             services.AddScoped<ITripRouteRepository, TripRouteRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IFareSettingsRepository, FareSettingsRepository>();
 
             // External services
             services.AddHttpClient<IRoutingService, OsrmRoutingService>(client =>

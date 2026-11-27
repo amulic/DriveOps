@@ -44,6 +44,17 @@ namespace DriveOps.Infrastructure.Services
             return users ?? [];
         }
 
+        public async Task<List<KeycloakUserDto>> GetUsersAsync(string? search, int first, int max)
+        {
+            var token = await GetAccessTokenAsync();
+            var url = $"admin/realms/{_realm}/users?briefRepresentation=false&first={Math.Max(0, first)}&max={Math.Clamp(max, 1, 100)}";
+            if (!string.IsNullOrWhiteSpace(search))
+                url += $"&search={Uri.EscapeDataString(search)}";
+
+            var users = await GetAsync<List<KeycloakUserDto>>(token, url);
+            return users ?? [];
+        }
+
         public async Task<KeycloakUserDto?> GetUserByIdAsync(string userId)
         {
             var token = await GetAccessTokenAsync();
@@ -87,6 +98,96 @@ namespace DriveOps.Infrastructure.Services
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
                 throw new InvalidOperationException($"Keycloak role assignment failed with status {(int)response.StatusCode}.");
+        }
+
+        public async Task RemoveRealmRoleAsync(string userId, string roleName)
+        {
+            var existingRoles = await GetUserRealmRolesAsync(userId);
+            if (!existingRoles.Contains(roleName))
+                return;
+
+            var token = await GetAccessTokenAsync();
+            var roleUrl = $"admin/realms/{_realm}/roles/{Uri.EscapeDataString(roleName)}";
+            var role = await GetAsync<KeycloakRoleRepresentation>(token, roleUrl)
+                ?? throw new InvalidOperationException($"Realm role '{roleName}' not found in Keycloak realm '{_realm}'.");
+
+            var removeUrl = $"admin/realms/{_realm}/users/{Uri.EscapeDataString(userId)}/role-mappings/realm";
+            using var request = new HttpRequestMessage(HttpMethod.Delete, removeUrl)
+            {
+                Content = JsonContent.Create(new[]
+                {
+                    new KeycloakRoleRepresentation { Id = role.Id, Name = role.Name }
+                })
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Keycloak role removal failed with status {(int)response.StatusCode}.");
+        }
+
+        public async Task UpdateUserAsync(string userId, string? firstName, string? lastName, string? email)
+        {
+            var user = await GetUserByIdAsync(userId)
+                ?? throw new KeycloakUserNotFoundException($"Keycloak user {userId} not found.");
+
+            await UpdateUserRepresentationAsync(userId, new KeycloakUpdateUserRequest
+            {
+                Id = userId,
+                Username = user.Username,
+                FirstName = firstName ?? user.FirstName,
+                LastName = lastName ?? user.LastName,
+                Email = email ?? user.Email,
+                Enabled = user.Enabled
+            });
+        }
+
+        public async Task SetUserEnabledAsync(string userId, bool enabled)
+        {
+            var user = await GetUserByIdAsync(userId)
+                ?? throw new KeycloakUserNotFoundException($"Keycloak user {userId} not found.");
+
+            await UpdateUserRepresentationAsync(userId, new KeycloakUpdateUserRequest
+            {
+                Id = userId,
+                Username = user.Username,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                Enabled = enabled
+            });
+        }
+
+        public async Task ResetPasswordAsync(string userId, string temporaryPassword)
+        {
+            var token = await GetAccessTokenAsync();
+            var url = $"admin/realms/{_realm}/users/{Uri.EscapeDataString(userId)}/reset-password";
+            using var request = new HttpRequestMessage(HttpMethod.Put, url)
+            {
+                Content = JsonContent.Create(new KeycloakCredential
+                {
+                    Type = "password",
+                    Value = temporaryPassword,
+                    Temporary = true
+                })
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Keycloak password reset failed with status {(int)response.StatusCode}.");
+        }
+
+        private async Task UpdateUserRepresentationAsync(string userId, KeycloakUpdateUserRequest payload)
+        {
+            var token = await GetAccessTokenAsync();
+            var url = $"admin/realms/{_realm}/users/{Uri.EscapeDataString(userId)}";
+            using var request = new HttpRequestMessage(HttpMethod.Put, url)
+            {
+                Content = JsonContent.Create(payload)
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Keycloak user update failed with status {(int)response.StatusCode}.");
         }
 
         public async Task<KeycloakUserDto> CreateUserAsync(string username, string? email, string? firstName, string? lastName, string temporaryPassword)
@@ -247,6 +348,27 @@ namespace DriveOps.Infrastructure.Services
         {
             [JsonPropertyName("errorMessage")]
             public string? ErrorMessage { get; set; }
+        }
+
+        private class KeycloakUpdateUserRequest
+        {
+            [JsonPropertyName("id")]
+            public string? Id { get; set; }
+
+            [JsonPropertyName("username")]
+            public string Username { get; set; } = null!;
+
+            [JsonPropertyName("firstName")]
+            public string? FirstName { get; set; }
+
+            [JsonPropertyName("lastName")]
+            public string? LastName { get; set; }
+
+            [JsonPropertyName("email")]
+            public string? Email { get; set; }
+
+            [JsonPropertyName("enabled")]
+            public bool Enabled { get; set; }
         }
     }
 }

@@ -6,14 +6,17 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:driveops_mobile/features/customer/payment/payment_methods_screen.dart';
 import 'package:driveops_mobile/features/customer/payment/payment_providers.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
+import 'package:driveops_mobile/services/config_api_service.dart';
 import 'package:driveops_mobile/services/geocoding_api_service.dart';
 import 'package:driveops_mobile/shared/dtos/requests/trip_requests.dart';
 import 'package:driveops_mobile/shared/location/current_position_provider.dart';
 import 'package:driveops_mobile/shared/location/location_service.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
+import 'package:driveops_mobile/shared/utils/money.dart';
 import 'package:driveops_mobile/shared/widgets/map/drive_ops_map.dart';
 import 'package:driveops_mobile/shared/widgets/map/map_markers.dart';
 import 'package:driveops_mobile/shared/widgets/map/route_polyline_layer.dart';
@@ -219,11 +222,27 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
         ref.invalidate(customerActiveTripProvider);
         ref.invalidate(customerTripsProvider);
       } else if (e.response?.statusCode == 400) {
-        // e.g. the server-side no-saved-card guard for card trips.
+        // Business precondition (e.g. the server-side no-saved-card guard).
         final data = e.response?.data;
         final message =
             data is Map<String, dynamic> ? data['message'] as String? : null;
-        _showSnack(message ?? 'Could not create the trip. Please try again.');
+        final code =
+            data is Map<String, dynamic> ? data['code'] as String? : null;
+        if (code == 'card_required') {
+          _showSnack(
+            message ?? 'Add a card first — Profile → Payment methods.',
+            action: SnackBarAction(
+              label: 'Add card',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const PaymentMethodsScreen(),
+                ),
+              ),
+            ),
+          );
+        } else {
+          _showSnack(message ?? 'Could not create the trip. Please try again.');
+        }
       } else {
         _showSnack('Could not create the trip. Please try again.');
       }
@@ -235,10 +254,11 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
     }
   }
 
-  void _showSnack(String message) {
+  void _showSnack(String message, {SnackBarAction? action}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), action: action),
+    );
   }
 
   /// Card trips are charged off-session to a saved card — require one upfront
@@ -441,6 +461,7 @@ class _CustomerRequestScreenState extends ConsumerState<CustomerRequestScreen> {
               confirming: _confirming,
               dropoffAddress: _dropoffAddress,
               paymentMethod: _paymentMethod,
+              currency: ref.watch(currencyCodeProvider),
               onPaymentMethodChanged: _onPaymentMethodChanged,
               onConfirm: () => _confirm(position.latLng),
               onClear: () => setState(() {
@@ -462,6 +483,7 @@ class _EstimateCard extends StatelessWidget {
   final bool confirming;
   final String? dropoffAddress;
   final PaymentMethod paymentMethod;
+  final String currency;
   final ValueChanged<PaymentMethod> onPaymentMethodChanged;
   final VoidCallback onConfirm;
   final VoidCallback onClear;
@@ -472,6 +494,7 @@ class _EstimateCard extends StatelessWidget {
     required this.confirming,
     required this.dropoffAddress,
     required this.paymentMethod,
+    required this.currency,
     required this.onPaymentMethodChanged,
     required this.onConfirm,
     required this.onClear,
@@ -552,7 +575,7 @@ class _EstimateCard extends StatelessWidget {
                   ),
                   _EstimateValue(
                     label: 'Fare',
-                    value: '\$${estimate!.estimatedFare.toStringAsFixed(2)}',
+                    value: formatMoney(estimate!.estimatedFare, currency),
                   ),
                 ],
               ),
@@ -576,13 +599,6 @@ class _EstimateCard extends StatelessWidget {
                       selected: paymentMethod == PaymentMethod.creditCard,
                       onSelected: () =>
                           onPaymentMethodChanged(PaymentMethod.creditCard),
-                    ),
-                    _PaymentChip(
-                      label: 'Digital wallet',
-                      icon: Icons.account_balance_wallet_outlined,
-                      selected: paymentMethod == PaymentMethod.digitalWallet,
-                      onSelected: () =>
-                          onPaymentMethodChanged(PaymentMethod.digitalWallet),
                     ),
                   ],
                 ),

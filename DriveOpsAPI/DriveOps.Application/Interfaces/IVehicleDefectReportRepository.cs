@@ -10,5 +10,6 @@ namespace DriveOps.Application.Interfaces
         Task<VehicleDefectReport?> GetByIdWithDetailsAsync(Guid id);
         Task<IEnumerable<VehicleDefectReport>> GetFilteredAsync(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId, int page, int pageSize);
         Task<int> CountFilteredAsync(string? status, DefectSeverity? severity, Guid? vehicleId, Guid? driverId);
+        Task<List<Guid>> GetVehicleIdsWithOpenHighSeverityDefectsAsync();
     }
 }

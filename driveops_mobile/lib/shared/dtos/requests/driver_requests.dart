@@ -89,6 +89,41 @@ class UpdateDriverLocationRequest {
   }
 }
 
+/// Personal fields a driver may edit on their own profile.
+class UpdateOwnDriverProfileRequest {
+  final String? firstName;
+  final String? lastName;
+  final String? email;
+  final String? phoneNumber;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
+  final String? profileImageUrl;
+
+  const UpdateOwnDriverProfileRequest({
+    this.firstName,
+    this.lastName,
+    this.email,
+    this.phoneNumber,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
+    this.profileImageUrl,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (firstName != null) 'firstName': firstName,
+      if (lastName != null) 'lastName': lastName,
+      if (email != null) 'email': email,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
+      if (emergencyContactName != null)
+        'emergencyContactName': emergencyContactName,
+      if (emergencyContactPhone != null)
+        'emergencyContactPhone': emergencyContactPhone,
+      if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+    };
+  }
+}
+
 class SetDriverStatusRequest {
   final bool isOnline;
 

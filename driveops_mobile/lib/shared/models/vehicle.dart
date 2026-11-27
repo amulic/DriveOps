@@ -1,4 +1,4 @@
-﻿enum VehicleStatus {
+enum VehicleStatus {
   available,
   inUse,
   maintenance,
@@ -40,7 +40,7 @@ class Vehicle {
   final String vin;
   final String insurancePolicyNumber;
   final VehicleStatus status;
-  final int? mileage;
+  final double? mileage;
   final FuelType fuelType;
   final int? seatingCapacity;
   final String? assignedDriverId;
@@ -86,7 +86,7 @@ class Vehicle {
       vin: json['vin'] as String,
       insurancePolicyNumber: json['insurancePolicyNumber'] as String? ?? '',
       status: VehicleStatus.fromInt(json['status'] as int),
-      mileage: json['mileage'] as int?,
+      mileage: (json['mileage'] as num?)?.toDouble(),
       fuelType: FuelType.fromInt(json['fuelType'] as int),
       seatingCapacity: json['seatingCapacity'] as int?,
       assignedDriverId: json['assignedDriverId'] as String?,
@@ -141,7 +141,7 @@ class Vehicle {
     String? vin,
     String? insurancePolicyNumber,
     VehicleStatus? status,
-    int? mileage,
+    double? mileage,
     FuelType? fuelType,
     int? seatingCapacity,
     String? assignedDriverId,

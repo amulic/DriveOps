@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:driveops_management/features/reports/presentation/providers/reports_providers.dart';
 import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 const _brand = PdfColor.fromInt(0xFF3B82F6);
 const _dark = PdfColor.fromInt(0xFF1A1A2E);
@@ -13,7 +14,7 @@ const _line = PdfColor.fromInt(0xFFE5E7EB);
 const _surface = PdfColor.fromInt(0xFFF3F4F6);
 
 class ReportPdfService {
-  static Future<Uint8List> buildTripsReportPdf(TripReportData data) async {
+  static Future<Uint8List> buildTripsReportPdf(TripReportData data, String currency) async {
     final document = pw.Document(title: 'DriveOps Trips & Revenue Report');
 
     document.addPage(
@@ -33,7 +34,7 @@ class ReportPdfService {
               pw.SizedBox(width: 8),
               _summaryCell('Cancelled', data.cancelled.toString()),
               pw.SizedBox(width: 8),
-              _summaryCell('Revenue', _formatMoney(data.revenue)),
+              _summaryCell('Revenue', _formatMoney(data.revenue, currency)),
             ],
           ),
           pw.SizedBox(height: 24),
@@ -57,7 +58,7 @@ class ReportPdfService {
                       _formatDate(day.date),
                       day.trips.toString(),
                       day.completed.toString(),
-                      _formatMoney(day.revenue),
+                      _formatMoney(day.revenue, currency),
                     ],
                   )
                   .toList(),
@@ -72,6 +73,7 @@ class ReportPdfService {
 
   static Future<Uint8List> buildDriverScoreboardPdf(
     List<Driver> drivers,
+    String currency,
   ) async {
     final document = pw.Document(
       title: 'DriveOps Driver Performance Scoreboard',
@@ -109,7 +111,7 @@ class ReportPdfService {
                       entry.value.driverName,
                       entry.value.rating.toStringAsFixed(1),
                       entry.value.totalTrips.toString(),
-                      _formatMoney(entry.value.totalRevenue),
+                      _formatMoney(entry.value.totalRevenue, currency),
                       _statusLabel(entry.value.status),
                     ],
                   )
@@ -304,7 +306,8 @@ class ReportPdfService {
     return '${_formatDate(date)} $hour:$minute';
   }
 
-  static String _formatMoney(double value) => '\$${value.toStringAsFixed(2)}';
+  static String _formatMoney(double value, String currency) =>
+      formatMoney(value, currency);
 
   static String _statusLabel(DriverStatus status) {
     final name = status.name;

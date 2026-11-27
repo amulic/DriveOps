@@ -17,5 +17,8 @@ namespace DriveOps.Application.Interfaces
         Task<PaginatedResult<VehicleDefectReportDto>> GetDefectsAsync(string? status, DriveOps.Model.Enums.DefectSeverity? severity, Guid? vehicleId, Guid? driverId, int page = 1, int pageSize = 20);
         Task<VehicleDefectReportDto> ResolveDefectAsync(Guid defectId, string? resolutionNotes);
         Task<VehicleDefectReportDto> ReopenDefectAsync(Guid defectId);
+        Task<PaginatedResult<VehicleServiceRecordDto>> GetVehicleServiceRecordsAsync(Guid vehicleId, int page = 1, int pageSize = 20);
+        Task<VehicleServiceRecordDto> AddVehicleServiceRecordAsync(CreateVehicleServiceRecordDto dto);
+        Task<IEnumerable<VehicleServiceReminderDto>> GetServiceRemindersAsync();
     }
 }

@@ -173,3 +173,7 @@ final isAuthorizedRoleProvider = Provider<bool>((ref) {
   if (user == null) return false;
   return user.userType == UserType.admin || user.userType == UserType.dispatcher;
 });
+
+final isAdminProvider = Provider<bool>((ref) {
+  return ref.watch(currentUserProvider)?.userType == UserType.admin;
+});

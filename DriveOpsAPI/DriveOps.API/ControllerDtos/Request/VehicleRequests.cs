@@ -34,10 +34,20 @@ namespace DriveOps.API.ControllerDtos.Request
         public DateOnly? InsuranceExpiryDate { get; set; }
         public DateOnly? RegistrationExpiryDate { get; set; }
         public VehicleStatus? Status { get; set; }
-        public int? Mileage { get; set; }
+        public decimal? Mileage { get; set; }
         public string? PhotoUrl { get; set; }
         public string? InternalName { get; set; }
         public DateTime? LastServiceDate { get; set; }
+    }
+
+    public class CreateVehicleServiceRecordRequest
+    {
+        public DateTime ServiceDate { get; set; }
+        public VehicleServiceType ServiceType { get; set; } = VehicleServiceType.RoutineMaintenance;
+        public string? Description { get; set; }
+        public string? PerformedBy { get; set; }
+        public decimal? OdometerKm { get; set; }
+        public decimal? Cost { get; set; }
     }
 
     public class AssignVehicleRequest

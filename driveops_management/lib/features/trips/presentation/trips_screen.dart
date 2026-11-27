@@ -7,6 +7,8 @@ import 'package:driveops_management/features/trips/presentation/providers/trips_
 import 'package:driveops_management/features/trips/presentation/widgets/trip_details_panel.dart';
 import 'package:driveops_management/features/trips/presentation/widgets/cancel_trip_dialog.dart';
 import 'package:driveops_management/services/cache_service.dart';
+import 'package:driveops_management/services/config_api_service.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 class TripsScreen extends ConsumerStatefulWidget {
   const TripsScreen({super.key});
@@ -397,6 +399,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
   }
 
   Widget _buildFareCell(Trip trip) {
+    final currency = ref.watch(currencyCodeProvider);
     final fare = trip.actualFare ?? trip.estimatedFare;
     if (fare == null) {
       return const Text('-', style: TextStyle(color: Colors.white54));
@@ -404,7 +407,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
 
     final isEstimated = trip.actualFare == null;
     return Text(
-      '\$${fare.toStringAsFixed(2)}${isEstimated ? '*' : ''}',
+      '${formatMoney(fare, currency)}${isEstimated ? '*' : ''}',
       style: TextStyle(
         color: isEstimated ? Colors.white54 : Colors.white,
         fontWeight: isEstimated ? FontWeight.normal : FontWeight.w600,

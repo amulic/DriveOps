@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
+import 'package:driveops_management/services/config_api_service.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 class DriverScoreboard extends ConsumerWidget {
   const DriverScoreboard({super.key});
@@ -9,6 +11,7 @@ class DriverScoreboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scoreboardAsync = ref.watch(driverScoreboardProvider);
+    final currency = ref.watch(currencyCodeProvider);
 
     return Card(
       color: const Color(0xFF252538),
@@ -31,7 +34,7 @@ class DriverScoreboard extends ConsumerWidget {
                 children: scoreboard.asMap().entries.map((entry) {
                   final index = entry.key;
                   final driver = entry.value;
-                  return _buildDriverRow(index + 1, driver, driver.driverName, driver.rating, driver.totalTrips, driver.totalRevenue);
+                  return _buildDriverRow(index + 1, driver, driver.driverName, driver.rating, driver.totalTrips, driver.totalRevenue, currency);
                 }).toList(),
               ),
               loading: () => const SizedBox(
@@ -49,7 +52,7 @@ class DriverScoreboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDriverRow(int rank, Driver driver, String name, double rating, int trips, double revenue) {
+  Widget _buildDriverRow(int rank, Driver driver, String name, double rating, int trips, double revenue, String currency) {
     final rankColor = switch (rank) {
       1 => const Color(0xFFFFD700),
       2 => const Color(0xFFC0C0C0),
@@ -121,7 +124,7 @@ class DriverScoreboard extends ConsumerWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '\$${revenue.toStringAsFixed(0)}',
+                formatMoneyWhole(revenue, currency),
                 style: const TextStyle(
                   color: Colors.white54,
                   fontSize: 12,

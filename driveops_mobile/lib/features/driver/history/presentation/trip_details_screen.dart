@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:driveops_mobile/services/config_api_service.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
+import 'package:driveops_mobile/shared/utils/money.dart';
 import 'package:driveops_mobile/shared/widgets/rate_trip_dialog.dart';
 import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
@@ -120,9 +122,10 @@ class TripDetailsScreen extends ConsumerWidget {
               children: [
                 _sectionTitle('Fare & Distance'),
                 const SizedBox(height: 12),
-                _metricRow('Distance', trip.actualDistance, trip.estimatedDistance, 'km'),
-                _metricRow('Duration', trip.actualDuration, trip.estimatedDuration, 'min'),
-                _metricRow('Fare', trip.actualFare, trip.estimatedFare, '', prefix: '\$'),
+              _metricRow('Distance', trip.actualDistance, trip.estimatedDistance, 'km'),
+              _metricRow('Duration', trip.actualDuration, trip.estimatedDuration, 'min'),
+              _metricRow('Fare', trip.actualFare, trip.estimatedFare, '',
+                  currency: ref.watch(currencyCodeProvider)),
                 if (trip.paymentMethod != null)
                   _plainRow('Payment', _paymentLabel(trip.paymentMethod!)),
               ],
@@ -261,10 +264,12 @@ class TripDetailsScreen extends ConsumerWidget {
   }
 
   Widget _metricRow(String label, num? actual, num? estimated, String unit,
-      {String prefix = ''}) {
-    String fmt(num? v) => v == null
-        ? '—'
-        : '$prefix${v is double ? v.toStringAsFixed(2) : v}${unit.isNotEmpty ? ' $unit' : ''}';
+      {String? currency}) {
+    String fmt(num? v) {
+      if (v == null) return '—';
+      if (currency != null) return formatMoney(v, currency);
+      return '${v is double ? v.toStringAsFixed(2) : v}${unit.isNotEmpty ? ' $unit' : ''}';
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(

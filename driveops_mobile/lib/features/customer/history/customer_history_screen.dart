@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:driveops_mobile/features/customer/payment/payment_status_banner.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
 import 'package:driveops_mobile/services/cache_service.dart';
+import 'package:driveops_mobile/services/config_api_service.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
+import 'package:driveops_mobile/shared/utils/money.dart';
 import 'package:driveops_mobile/shared/widgets/rate_trip_dialog.dart';
 import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
@@ -223,6 +225,7 @@ class _TripTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final date = DateFormat('MMM d, yyyy · HH:mm').format(trip.requestedAt.toLocal());
     final fare = trip.actualFare ?? trip.estimatedFare;
+    final currency = ref.watch(currencyCodeProvider);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -264,7 +267,7 @@ class _TripTile extends ConsumerWidget {
                     if (fare != null) ...[
                       const SizedBox(width: 12),
                       Text(
-                        '\$${fare.toStringAsFixed(2)}',
+                        formatMoney(fare, currency),
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
@@ -306,6 +309,7 @@ class _TripTile extends ConsumerWidget {
   void _showDetails(BuildContext context, WidgetRef ref) {
     final date =
         DateFormat('MMM d, yyyy · HH:mm').format(trip.requestedAt.toLocal());
+    final currency = ref.read(currencyCodeProvider);
 
     showDialog(
       context: context,
@@ -334,8 +338,8 @@ class _TripTile extends ConsumerWidget {
             if (trip.estimatedFare != null)
               _DetailLine(
                 label: trip.actualFare != null ? 'Final fare' : 'Estimated fare',
-                value:
-                    '\$${(trip.actualFare ?? trip.estimatedFare)!.toStringAsFixed(2)}',
+                value: formatMoney(
+                    trip.actualFare ?? trip.estimatedFare, currency),
               ),
             if (trip.paymentMethod != null)
               _DetailLine(

@@ -91,6 +91,14 @@ class DriverApiService {
     return Driver.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<Driver> updateOwnProfile(UpdateOwnDriverProfileRequest request) async {
+    final response = await _api.put(
+      '${ApiConfig.driverEndpoint}/me',
+      data: request.toJson(),
+    );
+    return Driver.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<void> updateDriverLocation(
     String id,
     UpdateDriverLocationRequest request,

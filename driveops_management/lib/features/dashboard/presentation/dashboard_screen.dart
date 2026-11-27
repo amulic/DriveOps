@@ -6,7 +6,9 @@ import 'package:driveops_management/features/dashboard/presentation/widgets/rece
 import 'package:driveops_management/features/dashboard/presentation/widgets/trip_statistics_chart.dart';
 import 'package:driveops_management/features/dashboard/presentation/widgets/vehicles_service_table.dart';
 import 'package:driveops_management/features/dashboard/presentation/widgets/driver_scoreboard.dart';
+import 'package:driveops_management/services/config_api_service.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -16,13 +18,14 @@ class DashboardScreen extends ConsumerWidget {
     final driversAsync = ref.watch(driversProvider);
     final vehiclesAsync = ref.watch(vehiclesProvider);
     final revenueAsync = ref.watch(totalRevenueProvider);
+    final currency = ref.watch(currencyCodeProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
       body: driversAsync.when(
         data: (driversData) => vehiclesAsync.when(
           data: (vehiclesData) => revenueAsync.when(
-            data: (revenue) => _buildContent(context, driversData, vehiclesData, revenue),
+            data: (revenue) => _buildContent(context, driversData, vehiclesData, revenue, currency),
             loading: () => _buildLoading(),
             error: (error, _) => _buildError('Revenue', error, () => ref.invalidate(totalRevenueProvider)),
           ),
@@ -35,7 +38,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, DriversData driversData, VehiclesData vehiclesData, double revenue) {
+  Widget _buildContent(BuildContext context, DriversData driversData, VehiclesData vehiclesData, double revenue, String currency) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -58,7 +61,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _buildStatsRow(driversData, vehiclesData, revenue),
+          _buildStatsRow(driversData, vehiclesData, revenue, currency),
           const SizedBox(height: 24),
           _buildChartsRow(),
           const SizedBox(height: 24),
@@ -91,7 +94,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow(DriversData driversData, VehiclesData vehiclesData, double revenue) {
+  Widget _buildStatsRow(DriversData driversData, VehiclesData vehiclesData, double revenue, String currency) {
     return Row(
       children: [
         Expanded(
@@ -125,7 +128,7 @@ class DashboardScreen extends ConsumerWidget {
           child: StatsCard(
             icon: Icons.attach_money,
             title: 'Total Revenue',
-            value: '\$${(revenue / 1000).toStringAsFixed(1)}K',
+            value: '${currencySymbol(currency)}${(revenue / 1000).toStringAsFixed(1)}K',
             iconColor: const Color(0xFF22C55E),
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:driveops_management/shared/models/driver.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/vehicle_service_record.dart';
 import 'package:driveops_management/shared/models/route_point.dart';
 import 'package:driveops_management/shared/models/recommended_driver.dart';
 import 'package:driveops_management/shared/models/keycloak_candidate.dart';
@@ -289,15 +290,12 @@ class ApiVehicleRepository implements VehicleRepository {
     if (cached != null) {
       return (cached as List).map((e) => Vehicle.fromJson(e as Map<String, dynamic>)).toList();
     }
+    // Use the server's reminder rules so the dashboard matches the notifications.
     final vehicles = await _api.getAllVehicles();
-    final now = DateTime.now();
-    final thirtyDaysFromNow = now.add(const Duration(days: 30));
-    final needingService = vehicles.where((v) {
-      if (v.status == VehicleStatus.maintenance) return true;
-      if (v.insuranceExpiryDate.isBefore(thirtyDaysFromNow)) return true;
-      if (v.registrationExpiryDate.isBefore(thirtyDaysFromNow)) return true;
-      return false;
-    }).toList();
+    final reminders = await _api.getServiceReminders();
+    final reminderIds = reminders.map((r) => r.vehicleId).toSet();
+    final needingService =
+        vehicles.where((v) => reminderIds.contains(v.id)).toList();
     await _cache.setList(CacheService.vehiclesNeedingService, needingService.map((v) => v.toJson()).toList());
     return needingService;
   }
@@ -333,6 +331,24 @@ class ApiVehicleRepository implements VehicleRepository {
   Future<void> unassignVehicle(String vehicleId) async {
     await _api.unassignVehicle(vehicleId);
     await _invalidateVehicleCaches(vehicleId);
+  }
+
+  @override
+  Future<List<VehicleServiceRecord>> getServiceRecords(String vehicleId) async {
+    return _api.getServiceRecords(vehicleId);
+  }
+
+  @override
+  Future<VehicleServiceRecord> addServiceRecord(
+      String vehicleId, CreateVehicleServiceRecordRequest request) async {
+    final record = await _api.addServiceRecord(vehicleId, request);
+    await _invalidateVehicleCaches(vehicleId);
+    return record;
+  }
+
+  @override
+  Future<List<VehicleServiceReminder>> getServiceReminders() async {
+    return _api.getServiceReminders();
   }
 
   Future<void> _invalidateVehicleCaches(String vehicleId) async {

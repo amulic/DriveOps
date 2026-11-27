@@ -83,6 +83,34 @@ class Sidebar extends ConsumerWidget {
                   isSelected: currentRoute == '/reports',
                   onTap: () => context.go('/reports'),
                 ),
+                if (user?.userType == UserType.admin) ...[
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(12, 16, 12, 6),
+                    child: Text(
+                      'Administration',
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                  _SidebarTabButton(
+                    icon: Icons.manage_accounts_rounded,
+                    label: 'Accounts & Roles',
+                    route: '/admin/accounts',
+                    isSelected: currentRoute == '/admin/accounts',
+                    onTap: () => context.go('/admin/accounts'),
+                  ),
+                  _SidebarTabButton(
+                    icon: Icons.tune_rounded,
+                    label: 'Fare Settings',
+                    route: '/admin/fare-settings',
+                    isSelected: currentRoute == '/admin/fare-settings',
+                    onTap: () => context.go('/admin/fare-settings'),
+                  ),
+                ],
               ],
             ),
           ),

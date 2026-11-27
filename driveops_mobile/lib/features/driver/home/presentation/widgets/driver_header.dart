@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:driveops_mobile/features/driver/profile/driver_profile_edit_screen.dart';
 import 'package:driveops_mobile/features/driver/providers/driver_providers.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
 
@@ -91,6 +92,16 @@ class DriverHeader extends ConsumerWidget {
           ),
           Column(
             children: [
+              IconButton(
+                tooltip: 'Edit profile',
+                icon: const Icon(Icons.edit_outlined,
+                    color: Colors.white54, size: 20),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => DriverProfileEditScreen(driver: driver),
+                  ),
+                ),
+              ),
               Switch(
                 value: isOnline,
                 activeThumbColor: const Color(0xFF22C55E),

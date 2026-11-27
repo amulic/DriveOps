@@ -636,9 +636,10 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
     }
   }
 
-  String _formatMileage(int? mileage) {
+  String _formatMileage(double? mileage) {
     if (mileage == null) return '-';
-    return '${(mileage / 1000).toStringAsFixed(1)}k mi';
+    // Server accumulates kilometers — display the same unit.
+    return '${mileage.toStringAsFixed(1)} km';
   }
 
   String _formatDate(DateTime date) {

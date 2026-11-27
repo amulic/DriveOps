@@ -26,6 +26,16 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet.CountAsync(r => r.VehicleId == vehicleId);
         }
 
+        public async Task<List<Guid>> GetVehicleIdsWithOpenHighSeverityDefectsAsync()
+        {
+            return await _dbSet
+                .Where(r => r.Status != DefectStatus.Resolved
+                    && (r.Severity == DefectSeverity.High || r.Severity == DefectSeverity.Critical))
+                .Select(r => r.VehicleId)
+                .Distinct()
+                .ToListAsync();
+        }
+
         public async Task<VehicleDefectReport?> GetByIdWithDetailsAsync(Guid id)
         {
             return await _dbSet

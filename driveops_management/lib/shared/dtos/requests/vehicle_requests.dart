@@ -95,3 +95,49 @@ class AssignVehicleRequest {
 
   Map<String, dynamic> toJson() => {'driverId': driverId};
 }
+
+class CreateVehicleServiceRecordRequest {
+  final DateTime serviceDate;
+  final String serviceType;
+  final String? description;
+  final String? performedBy;
+  final double? odometerKm;
+  final double? cost;
+
+  const CreateVehicleServiceRecordRequest({
+    required this.serviceDate,
+    required this.serviceType,
+    this.description,
+    this.performedBy,
+    this.odometerKm,
+    this.cost,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'serviceDate': serviceDate.toIso8601String(),
+      'serviceType': _serviceTypeCode,
+      if (description != null && description!.trim().isNotEmpty)
+        'description': description,
+      if (performedBy != null && performedBy!.trim().isNotEmpty)
+        'performedBy': performedBy,
+      if (odometerKm != null) 'odometerKm': odometerKm,
+      if (cost != null) 'cost': cost,
+    };
+  }
+
+  // The API expects the numeric enum value (System.Text.Json default).
+  int get _serviceTypeCode {
+    switch (serviceType) {
+      case 'Inspection':
+        return 2;
+      case 'Repair':
+        return 3;
+      case 'Other':
+        return 4;
+      case 'RoutineMaintenance':
+      default:
+        return 1;
+    }
+  }
+}

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:driveops_mobile/services/config_api_service.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
+import 'package:driveops_mobile/shared/utils/money.dart';
 
 /// Three stat cards: trips completed, rating, total earned.
-class DriverStatsRow extends StatelessWidget {
+class DriverStatsRow extends ConsumerWidget {
   final Driver driver;
 
   const DriverStatsRow({super.key, required this.driver});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currency = ref.watch(currencyCodeProvider);
     return Row(
       children: [
         Expanded(
@@ -33,7 +37,7 @@ class DriverStatsRow extends StatelessWidget {
           child: _StatCard(
             icon: Icons.payments_outlined,
             iconColor: const Color(0xFF3B82F6),
-            value: '\$${driver.totalRevenue.toStringAsFixed(0)}',
+            value: formatMoneyWhole(driver.totalRevenue, currency),
             label: 'Earned',
           ),
         ),

@@ -1,5 +1,6 @@
 using DriveOps.Application.DependencyInjection;
 using DriveOps.Application.Helpers;
+using DriveOps.API.Controllers;
 using DriveOps.Infrastructure.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
@@ -20,7 +21,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // FluentValidation failures -> 400 with field-level messages.
+    options.Filters.Add<ValidationExceptionFilter>();
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -84,17 +89,20 @@ builder.Services.AddSingleton(new DriveOps.Application.Services.PaymentServiceOp
 builder.Services.Configure<FareCalculatorOptions>(
     builder.Configuration.GetSection("FareCalculator"));
 var fareSection = builder.Configuration.GetSection("FareCalculator");
+var configuredFareOptions = new FareCalculatorOptions
+{
+    BaseFare = fareSection.GetValue<decimal>("BaseFare", 2.50m),
+    PerKmRate = fareSection.GetValue<decimal>("PerKmRate", 1.50m),
+    PerMinuteRate = fareSection.GetValue<decimal>("PerMinuteRate", 0.25m),
+    PremiumMultiplier = fareSection.GetValue<decimal>("PremiumMultiplier", 1.5m),
+    SharedMultiplier = fareSection.GetValue<decimal>("SharedMultiplier", 0.7m)
+};
 if (fareSection.Exists())
 {
-    FareCalculator.Configure(new FareCalculatorOptions
-    {
-        BaseFare = fareSection.GetValue<decimal>("BaseFare", 2.50m),
-        PerKmRate = fareSection.GetValue<decimal>("PerKmRate", 1.50m),
-        PerMinuteRate = fareSection.GetValue<decimal>("PerMinuteRate", 0.25m),
-        PremiumMultiplier = fareSection.GetValue<decimal>("PremiumMultiplier", 1.5m),
-        SharedMultiplier = fareSection.GetValue<decimal>("SharedMultiplier", 0.7m)
-    });
+    FareCalculator.Configure(configuredFareOptions);
 }
+// Admin-managed fare settings fall back to these appsettings defaults.
+builder.Services.AddSingleton(configuredFareOptions);
 
 // Keycloak
 var keycloakAuthority = builder.Configuration["Keycloak:Authority"];

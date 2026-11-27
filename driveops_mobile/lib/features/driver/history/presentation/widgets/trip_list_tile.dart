@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:driveops_mobile/services/config_api_service.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
+import 'package:driveops_mobile/shared/utils/money.dart';
 import 'package:driveops_mobile/shared/widgets/trip_status_chip.dart';
 
-class TripListTile extends StatelessWidget {
+class TripListTile extends ConsumerWidget {
   final Trip trip;
   final VoidCallback onTap;
 
   const TripListTile({super.key, required this.trip, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currency = ref.watch(currencyCodeProvider);
     final dateFormat = DateFormat('MMM d, HH:mm');
 
     return Material(
@@ -56,7 +60,7 @@ class TripListTile extends StatelessWidget {
                   const Spacer(),
                   if (trip.actualFare != null)
                     Text(
-                      '\$${trip.actualFare!.toStringAsFixed(2)}',
+                      formatMoney(trip.actualFare, currency),
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
@@ -65,7 +69,7 @@ class TripListTile extends StatelessWidget {
                     )
                   else if (trip.estimatedFare != null)
                     Text(
-                      '~\$${trip.estimatedFare!.toStringAsFixed(2)}',
+                      '~${formatMoney(trip.estimatedFare, currency)}',
                       style: const TextStyle(
                         color: Colors.white38,
                         fontSize: 13,

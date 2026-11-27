@@ -11,13 +11,16 @@ namespace DriveOps.Application.Services
 
         private readonly ITripRepository _tripRepository;
         private readonly IDriverRepository _driverRepository;
+        private readonly IVehicleRepository _vehicleRepository;
 
         public DriverRecommendationService(
             ITripRepository tripRepository,
-            IDriverRepository driverRepository)
+            IDriverRepository driverRepository,
+            IVehicleRepository vehicleRepository)
         {
             _tripRepository = tripRepository;
             _driverRepository = driverRepository;
+            _vehicleRepository = vehicleRepository;
         }
 
         public async Task<IEnumerable<RecommendedDriverDto>> GetRecommendedDriversAsync(Guid tripId, int count = 5)
@@ -73,14 +76,17 @@ namespace DriveOps.Application.Services
                 .Take(count)
                 .ToList();
 
-            // Assign requires a vehicleId, so enrich each candidate with their first
-            // available vehicle (enables one-click assign; null when none).
+            // Assignment requires a vehicleId. Prefer the driver's own assigned vehicle
+            // (assignment is independent from trip usage); fall back to an unassigned
+            // available spare so a recommendation keeps its Assign action whenever the
+            // fleet can actually serve it.
+            var spareVehicle = await _vehicleRepository.GetUnassignedAvailableVehicleAsync();
+
             for (var i = 0; i < scored.Count; i++)
             {
                 var dto = scored[i];
-                var withVehicles = await _driverRepository.GetWithVehiclesAsync(dto.DriverId);
-                var vehicle = withVehicles?.Vehicles
-                    .FirstOrDefault(v => v.Status == ModelEnums.VehicleStatus.Available);
+                var vehicle = await _vehicleRepository.GetAssignedAvailableVehicleAsync(dto.DriverId)
+                    ?? spareVehicle;
 
                 if (vehicle != null)
                 {

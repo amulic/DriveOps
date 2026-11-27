@@ -16,8 +16,9 @@ namespace DriveOps.Application.Services
         private readonly IKeycloakAdminService _keycloakAdminService;
         private readonly IValidator<CreateDriverDto> _createDriverValidator;
         private readonly IValidator<OnboardDriverDto> _onboardDriverValidator;
+        private readonly IValidator<UpdateOwnDriverProfileDto> _ownProfileValidator;
 
-        public DriverService(IDriverRepository driverRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher, IKeycloakAdminService keycloakAdminService, IValidator<CreateDriverDto> createDriverValidator, IValidator<OnboardDriverDto> onboardDriverValidator)
+        public DriverService(IDriverRepository driverRepository, IUnitOfWork unitOfWork, IEventPublisher eventPublisher, IKeycloakAdminService keycloakAdminService, IValidator<CreateDriverDto> createDriverValidator, IValidator<OnboardDriverDto> onboardDriverValidator, IValidator<UpdateOwnDriverProfileDto> ownProfileValidator)
         {
             _driverRepository = driverRepository;
             _unitOfWork = unitOfWork;
@@ -25,6 +26,7 @@ namespace DriveOps.Application.Services
             _keycloakAdminService = keycloakAdminService;
             _createDriverValidator = createDriverValidator;
             _onboardDriverValidator = onboardDriverValidator;
+            _ownProfileValidator = ownProfileValidator;
         }
 
         public async Task<PaginatedResult<DriverDto>> GetAllDriversAsync(int page = 1, int pageSize = 50)
@@ -200,6 +202,28 @@ namespace DriveOps.Application.Services
             if (dto.LicenseExpiryDate.HasValue) driver.LicenseExpiryDate = dto.LicenseExpiryDate.Value;
             if (dto.EmergencyContactName != null) driver.EmergencyContactName = dto.EmergencyContactName;
             if (dto.EmergencyContactPhone != null) driver.EmergencyContactPhone = dto.EmergencyContactPhone;
+            driver.UpdatedAt = DateTime.UtcNow;
+
+            await _driverRepository.UpdateAsync(driver);
+            await _unitOfWork.SaveChangesAsync();
+            return driver.ToDto();
+        }
+
+        public async Task<DriverDto> UpdateOwnProfileAsync(Guid keycloakId, UpdateOwnDriverProfileDto dto)
+        {
+            await _ownProfileValidator.ValidateAndThrowAsync(dto);
+
+            var driver = await _driverRepository.GetByKeycloakIdAsync(keycloakId)
+                ?? throw new KeyNotFoundException("No driver profile is linked to this account.");
+
+            if (dto.FirstName != null) driver.FirstName = dto.FirstName;
+            if (dto.LastName != null) driver.LastName = dto.LastName;
+            if (dto.Email != null) driver.Email = dto.Email;
+            if (dto.PhoneNumber != null) driver.PhoneNumber = dto.PhoneNumber;
+            if (dto.EmergencyContactName != null) driver.EmergencyContactName = dto.EmergencyContactName;
+            if (dto.EmergencyContactPhone != null) driver.EmergencyContactPhone = dto.EmergencyContactPhone;
+            if (dto.ProfileImageUrl != null) driver.ProfileImageUrl = dto.ProfileImageUrl;
+
             driver.UpdatedAt = DateTime.UtcNow;
 
             await _driverRepository.UpdateAsync(driver);

@@ -7,8 +7,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:driveops_mobile/features/chat/presentation/chat_thread_screen.dart';
 import 'package:driveops_mobile/features/customer/providers/customer_providers.dart';
 import 'package:driveops_mobile/services/chat_api_service.dart';
+import 'package:driveops_mobile/services/config_api_service.dart';
 import 'package:driveops_mobile/shared/models/trip.dart';
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
+import 'package:driveops_mobile/shared/utils/money.dart';
 import 'package:driveops_mobile/shared/widgets/map/drive_ops_map.dart';
 import 'package:driveops_mobile/shared/widgets/map/map_markers.dart';
 import 'package:driveops_mobile/shared/widgets/map/map_utils.dart';
@@ -230,6 +232,7 @@ class _ActiveTripView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final requestedAt =
         DateFormat('MMM d, HH:mm').format(trip.requestedAt.toLocal());
+    final currency = ref.watch(currencyCodeProvider);
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -303,12 +306,11 @@ class _ActiveTripView extends ConsumerWidget {
                       style: TextStyle(color: Colors.white54, fontSize: 13)),
                   const Spacer(),
                   Text(
-                    '\$${trip.estimatedFare!.toStringAsFixed(2)}',
+                    formatMoney(trip.estimatedFare, currency),
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600),
                   ),
                 ],
               ),

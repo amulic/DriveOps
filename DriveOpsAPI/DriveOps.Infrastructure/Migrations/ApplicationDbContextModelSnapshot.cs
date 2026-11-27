@@ -191,6 +191,44 @@ namespace DriveOps.Infrastructure.Migrations
                     b.ToTable("Drivers");
                 });
 
+            modelBuilder.Entity("DriveOps.Model.Entity.FareSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("BaseFare")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("PerKmRate")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("PerMinuteRate")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("PremiumMultiplier")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("SharedMultiplier")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("Id")
+                        .HasName("PK__FareSettings__3214EC07");
+
+                    b.ToTable("FareSettings");
+                });
+
             modelBuilder.Entity("DriveOps.Model.Entity.Payment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -446,10 +484,11 @@ namespace DriveOps.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.Property<int?>("Mileage")
+                    b.Property<decimal?>("Mileage")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("Model")
                         .IsRequired()
@@ -556,6 +595,51 @@ namespace DriveOps.Infrastructure.Migrations
                     b.ToTable("VehicleDefectReports");
                 });
 
+            modelBuilder.Entity("DriveOps.Model.Entity.VehicleServiceRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)")
+                        .HasDefaultValueSql("(UUID())");
+
+                    b.Property<decimal?>("Cost")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<decimal?>("OdometerKm")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("PerformedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime>("ServiceDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("ServiceType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("VehicleId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id")
+                        .HasName("PK__VehicleServiceRecords__3214EC07");
+
+                    b.HasIndex("VehicleId");
+
+                    b.ToTable("VehicleServiceRecords");
+                });
+
             modelBuilder.Entity("DriveOps.Model.Entity.Payment", b =>
                 {
                     b.HasOne("DriveOps.Model.Entity.Trip", "Trip")
@@ -634,6 +718,18 @@ namespace DriveOps.Infrastructure.Migrations
                     b.Navigation("Vehicle");
                 });
 
+            modelBuilder.Entity("DriveOps.Model.Entity.VehicleServiceRecord", b =>
+                {
+                    b.HasOne("DriveOps.Model.Entity.Vehicle", "Vehicle")
+                        .WithMany("ServiceRecords")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK__VehicleServiceRecords__VehicleId");
+
+                    b.Navigation("Vehicle");
+                });
+
             modelBuilder.Entity("DriveOps.Model.Entity.Customer", b =>
                 {
                     b.Navigation("Trips");
@@ -653,6 +749,8 @@ namespace DriveOps.Infrastructure.Migrations
 
             modelBuilder.Entity("DriveOps.Model.Entity.Vehicle", b =>
                 {
+                    b.Navigation("ServiceRecords");
+
                     b.Navigation("Trips");
                 });
 #pragma warning restore 612, 618

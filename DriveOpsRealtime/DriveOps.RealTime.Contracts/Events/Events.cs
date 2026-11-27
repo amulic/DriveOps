@@ -131,6 +131,31 @@ public record VehicleStatusChangedEvent(
     DateTime ChangedAt
 );
 
+public record VehicleServiceRecordedEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    DateOnly ServiceDate,
+    string ServiceType,
+    decimal? OdometerKm,
+    DateTime RecordedAt
+);
+
+public record VehicleServiceDueEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    string Reason,
+    DateTime? DueAt,
+    DateTime Timestamp
+);
+
+public record VehicleInspectionDueEvent(
+    Guid VehicleId,
+    string LicensePlate,
+    string Reason,
+    DateTime? DueAt,
+    DateTime Timestamp
+);
+
 public record VehicleDefectReportedEvent(
     Guid DefectId,
     Guid VehicleId,

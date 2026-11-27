@@ -11,6 +11,8 @@ import 'package:driveops_management/features/vehicles/presentation/vehicles_scre
 import 'package:driveops_management/features/defects/presentation/defects_screen.dart';
 import 'package:driveops_management/features/reports/presentation/reports_screen.dart';
 import 'package:driveops_management/features/profile/presentation/profile_screen.dart';
+import 'package:driveops_management/features/admin/presentation/admin_accounts_screen.dart';
+import 'package:driveops_management/features/admin/presentation/admin_fare_settings_screen.dart';
 import 'package:driveops_management/shared/providers/auth_provider.dart';
 import 'package:driveops_management/shared/providers/fleet_update_provider.dart';
 import 'package:driveops_management/features/messages/presentation/providers/chat_signalr_provider.dart';
@@ -27,6 +29,7 @@ GoRouter createAppRouter(WidgetRef ref) {
     redirect: (context, state) {
       final isAuth = ref.watch(isAuthenticatedProvider);
       final isAuthorizedRole = ref.watch(isAuthorizedRoleProvider);
+      final isAdmin = ref.watch(isAdminProvider);
       final loggingIn = state.matchedLocation == '/login';
       final onUnauthorized = state.matchedLocation == '/unauthorized';
       if (!isAuth && !loggingIn) return '/login';
@@ -37,6 +40,8 @@ GoRouter createAppRouter(WidgetRef ref) {
       if (isAuth && !isAuthorizedRole && !onUnauthorized)
         return '/unauthorized';
       if (isAuth && isAuthorizedRole && onUnauthorized) return '/dashboard';
+      if (isAuth && isAuthorizedRole && state.matchedLocation.startsWith('/admin') && !isAdmin)
+        return '/dashboard';
       return null;
     },
     refreshListenable: _RouterRefreshNotifier(ref),
@@ -94,6 +99,16 @@ GoRouter createAppRouter(WidgetRef ref) {
             path: '/profile',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: ProfileScreen()),
+          ),
+          GoRoute(
+            path: '/admin/accounts',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminAccountsScreen()),
+          ),
+          GoRoute(
+            path: '/admin/fare-settings',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AdminFareSettingsScreen()),
           ),
         ],
       ),

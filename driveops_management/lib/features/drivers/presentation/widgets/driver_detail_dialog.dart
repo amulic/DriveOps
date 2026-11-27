@@ -5,6 +5,8 @@ import 'package:driveops_management/shared/models/vehicle.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/drivers/presentation/providers/drivers_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
+import 'package:driveops_management/services/config_api_service.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 class DriverDetailDialog extends ConsumerWidget {
   final Driver driver;
@@ -96,7 +98,8 @@ class DriverDetailDialog extends ConsumerWidget {
                 _buildInfoSection('Performance', [
                   _buildInfoRow(Icons.star_outlined, '${driver.rating.toStringAsFixed(1)} / 5.0'),
                   _buildInfoRow(Icons.route_outlined, '${driver.totalTrips} trips'),
-                  _buildInfoRow(Icons.attach_money_outlined, '\$${driver.totalRevenue.toStringAsFixed(0)}'),
+                  _buildInfoRow(Icons.attach_money_outlined,
+                    formatMoneyWhole(driver.totalRevenue, ref.watch(currencyCodeProvider))),
                 ]),
                 const SizedBox(height: 16),
                 _buildVehiclesSection(context, ref),

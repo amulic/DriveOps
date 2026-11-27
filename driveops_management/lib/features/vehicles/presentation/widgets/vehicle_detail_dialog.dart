@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/vehicle_service_record.dart';
 import 'package:driveops_management/shared/models/defect_report.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/providers/vehicles_providers.dart';
 import 'package:driveops_management/features/drivers/presentation/providers/drivers_providers.dart';
 import 'package:driveops_management/features/vehicles/presentation/widgets/assign_driver_dialog.dart';
 import 'package:driveops_management/features/vehicles/presentation/widgets/vehicle_form_dialog.dart';
+import 'package:driveops_management/features/vehicles/presentation/widgets/record_service_dialog.dart';
+import 'package:driveops_management/services/config_api_service.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 import 'package:driveops_management/features/defects/presentation/providers/defects_providers.dart';
 import 'package:driveops_management/features/defects/presentation/widgets/defect_chips.dart';
 import 'package:driveops_management/features/defects/presentation/widgets/defect_detail_dialog.dart';
@@ -79,6 +83,14 @@ class VehicleDetailDialog extends ConsumerWidget {
                   _buildInfoRow(Icons.palette_outlined, 'Color: ${vehicle.color}'),
                   _buildInfoRow(Icons.people_outline, 'Seats: ${vehicle.seatingCapacity ?? "-"}'),
                   _buildInfoRow(Icons.speed_outlined, 'Mileage: ${_formatMileage(vehicle.mileage)}'),
+                  _buildInfoRow(Icons.build_outlined,
+                    vehicle.lastServiceDate != null
+                        ? _formatDate(vehicle.lastServiceDate!)
+                        : 'Never',
+                    label: 'Last service: ',
+                    color: vehicle.lastServiceDate != null
+                        ? Colors.white
+                        : const Color(0xFFF59E0B)),
                   _buildInfoRow(Icons.local_gas_station_outlined,
                     fuelTypeLabel(vehicle.fuelType),
                     color: _getFuelColor(vehicle.fuelType)),
@@ -102,6 +114,8 @@ class VehicleDetailDialog extends ConsumerWidget {
                     _buildInfoRow(Icons.person_off_outlined, 'Unassigned',
                       color: Colors.white38),
                 ]),
+                const SizedBox(height: 16),
+                _buildServiceHistorySection(context, ref),
                 const SizedBox(height: 16),
                 _buildDefectsSection(context, ref),
                 const SizedBox(height: 24),
@@ -215,6 +229,153 @@ class VehicleDetailDialog extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildServiceHistorySection(BuildContext context, WidgetRef ref) {
+    final recordsAsync = ref.watch(vehicleServiceRecordsProvider(vehicle.id));
+    final currency = ref.watch(currencyCodeProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Service History',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3B82F6)),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => _recordService(context, ref),
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Record Service', style: TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF3B82F6)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF252538),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: recordsAsync.when(
+            data: (records) {
+              if (records.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.history, size: 16, color: Colors.white38),
+                      SizedBox(width: 10),
+                      Text('No service records yet',
+                          style: TextStyle(color: Colors.white38, fontSize: 14)),
+                    ],
+                  ),
+                );
+              }
+              return Column(
+                children: records
+                    .map((r) => _buildServiceRecordTile(r, currency))
+                    .toList(),
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Color(0xFF3B82F6)),
+                ),
+              ),
+            ),
+            error: (_, __) => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text('Failed to load service history',
+                  style: TextStyle(color: Colors.white38, fontSize: 14)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildServiceRecordTile(VehicleServiceRecord record, String currency) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.build_outlined, size: 16, color: Color(0xFF3B82F6)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${record.serviceTypeLabel} · ${_formatDate(record.serviceDate)}',
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                ),
+                if (record.performedBy != null && record.performedBy!.isNotEmpty)
+                  Text(
+                    record.performedBy!,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                if (record.description != null && record.description!.isNotEmpty)
+                  Text(
+                    record.description!,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (record.odometerKm != null)
+                Text('${record.odometerKm!.toStringAsFixed(1)} km',
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 12)),
+              if (record.cost != null)
+                Text(formatMoney(record.cost, currency),
+                    style:
+                        const TextStyle(color: Colors.white54, fontSize: 12)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _recordService(BuildContext context, WidgetRef ref) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => RecordServiceDialog(vehicle: vehicle),
+    );
+    if (saved == true && context.mounted) {
+      ref.invalidate(vehicleServiceRecordsProvider(vehicle.id));
+      ref.invalidate(vehicleServiceRemindersProvider);
+      ref.invalidate(vehiclesAsyncProvider);
+      ref.invalidate(filteredVehiclesProvider);
+      ref.invalidate(allVehiclesProvider);
+      ref.invalidate(vehiclesNeedingServiceProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Service record saved'),
+          backgroundColor: Color(0xFF22C55E),
+        ),
+      );
+    }
   }
 
   Widget _buildDefectsSection(BuildContext context, WidgetRef ref) {
@@ -369,9 +530,10 @@ class VehicleDetailDialog extends ConsumerWidget {
     return ft.name[0].toUpperCase() + ft.name.substring(1);
   }
 
-  String _formatMileage(int? mileage) {
+  String _formatMileage(double? mileage) {
     if (mileage == null) return '-';
-    return '${(mileage / 1000).toStringAsFixed(1)}k mi';
+    // Server accumulates kilometers — display the same unit.
+    return '${mileage.toStringAsFixed(1)} km';
   }
 
   String _formatDate(DateTime date) {

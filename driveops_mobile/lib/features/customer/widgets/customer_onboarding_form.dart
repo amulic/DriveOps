@@ -138,6 +138,15 @@ class _CustomerOnboardingFormState
                   label: 'Email (optional)',
                   hint: 'e.g. john@email.com',
                   keyboardType: TextInputType.emailAddress,
+                  validator: (v) {
+                    final email = v?.trim() ?? '';
+                    if (email.isEmpty) return null;
+                    if (!RegExp(r'^[\w\.\-]+@[\w\.\-]+\.\w{2,}$')
+                        .hasMatch(email)) {
+                      return 'Enter a valid email address';
+                    }
+                    return null;
+                  },
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),

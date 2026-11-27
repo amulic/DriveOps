@@ -40,13 +40,14 @@ class Vehicle {
   final String vin;
   final String insurancePolicyNumber;
   final VehicleStatus status;
-  final int? mileage;
+  final double? mileage;
   final FuelType fuelType;
   final int? seatingCapacity;
   final String? assignedDriverId;
   final String? assignedDriverName;
   final DateTime insuranceExpiryDate;
   final DateTime registrationExpiryDate;
+  final DateTime? lastServiceDate;
   final DateTime? createdAt;
 
   const Vehicle({
@@ -66,6 +67,7 @@ class Vehicle {
     this.assignedDriverName,
     required this.insuranceExpiryDate,
     required this.registrationExpiryDate,
+    this.lastServiceDate,
     this.createdAt,
   });
 
@@ -80,7 +82,7 @@ class Vehicle {
       vin: json['vin'] as String,
       insurancePolicyNumber: json['insurancePolicyNumber'] as String? ?? '',
       status: VehicleStatus.fromInt(json['status'] as int),
-      mileage: json['mileage'] as int?,
+      mileage: (json['mileage'] as num?)?.toDouble(),
       fuelType: FuelType.fromInt(json['fuelType'] as int),
       seatingCapacity: json['seatingCapacity'] as int?,
       assignedDriverId: json['assignedDriverId'] as String?,
@@ -89,6 +91,9 @@ class Vehicle {
           DateTime.parse(json['insuranceExpiryDate'] as String),
       registrationExpiryDate:
           DateTime.parse(json['registrationExpiryDate'] as String),
+      lastServiceDate: json['lastServiceDate'] != null
+          ? DateTime.parse(json['lastServiceDate'] as String)
+          : null,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
@@ -113,6 +118,7 @@ class Vehicle {
       'assignedDriverName': assignedDriverName,
       'insuranceExpiryDate': insuranceExpiryDate.toIso8601String(),
       'registrationExpiryDate': registrationExpiryDate.toIso8601String(),
+      'lastServiceDate': lastServiceDate?.toIso8601String(),
       'createdAt': createdAt?.toIso8601String(),
     };
   }
@@ -127,13 +133,14 @@ class Vehicle {
     String? vin,
     String? insurancePolicyNumber,
     VehicleStatus? status,
-    int? mileage,
+    double? mileage,
     FuelType? fuelType,
     int? seatingCapacity,
     String? assignedDriverId,
     String? assignedDriverName,
     DateTime? insuranceExpiryDate,
     DateTime? registrationExpiryDate,
+    DateTime? lastServiceDate,
     DateTime? createdAt,
   }) {
     return Vehicle(
@@ -155,6 +162,7 @@ class Vehicle {
       insuranceExpiryDate: insuranceExpiryDate ?? this.insuranceExpiryDate,
       registrationExpiryDate:
           registrationExpiryDate ?? this.registrationExpiryDate,
+      lastServiceDate: lastServiceDate ?? this.lastServiceDate,
       createdAt: createdAt ?? this.createdAt,
     );
   }

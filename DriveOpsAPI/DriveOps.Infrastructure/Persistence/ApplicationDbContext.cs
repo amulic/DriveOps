@@ -25,9 +25,13 @@ namespace DriveOps.Infrastructure.Persistence
 
         public virtual DbSet<Vehicle> Vehicles { get; set; }
 
+        public virtual DbSet<VehicleServiceRecord> VehicleServiceRecords { get; set; }
+
         public virtual DbSet<VehicleDefectReport> VehicleDefectReports { get; set; }
 
         public virtual DbSet<Payment> Payments { get; set; }
+
+        public virtual DbSet<FareSetting> FareSettings { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -165,7 +169,7 @@ namespace DriveOps.Infrastructure.Persistence
                 entity.Property(e => e.InternalName).HasMaxLength(100);
                 entity.Property(e => e.LicensePlate).HasMaxLength(20);
                 entity.Property(e => e.Make).HasMaxLength(50);
-                entity.Property(e => e.Mileage).HasDefaultValue(0);
+                entity.Property(e => e.Mileage).HasDefaultValue(0m).HasPrecision(10, 2);
                 entity.Property(e => e.Model).HasMaxLength(50);
                 entity.Property(e => e.PhotoUrl).HasMaxLength(500);
                 entity.Property(e => e.SeatingCapacity).HasDefaultValue(4);
@@ -200,9 +204,38 @@ namespace DriveOps.Infrastructure.Persistence
                     .HasConstraintName("FK__VehicleDefectReports__DriverId");
             });
 
-            modelBuilder.Entity<Payment>(entity =>
+            modelBuilder.Entity<VehicleServiceRecord>(entity =>
             {
-                entity.HasKey(e => e.Id).HasName("PK__Payments__3214EC07");
+                entity.HasKey(e => e.Id).HasName("PK__VehicleServiceRecords__3214EC07");
+
+                entity.Property(e => e.Id).HasDefaultValueSql("(UUID())");
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.PerformedBy).HasMaxLength(200);
+                entity.Property(e => e.OdometerKm).HasPrecision(10, 2);
+                entity.Property(e => e.Cost).HasPrecision(10, 2);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                entity.HasOne(d => d.Vehicle).WithMany(p => p.ServiceRecords)
+                    .HasForeignKey(d => d.VehicleId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("FK__VehicleServiceRecords__VehicleId");
+            });
+
+            modelBuilder.Entity<FareSetting>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK__FareSettings__3214EC07");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.BaseFare).HasPrecision(10, 2);
+                entity.Property(e => e.PerKmRate).HasPrecision(10, 2);
+                entity.Property(e => e.PerMinuteRate).HasPrecision(10, 2);
+                entity.Property(e => e.PremiumMultiplier).HasPrecision(10, 2);
+                entity.Property(e => e.SharedMultiplier).HasPrecision(10, 2);
+                entity.Property(e => e.UpdatedBy).HasMaxLength(150);
+            });
+
+            modelBuilder.Entity<Payment>(entity =>
+            {                entity.HasKey(e => e.Id).HasName("PK__Payments__3214EC07");
 
                 entity.HasIndex(e => e.TripId, "IX__Payments__TripId");
                 entity.HasIndex(e => e.TransactionId, "UQ__Payments__TransactionId").IsUnique();

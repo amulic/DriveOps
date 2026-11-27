@@ -43,7 +43,10 @@ public class FleetEventConsumer : BackgroundService
             { "realtime.fleet.driver.status.changed", "driver.status.changed" },
             { "realtime.fleet.vehicle.status.changed", "vehicle.status.changed" },
             { "realtime.fleet.vehicle.defect.reported", "vehicle.defect.reported" },
-            { "realtime.fleet.vehicle.defect.resolved", "vehicle.defect.resolved" }
+            { "realtime.fleet.vehicle.defect.resolved", "vehicle.defect.resolved" },
+            { "realtime.fleet.vehicle.service.recorded", "vehicle.service.recorded" },
+            { "realtime.fleet.vehicle.service.due", "vehicle.service.due" },
+            { "realtime.fleet.vehicle.inspection.due", "vehicle.inspection.due" }
         };
 
         foreach (var (queue, routingKey) in queues)
@@ -115,6 +118,30 @@ public class FleetEventConsumer : BackgroundService
                             defectResolved.Reopened ? "VehicleDefectReopened" : "VehicleDefectResolved",
                             JsonSerializer.Serialize(defectResolved),
                             defectResolved.Timestamp));
+                        break;
+
+                    case "vehicle.service.recorded":
+                        var serviceRecorded = JsonSerializer.Deserialize<VehicleServiceRecordedEvent>(body)!;
+                        await notifications.SendFleetUpdateAsync(new FleetUpdateDto(
+                            "VehicleServiceRecorded",
+                            JsonSerializer.Serialize(serviceRecorded),
+                            serviceRecorded.RecordedAt));
+                        break;
+
+                    case "vehicle.service.due":
+                        var serviceDue = JsonSerializer.Deserialize<VehicleServiceDueEvent>(body)!;
+                        await notifications.SendFleetUpdateAsync(new FleetUpdateDto(
+                            "VehicleServiceDue",
+                            JsonSerializer.Serialize(serviceDue),
+                            serviceDue.Timestamp));
+                        break;
+
+                    case "vehicle.inspection.due":
+                        var inspectionDue = JsonSerializer.Deserialize<VehicleInspectionDueEvent>(body)!;
+                        await notifications.SendFleetUpdateAsync(new FleetUpdateDto(
+                            "VehicleInspectionDue",
+                            JsonSerializer.Serialize(inspectionDue),
+                            inspectionDue.Timestamp));
                         break;
                 }
 

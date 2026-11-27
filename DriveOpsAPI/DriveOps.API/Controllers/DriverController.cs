@@ -44,6 +44,41 @@ namespace DriveOps.API.Controllers
             return Ok(driver.ToResponse());
         }
 
+        [HttpGet("me")]
+        [Authorize(Roles = "driver")]
+        public async Task<IActionResult> GetMyProfile()
+        {
+            var keycloakId = User.GetKeycloakId();
+            if (keycloakId == null)
+                return Unauthorized();
+
+            var driver = await _driverService.GetDriverByKeycloakIdAsync(keycloakId.Value);
+            if (driver == null)
+                return NotFound(new { message = "No driver profile is linked to this account." });
+
+            return Ok(driver.ToResponse());
+        }
+
+        [HttpPut("me")]
+        [Authorize(Roles = "driver")]
+        public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateOwnDriverProfileRequest request)
+        {
+            var keycloakId = User.GetKeycloakId();
+            if (keycloakId == null)
+                return Unauthorized();
+
+            try
+            {
+                var driver = await _driverService.UpdateOwnProfileAsync(
+                    keycloakId.Value, request.ToApplicationDto());
+                return Ok(driver.ToResponse());
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("keycloak/{keycloakId:guid}")]
         public async Task<IActionResult> GetDriverByKeycloakId(Guid keycloakId)
         {

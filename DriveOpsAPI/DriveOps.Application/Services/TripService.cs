@@ -6,6 +6,7 @@ using DriveOps.Application.Mappings;
 using DriveOps.Model.Entity;
 using DriveOps.RealTime.Contracts.Enums;
 using DriveOps.RealTime.Contracts.Events;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using ModelEnums = DriveOps.Model.Enums;
 
@@ -18,10 +19,13 @@ namespace DriveOps.Application.Services
         private readonly IDriverRepository _driverRepository;
         private readonly ICustomerRepository _customerRepository;
         private readonly IVehicleRepository _vehicleRepository;
+        private readonly IVehicleServiceRecordRepository _vehicleServiceRecordRepository;
         private readonly IRoutingService _routingService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEventPublisher _eventPublisher;
         private readonly IPaymentService _paymentService;
+        private readonly IFareSettingsProvider _fareSettings;
+        private readonly IValidator<CreateTripDto> _createTripValidator;
         private readonly ILogger<TripService> _logger;
 
         public TripService(
@@ -30,10 +34,13 @@ namespace DriveOps.Application.Services
             IDriverRepository driverRepository,
             ICustomerRepository customerRepository,
             IVehicleRepository vehicleRepository,
+            IVehicleServiceRecordRepository vehicleServiceRecordRepository,
             IRoutingService routingService,
             IUnitOfWork unitOfWork,
             IEventPublisher eventPublisher,
             IPaymentService paymentService,
+            IFareSettingsProvider fareSettings,
+            IValidator<CreateTripDto> createTripValidator,
             ILogger<TripService> logger)
         {
             _tripRepository = tripRepository;
@@ -41,10 +48,13 @@ namespace DriveOps.Application.Services
             _driverRepository = driverRepository;
             _customerRepository = customerRepository;
             _vehicleRepository = vehicleRepository;
+            _vehicleServiceRecordRepository = vehicleServiceRecordRepository;
             _routingService = routingService;
             _unitOfWork = unitOfWork;
             _eventPublisher = eventPublisher;
             _paymentService = paymentService;
+            _fareSettings = fareSettings;
+            _createTripValidator = createTripValidator;
             _logger = logger;
         }
 
@@ -108,6 +118,9 @@ namespace DriveOps.Application.Services
 
         public async Task<TripDto> RequestTripAsync(CreateTripDto dto)
         {
+            // Apply the defined input rules before any route calculation or write.
+            await _createTripValidator.ValidateAndThrowAsync(dto);
+
             // Single-active-trip rule: a customer with a live trip (Requested →
             // InProgress) cannot request another until it reaches a terminal state.
             var activeTrips = await _tripRepository.GetActiveTripsByCustomerIdAsync(dto.CustomerId);
@@ -115,11 +128,19 @@ namespace DriveOps.Application.Services
                 throw new ActiveTripExistsException(
                     $"Customer {dto.CustomerId} already has an active trip. Cancel it before requesting a new one.");
 
+            // Only cash and card are supported. Digital wallet has no actual charge
+            // flow yet, so it must never be accepted (and never booked as paid).
+            if (dto.PaymentMethod == ModelEnums.PaymentMethod.DigitalWallet)
+                throw new TripRequestValidationException(
+                    "digital_wallet_unsupported",
+                    "Digital wallet is not available. Choose cash or card.");
+
             // Card trips need a saved card at request time — the charge at completion is off-session.
             if (dto.PaymentMethod is ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard
                 && !await _paymentService.CustomerHasSavedCardAsync(dto.CustomerId))
-                throw new InvalidOperationException(
-                    "No saved card found. Add a card (Profile → Payment methods) before requesting a card trip.");
+                throw new TripRequestValidationException(
+                    "card_required",
+                    "Add a card (Profile → Payment methods) before requesting a card trip.");
 
             var estimate = await _routingService.GetTripEstimateAsync(
                 dto.PickupLatitude, dto.PickupLongitude,
@@ -161,6 +182,29 @@ namespace DriveOps.Application.Services
 
             var vehicle = await _vehicleRepository.GetByIdAsync(vehicleId)
                 ?? throw new KeyNotFoundException($"Vehicle {vehicleId} not found.");
+
+            // Apply the same availability rules used when selecting a driver/vehicle:
+            // the driver must be online and active, the vehicle must be available and
+            // must not belong to another driver or already be on an active trip.
+            if (driver.IsOnline != true || driver.Status != ModelEnums.DriverStatus.Active)
+                throw new TripAssignmentException(
+                    $"Driver {driver.FirstName} {driver.LastName} is not available (must be active and online).");
+
+            if (await _tripRepository.HasActiveTripForDriverAsync(driverId, tripId))
+                throw new TripAssignmentException(
+                    $"Driver {driver.FirstName} {driver.LastName} is already on an active trip.");
+
+            if (vehicle.Status != ModelEnums.VehicleStatus.Available)
+                throw new TripAssignmentException(
+                    $"Vehicle {vehicle.LicensePlate} is not available (current status: {vehicle.Status}).");
+
+            if (vehicle.AssignedDriverId.HasValue && vehicle.AssignedDriverId.Value != driverId)
+                throw new TripAssignmentException(
+                    $"Vehicle {vehicle.LicensePlate} is assigned to another driver.");
+
+            if (await _tripRepository.HasActiveTripForVehicleAsync(vehicleId, tripId))
+                throw new TripAssignmentException(
+                    $"Vehicle {vehicle.LicensePlate} is already on an active trip.");
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
@@ -231,6 +275,17 @@ namespace DriveOps.Application.Services
             if (trip.TripStatus != ModelEnums.TripStatus.InProgress)
                 throw new InvalidOperationException("Trip is not in progress.");
 
+            var vehicleForMileage = trip.VehicleId.HasValue
+                ? await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value)
+                : null;
+            var latestServiceRecord = vehicleForMileage != null
+                ? await _vehicleServiceRecordRepository.GetLatestByVehicleIdAsync(vehicleForMileage.Id)
+                : null;
+            var mileageDueBefore = vehicleForMileage != null
+                && VehicleReminderHelper.IsMileageServiceDue(vehicleForMileage, latestServiceRecord);
+
+            var fareOptions = await _fareSettings.GetAsync();
+
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 trip.TripStatus = ModelEnums.TripStatus.Completed;
@@ -242,12 +297,17 @@ namespace DriveOps.Application.Services
                 trip.ActualFare = FareCalculator.Calculate(
                     actualDistance,
                     trip.ActualDuration ?? trip.EstimatedDuration ?? 0,
-                    (DriveOps.RealTime.Contracts.Enums.TripType)(int)trip.TripType);
-                // Cash is collected by the driver → settled immediately. Card trips stay Pending
-                // until the off-session charge below resolves (or the customer retries in-app).
-                trip.PaymentStatus = trip.PaymentMethod is ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard
-                    ? ModelEnums.PaymentStatus.Pending
-                    : ModelEnums.PaymentStatus.Completed;
+                    (DriveOps.RealTime.Contracts.Enums.TripType)(int)trip.TripType,
+                    fareOptions);
+                // Cash is collected by the driver → settled immediately. Electronic
+                // methods stay Pending until the charge is confirmed (or the retry
+                // webhook finalizes them). Digital wallet has no charge flow at all.
+                trip.PaymentStatus = trip.PaymentMethod switch
+                {
+                    null or ModelEnums.PaymentMethod.Cash => ModelEnums.PaymentStatus.Completed,
+                    ModelEnums.PaymentMethod.DigitalWallet => ModelEnums.PaymentStatus.Failed,
+                    _ => ModelEnums.PaymentStatus.Pending
+                };
                 trip.UpdatedAt = DateTime.UtcNow;
 
                 if (trip.DriverId.HasValue)
@@ -262,15 +322,15 @@ namespace DriveOps.Application.Services
                     }
                 }
 
-                if (trip.VehicleId.HasValue)
+                if (vehicleForMileage != null)
                 {
-                    var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
-                    if (vehicle != null)
-                    {
-                        vehicle.Status = ModelEnums.VehicleStatus.Available;
-                        vehicle.Mileage = (vehicle.Mileage ?? 0) + (int)actualDistance;
-                        vehicle.UpdatedAt = DateTime.UtcNow;
-                    }
+                    // Keep the full trip distance (km) — no integer truncation.
+                    vehicleForMileage.Mileage = (vehicleForMileage.Mileage ?? 0m) + actualDistance;
+                    // A trip ends, but the vehicle stays assigned to the driver; only
+                    // the transient "in use" state is cleared.
+                    if (vehicleForMileage.Status == ModelEnums.VehicleStatus.InUse)
+                        vehicleForMileage.Status = ModelEnums.VehicleStatus.Available;
+                    vehicleForMileage.UpdatedAt = DateTime.UtcNow;
                 }
 
                 await _unitOfWork.SaveChangesAsync();
@@ -287,6 +347,34 @@ namespace DriveOps.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Post-commit card charge failed for completed trip {TripId}", tripId);
+            }
+
+            if (vehicleForMileage != null)
+            {
+                try
+                {
+                    await _eventPublisher.PublishAsync("driveops.fleet", "vehicle.status.changed",
+                        new VehicleStatusChangedEvent(
+                            vehicleForMileage.Id, vehicleForMileage.LicensePlate,
+                            vehicleForMileage.Make, vehicleForMileage.Model,
+                            vehicleForMileage.Status?.ToString() ?? "Unknown",
+                            vehicleForMileage.UpdatedAt ?? DateTime.UtcNow));
+
+                    var mileageDueAfter = VehicleReminderHelper.IsMileageServiceDue(
+                        vehicleForMileage, latestServiceRecord);
+                    if (!mileageDueBefore && mileageDueAfter)
+                    {
+                        await _eventPublisher.PublishAsync("driveops.fleet", "vehicle.service.due",
+                            new VehicleServiceDueEvent(
+                                vehicleForMileage.Id, vehicleForMileage.LicensePlate,
+                                $"More than {VehicleReminderHelper.MileageServiceIntervalKm:0} km since the last service.",
+                                null, DateTime.UtcNow));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to publish vehicle updates for completed trip {TripId}", tripId);
+                }
             }
 
             var result = await _tripRepository.GetWithDetailsAsync(tripId);
@@ -340,7 +428,10 @@ namespace DriveOps.Application.Services
                     var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
                     if (vehicle != null)
                     {
-                        vehicle.Status = ModelEnums.VehicleStatus.Available;
+                        // Only clear the transient in-use state; never clobber
+                        // maintenance/retired or the permanent driver assignment.
+                        if (vehicle.Status == ModelEnums.VehicleStatus.InUse)
+                            vehicle.Status = ModelEnums.VehicleStatus.Available;
                         vehicle.UpdatedAt = DateTime.UtcNow;
                     }
                 }
@@ -389,7 +480,8 @@ namespace DriveOps.Application.Services
                     var vehicle = await _vehicleRepository.GetByIdAsync(trip.VehicleId.Value);
                     if (vehicle != null)
                     {
-                        vehicle.Status = ModelEnums.VehicleStatus.Available;
+                        if (vehicle.Status == ModelEnums.VehicleStatus.InUse)
+                            vehicle.Status = ModelEnums.VehicleStatus.Available;
                         vehicle.UpdatedAt = DateTime.UtcNow;
                     }
                 }

@@ -94,6 +94,32 @@ namespace DriveOps.Infrastructure.Repositories
             return await _dbSet.CountAsync(t => t.DriverId == driverId);
         }
 
+        public async Task<int> CountByVehicleIdAsync(Guid vehicleId)
+        {
+            return await _dbSet.CountAsync(t => t.VehicleId == vehicleId);
+        }
+
+        public async Task<bool> HasActiveTripForDriverAsync(Guid driverId, Guid? excludeTripId = null)
+        {
+            var query = _dbSet.Where(t => t.DriverId == driverId && IsActiveStatus(t.TripStatus));
+            if (excludeTripId.HasValue)
+                query = query.Where(t => t.Id != excludeTripId.Value);
+            return await query.AnyAsync();
+        }
+
+        public async Task<bool> HasActiveTripForVehicleAsync(Guid vehicleId, Guid? excludeTripId = null)
+        {
+            var query = _dbSet.Where(t => t.VehicleId == vehicleId && IsActiveStatus(t.TripStatus));
+            if (excludeTripId.HasValue)
+                query = query.Where(t => t.Id != excludeTripId.Value);
+            return await query.AnyAsync();
+        }
+
+        private static bool IsActiveStatus(TripStatus status) =>
+            status == TripStatus.Assigned
+            || status == TripStatus.DriverEnRoute
+            || status == TripStatus.InProgress;
+
         public async Task<Trip?> GetWithDetailsAsync(Guid tripId)
         {
             return await _dbSet

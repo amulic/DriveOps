@@ -4,6 +4,8 @@ import 'package:printing/printing.dart';
 import 'package:driveops_management/features/reports/data/report_pdf_service.dart';
 import 'package:driveops_management/features/reports/presentation/providers/reports_providers.dart';
 import 'package:driveops_management/shared/models/driver.dart';
+import 'package:driveops_management/services/config_api_service.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 enum _RangePreset { allTime, last7Days, last30Days, thisMonth, custom }
 
@@ -382,7 +384,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     setState(() => _generatingTrips = true);
     try {
-      final bytes = await ReportPdfService.buildTripsReportPdf(data);
+      final bytes = await ReportPdfService.buildTripsReportPdf(
+          data, ref.read(currencyCodeProvider));
       await Printing.layoutPdf(
         name: _fileName('trips-report'),
         onLayout: (_) async => bytes,
@@ -408,7 +411,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
     setState(() => _generatingScoreboard = true);
     try {
-      final bytes = await ReportPdfService.buildDriverScoreboardPdf(drivers);
+      final bytes = await ReportPdfService.buildDriverScoreboardPdf(
+          drivers, ref.read(currencyCodeProvider));
       await Printing.layoutPdf(
         name: _fileName('driver-scoreboard'),
         onLayout: (_) async => bytes,
@@ -431,5 +435,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
   static String _pad(int value) => value.toString().padLeft(2, '0');
 
-  String _formatMoney(double value) => '\$${value.toStringAsFixed(2)}';
+  String _formatMoney(double value) =>
+      formatMoney(value, ref.read(currencyCodeProvider));
 }

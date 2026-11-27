@@ -28,7 +28,7 @@ public partial class Vehicle
 
     public VehicleStatus? Status { get; set; }
 
-    public int? Mileage { get; set; }
+    public decimal? Mileage { get; set; }
 
     public FuelType FuelType { get; set; }
 
@@ -49,4 +49,6 @@ public partial class Vehicle
     public virtual Driver? AssignedDriver { get; set; }
 
     public virtual ICollection<Trip> Trips { get; set; } = new List<Trip>();
+
+    public virtual ICollection<VehicleServiceRecord> ServiceRecords { get; set; } = new List<VehicleServiceRecord>();
 }

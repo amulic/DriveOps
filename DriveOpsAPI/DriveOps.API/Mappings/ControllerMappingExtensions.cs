@@ -47,6 +47,17 @@ namespace DriveOps.API.Mappings
             EmergencyContactPhone = request.EmergencyContactPhone
         };
 
+        public static UpdateOwnDriverProfileDto ToApplicationDto(this UpdateOwnDriverProfileRequest request) => new()
+        {
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
+            EmergencyContactName = request.EmergencyContactName,
+            EmergencyContactPhone = request.EmergencyContactPhone,
+            ProfileImageUrl = request.ProfileImageUrl
+        };
+
         public static UpdateDriverLocationDto ToApplicationDto(this UpdateDriverLocationRequest request, Guid driverId) => new()
         {
             DriverId = driverId,
@@ -200,6 +211,41 @@ namespace DriveOps.API.Mappings
             ReportedAt = dto.ReportedAt,
             ResolvedAt = dto.ResolvedAt,
             ResolutionNotes = dto.ResolutionNotes
+        };
+
+        public static CreateVehicleServiceRecordDto ToApplicationDto(this CreateVehicleServiceRecordRequest request, Guid vehicleId) => new()
+        {
+            VehicleId = vehicleId,
+            ServiceDate = request.ServiceDate,
+            ServiceType = request.ServiceType,
+            Description = request.Description,
+            PerformedBy = request.PerformedBy,
+            OdometerKm = request.OdometerKm,
+            Cost = request.Cost
+        };
+
+        public static VehicleServiceRecordResponse ToResponse(this VehicleServiceRecordDto dto) => new()
+        {
+            Id = dto.Id,
+            VehicleId = dto.VehicleId,
+            ServiceDate = dto.ServiceDate,
+            ServiceType = dto.ServiceType.ToString(),
+            Description = dto.Description,
+            PerformedBy = dto.PerformedBy,
+            OdometerKm = dto.OdometerKm,
+            Cost = dto.Cost,
+            CreatedAt = dto.CreatedAt
+        };
+
+        public static VehicleServiceReminderResponse ToResponse(this VehicleServiceReminderDto dto) => new()
+        {
+            VehicleId = dto.VehicleId,
+            LicensePlate = dto.LicensePlate,
+            Make = dto.Make,
+            Model = dto.Model,
+            Type = dto.Type,
+            Reason = dto.Reason,
+            DueAt = dto.DueAt
         };
 
         // ── Trip ──

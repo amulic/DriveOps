@@ -9,5 +9,7 @@ namespace DriveOps.Application.Interfaces
         Task<IEnumerable<Vehicle>> GetAvailableVehiclesAsync(int page, int pageSize);
         Task<IEnumerable<Vehicle>> GetByDriverIdAsync(Guid driverId);
         Task<Vehicle?> GetByVinAsync(string vin);
+        Task<Vehicle?> GetAssignedAvailableVehicleAsync(Guid driverId);
+        Task<Vehicle?> GetUnassignedAvailableVehicleAsync();
     }
 }

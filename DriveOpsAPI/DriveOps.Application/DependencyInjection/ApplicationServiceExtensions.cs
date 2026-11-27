@@ -16,6 +16,8 @@ namespace DriveOps.Application.DependencyInjection
             services.AddScoped<ITripService, TripService>();
             services.AddScoped<IDriverRecommendationService, DriverRecommendationService>();
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<IFareSettingsProvider, FareSettingsService>();
+            services.AddScoped<IAccountAdminService, AccountAdminService>();
 
             services.AddValidatorsFromAssemblyContaining<CreateTripDtoValidator>();
 

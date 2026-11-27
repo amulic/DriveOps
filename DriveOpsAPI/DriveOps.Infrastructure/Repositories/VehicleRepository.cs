@@ -59,5 +59,21 @@ namespace DriveOps.Infrastructure.Repositories
                 .Include(v => v.AssignedDriver)
                 .FirstOrDefaultAsync(v => v.Vin == vin);
         }
+
+        public async Task<Vehicle?> GetAssignedAvailableVehicleAsync(Guid driverId)
+        {
+            return await _dbSet
+                .Where(v => v.AssignedDriverId == driverId && v.Status == VehicleStatus.Available)
+                .OrderBy(v => v.LicensePlate)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<Vehicle?> GetUnassignedAvailableVehicleAsync()
+        {
+            return await _dbSet
+                .Where(v => v.AssignedDriverId == null && v.Status == VehicleStatus.Available)
+                .OrderBy(v => v.LicensePlate)
+                .FirstOrDefaultAsync();
+        }
     }
 }

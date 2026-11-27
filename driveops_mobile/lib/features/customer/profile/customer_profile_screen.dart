@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_mobile/features/customer/payment/payment_methods_screen.dart';
@@ -22,6 +23,7 @@ class _CustomerProfileScreenState
   final _emailController = TextEditingController();
   bool _prefilled = false;
   bool _saving = false;
+  String? _emailServerError;
 
   @override
   void dispose() {
@@ -31,12 +33,26 @@ class _CustomerProfileScreenState
     super.dispose();
   }
 
+  String? _validateOptionalEmail(String? value) {
+    if (_emailServerError != null) return _emailServerError;
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) return null;
+    final emailRegex = RegExp(r'^[\w\.\-]+@[\w\.\-]+\.\w{2,}$');
+    if (!emailRegex.hasMatch(email)) {
+      return 'Enter a valid email address';
+    }
+    return null;
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final customer = ref.read(currentCustomerProvider).value;
     if (customer == null || _saving) return;
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _emailServerError = null;
+    });
 
     try {
       final email = _emailController.text.trim();
@@ -51,6 +67,29 @@ class _CustomerProfileScreenState
           );
       ref.invalidate(currentCustomerProvider);
       if (mounted) Navigator.of(context).pop();
+    } on DioException catch (e) {
+      if (mounted) {
+        final data = e.response?.data;
+        String? fieldError;
+        if (data is Map<String, dynamic>) {
+          final errors = data['errors'];
+          if (errors is Map<String, dynamic> && errors['email'] is List) {
+            fieldError = (errors['email'] as List).firstOrNull?.toString();
+          }
+        }
+        setState(() {
+          _saving = false;
+          _emailServerError = fieldError;
+        });
+        if (fieldError != null) {
+          _formKey.currentState?.validate();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Could not save your profile. Please try again.')),
+          );
+        }
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _saving = false);
@@ -152,6 +191,7 @@ class _CustomerProfileScreenState
                         label: 'Email (optional)',
                         hint: 'e.g. john@email.com',
                         keyboardType: TextInputType.emailAddress,
+                        validator: _validateOptionalEmail,
                       ),
                       const SizedBox(height: 28),
                       Card(

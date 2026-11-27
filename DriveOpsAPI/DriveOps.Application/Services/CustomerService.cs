@@ -1,6 +1,7 @@
 using DriveOps.Application.DTOs;
 using DriveOps.Application.Interfaces;
 using DriveOps.Application.Mappings;
+using FluentValidation;
 
 namespace DriveOps.Application.Services
 {
@@ -8,11 +9,19 @@ namespace DriveOps.Application.Services
     {
         private readonly ICustomerRepository _customerRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IValidator<CreateCustomerDto> _createValidator;
+        private readonly IValidator<UpdateCustomerDto> _updateValidator;
 
-        public CustomerService(ICustomerRepository customerRepository, IUnitOfWork unitOfWork)
+        public CustomerService(
+            ICustomerRepository customerRepository,
+            IUnitOfWork unitOfWork,
+            IValidator<CreateCustomerDto> createValidator,
+            IValidator<UpdateCustomerDto> updateValidator)
         {
             _customerRepository = customerRepository;
             _unitOfWork = unitOfWork;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
         public async Task<CustomerDto?> GetCustomerByIdAsync(Guid customerId)
@@ -29,6 +38,8 @@ namespace DriveOps.Application.Services
 
         public async Task<CustomerDto> CreateCustomerAsync(CreateCustomerDto dto)
         {
+            await _createValidator.ValidateAndThrowAsync(dto);
+
             var customer = dto.ToEntity();
             await _customerRepository.AddAsync(customer);
             await _unitOfWork.SaveChangesAsync();
@@ -37,6 +48,8 @@ namespace DriveOps.Application.Services
 
         public async Task<CustomerDto> UpdateCustomerAsync(UpdateCustomerDto dto)
         {
+            await _updateValidator.ValidateAndThrowAsync(dto);
+
             var customer = await _customerRepository.GetByIdAsync(dto.Id)
                 ?? throw new KeyNotFoundException($"Customer {dto.Id} not found.");
 

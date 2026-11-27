@@ -1,6 +1,7 @@
 ﻿using DriveOps.API.ControllerDtos.Request;
 using DriveOps.API.Helpers;
 using DriveOps.API.Mappings;
+using DriveOps.Application.Exceptions;
 using DriveOps.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -105,8 +106,61 @@ namespace DriveOps.API.Controllers
         [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> DeleteVehicle(Guid id)
         {
-            await _vehicleService.DeleteVehicleAsync(id);
-            return NoContent();
+            try
+            {
+                await _vehicleService.DeleteVehicleAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (VehicleHasDependenciesException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("service-reminders")]
+        [Authorize(Roles = "admin,dispatcher")]
+        public async Task<IActionResult> GetServiceReminders()
+        {
+            var reminders = await _vehicleService.GetServiceRemindersAsync();
+            return Ok(reminders.Select(r => r.ToResponse()).ToList());
+        }
+
+        [HttpGet("{id:guid}/service-records")]
+        [Authorize(Roles = "admin,dispatcher")]
+        public async Task<IActionResult> GetServiceRecords(Guid id,
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                page = Math.Max(1, page);
+                pageSize = Math.Clamp(pageSize, 1, 100);
+                var records = await _vehicleService.GetVehicleServiceRecordsAsync(id, page, pageSize);
+                return Ok(records.MapPage(r => r.ToResponse()));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("{id:guid}/service-records")]
+        [Authorize(Roles = "admin,dispatcher")]
+        public async Task<IActionResult> AddServiceRecord(Guid id, [FromBody] CreateVehicleServiceRecordRequest request)
+        {
+            try
+            {
+                var record = await _vehicleService.AddVehicleServiceRecordAsync(
+                    request.ToApplicationDto(id));
+                return CreatedAtAction(nameof(GetServiceRecords), new { id }, record.ToResponse());
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
 
         [HttpPost("{id:guid}/defects")]

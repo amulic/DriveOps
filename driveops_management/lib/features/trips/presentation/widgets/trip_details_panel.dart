@@ -8,6 +8,8 @@ import 'package:driveops_management/features/trips/presentation/providers/trips_
 import 'package:driveops_management/features/trips/presentation/widgets/trip_map_view.dart';
 import 'package:driveops_management/features/trips/presentation/widgets/recommended_drivers_section.dart';
 import 'package:driveops_management/features/trips/presentation/widgets/cancel_trip_dialog.dart';
+import 'package:driveops_management/services/config_api_service.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 /// Right-side panel for a selected trip: map, full details and contextual
 /// actions. Fixed ~440px width, full height.
@@ -179,9 +181,12 @@ class TripDetailsPanel extends ConsumerWidget {
                       _buildInfoRow(
                         'Fare',
                         _estimateVsActual(
-                          trip.actualFare?.toStringAsFixed(2),
-                          trip.estimatedFare?.toStringAsFixed(2),
-                          prefix: '\$',
+                          trip.actualFare != null
+                              ? formatMoney(trip.actualFare, ref.watch(currencyCodeProvider))
+                              : null,
+                          trip.estimatedFare != null
+                              ? formatMoney(trip.estimatedFare, ref.watch(currencyCodeProvider))
+                              : null,
                         ),
                       ),
                   ]),

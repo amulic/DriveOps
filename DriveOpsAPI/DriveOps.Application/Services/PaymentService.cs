@@ -104,7 +104,8 @@ namespace DriveOps.Application.Services
                 payment.Status = ModelEnums.PaymentStatus.Failed;
                 payment.FailureReason = "Customer has no saved card.";
                 payment.ProcessedAt = DateTime.UtcNow;
-                trip.PaymentStatus = ModelEnums.PaymentStatus.Failed;
+                if (trip.PaymentStatus == ModelEnums.PaymentStatus.Pending)
+                    trip.PaymentStatus = ModelEnums.PaymentStatus.Failed;
             }
             else
             {
@@ -126,7 +127,9 @@ namespace DriveOps.Application.Services
                     payment.Status = ModelEnums.PaymentStatus.Failed;
                     payment.FailureReason = ex.Message.Length <= 500 ? ex.Message : ex.Message[..500];
                     payment.ProcessedAt = DateTime.UtcNow;
-                    trip.PaymentStatus = ModelEnums.PaymentStatus.Failed;
+                    // Never downgrade a payment that was already confirmed elsewhere.
+                    if (trip.PaymentStatus == ModelEnums.PaymentStatus.Pending)
+                        trip.PaymentStatus = ModelEnums.PaymentStatus.Failed;
                 }
             }
 
@@ -147,14 +150,45 @@ namespace DriveOps.Application.Services
                 throw new UnauthorizedAccessException("You can only pay for your own trips.");
             if (trip.TripStatus != ModelEnums.TripStatus.Completed)
                 throw new InvalidOperationException("Only completed trips can be paid.");
-            if (trip.PaymentStatus == ModelEnums.PaymentStatus.Completed)
-                throw new InvalidOperationException("This trip is already paid.");
             if (trip.PaymentMethod is not (ModelEnums.PaymentMethod.CreditCard or ModelEnums.PaymentMethod.DebitCard))
                 throw new InvalidOperationException("This trip was not set to be paid by card.");
             if (trip.ActualFare is not decimal fare || fare <= 0)
                 throw new InvalidOperationException("This trip has no fare to pay.");
+
+            // Retry only while an amount is actually owed.
+            if (trip.PaymentStatus == ModelEnums.PaymentStatus.Completed)
+                throw new InvalidOperationException("This trip is already paid.");
+            if (trip.PaymentStatus == ModelEnums.PaymentStatus.Refunded)
+                throw new InvalidOperationException("This trip has been fully refunded; nothing is owed.");
+            if (trip.PaymentStatus is not (ModelEnums.PaymentStatus.Pending or ModelEnums.PaymentStatus.Failed))
+                throw new InvalidOperationException("This trip does not have an outstanding amount to pay.");
+
             if (customer.StripeCustomerId == null)
                 throw new InvalidOperationException("Add a card first (Profile → Payment methods).");
+
+            // One active attempt per trip: a Pending ledger row with an intent means
+            // the customer must finish (or wait for) that attempt first. Abandoned
+            // attempts expire so a retry is never blocked forever.
+            var attempts = await _paymentRepository.GetByTripIdAsync(tripId);
+            var activeAttempt = attempts
+                .Where(p => p.Status == ModelEnums.PaymentStatus.Pending && p.TransactionId != null)
+                .OrderByDescending(p => p.CreatedAt)
+                .FirstOrDefault();
+
+            if (activeAttempt != null)
+            {
+                var now = DateTime.UtcNow;
+                var createdAt = activeAttempt.CreatedAt ?? DateTime.MinValue;
+                if (now - createdAt < TimeSpan.FromMinutes(15))
+                    throw new InvalidOperationException(
+                        "A payment attempt is already in progress. Finish it before starting a new one.");
+
+                activeAttempt.Status = ModelEnums.PaymentStatus.Failed;
+                activeAttempt.FailureReason = "Payment attempt expired before confirmation.";
+                activeAttempt.ProcessedAt = now;
+                await _paymentRepository.UpdateAsync(activeAttempt);
+                await _unitOfWork.SaveChangesAsync();
+            }
 
             var session = await _gateway.CreateOnSessionPaymentIntentAsync(
                 customer.StripeCustomerId, fare, _options.Currency,
@@ -227,9 +261,18 @@ namespace DriveOps.Application.Services
 
                     await _paymentRepository.AddAsync(reconciled);
 
-                    orphanTrip.PaymentStatus = succeeded
-                        ? ModelEnums.PaymentStatus.Completed
-                        : ModelEnums.PaymentStatus.Failed;
+                    // Preserve a confirmed/refunded trip state when processing an
+                    // event for a different (orphaned) attempt.
+                    if (succeeded)
+                    {
+                        if (orphanTrip.PaymentStatus is not (ModelEnums.PaymentStatus.Completed or ModelEnums.PaymentStatus.Refunded))
+                            orphanTrip.PaymentStatus = ModelEnums.PaymentStatus.Completed;
+                    }
+                    else if (orphanTrip.PaymentStatus is ModelEnums.PaymentStatus.Pending or ModelEnums.PaymentStatus.Failed)
+                    {
+                        orphanTrip.PaymentStatus = ModelEnums.PaymentStatus.Failed;
+                    }
+
                     orphanTrip.UpdatedAt = DateTime.UtcNow;
                     await _tripRepository.UpdateAsync(orphanTrip);
                     await _unitOfWork.SaveChangesAsync();
@@ -237,8 +280,10 @@ namespace DriveOps.Application.Services
                 return;
             }
 
-            if (payment.Status == ModelEnums.PaymentStatus.Completed && succeeded)
-                return; // Idempotent — already final.
+            // A finalized successful charge is immutable. Late events for the same
+            // intent must never unpay the trip or downgrade the ledger row.
+            if (payment.Status == ModelEnums.PaymentStatus.Completed)
+                return;
 
             await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
@@ -251,7 +296,19 @@ namespace DriveOps.Application.Services
                 var trip = await _tripRepository.GetByIdAsync(payment.TripId);
                 if (trip != null)
                 {
-                    trip.PaymentStatus = succeeded ? ModelEnums.PaymentStatus.Completed : ModelEnums.PaymentStatus.Failed;
+                    // Only move forward: a success confirms the trip unless it was
+                    // already refunded; a failure must not clobber a payment that
+                    // was already confirmed through another attempt.
+                    if (succeeded)
+                    {
+                        if (trip.PaymentStatus is not (ModelEnums.PaymentStatus.Completed or ModelEnums.PaymentStatus.Refunded))
+                            trip.PaymentStatus = ModelEnums.PaymentStatus.Completed;
+                    }
+                    else if (trip.PaymentStatus is ModelEnums.PaymentStatus.Pending or ModelEnums.PaymentStatus.Failed)
+                    {
+                        trip.PaymentStatus = ModelEnums.PaymentStatus.Failed;
+                    }
+
                     trip.UpdatedAt = DateTime.UtcNow;
                     await _tripRepository.UpdateAsync(trip);
                 }

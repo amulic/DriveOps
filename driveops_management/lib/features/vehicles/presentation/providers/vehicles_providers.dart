@@ -1,10 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/vehicle_service_record.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 
 final vehiclesAsyncProvider = FutureProvider<List<Vehicle>>((ref) async {
   final repo = ref.watch(vehicleRepositoryProvider);
   return repo.getAllVehicles();
+});
+
+final vehicleServiceRecordsProvider =
+    FutureProvider.family<List<VehicleServiceRecord>, String>((ref, vehicleId) {
+  final repo = ref.watch(vehicleRepositoryProvider);
+  return repo.getServiceRecords(vehicleId);
+});
+
+final vehicleServiceRemindersProvider =
+    FutureProvider<List<VehicleServiceReminder>>((ref) async {
+  final repo = ref.watch(vehicleRepositoryProvider);
+  return repo.getServiceReminders();
 });
 
 class VehiclesSearchQueryNotifier extends Notifier<String> {
@@ -38,6 +51,9 @@ bool _needsService(Vehicle v) {
   final thirtyDays = now.add(const Duration(days: 30));
   if (v.insuranceExpiryDate.isBefore(thirtyDays)) return true;
   if (v.registrationExpiryDate.isBefore(thirtyDays)) return true;
+  // Service interval: never serviced or older than 180 days.
+  if (v.lastServiceDate == null) return true;
+  if (now.difference(v.lastServiceDate!).inDays > 180) return true;
   return false;
 }
 

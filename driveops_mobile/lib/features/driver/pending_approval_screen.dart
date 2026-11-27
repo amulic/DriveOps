@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:driveops_mobile/features/driver/profile/driver_profile_edit_screen.dart';
 import 'package:driveops_mobile/shared/models/driver.dart';
 import 'package:driveops_mobile/shared/providers/auth_provider.dart';
 import 'package:driveops_mobile/shared/providers/repository_providers.dart';
@@ -82,6 +83,28 @@ class PendingApprovalScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            DriverProfileEditScreen(driver: driver),
+                      ),
+                    ),
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: const Text('Complete / review my details'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF3B82F6),
+                      side: const BorderSide(color: Color(0xFF3B82F6)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(

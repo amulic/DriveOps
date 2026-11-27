@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/shared/models/trip.dart';
 import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/shared/utils/id_display.dart';
+import 'package:driveops_management/services/config_api_service.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 final recentTripsProvider = FutureProvider<List<Trip>>((ref) async {
   final trips = await ref.watch(allTripsProvider.future);
@@ -17,6 +19,7 @@ class RecentTripsTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recentTripsAsync = ref.watch(recentTripsProvider);
+    final currency = ref.watch(currencyCodeProvider);
 
     return Card(
       color: const Color(0xFF252538),
@@ -35,7 +38,7 @@ class RecentTripsTable extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             recentTripsAsync.when(
-              data: (trips) => _buildTable(trips.take(10).toList()),
+              data: (trips) => _buildTable(trips.take(10).toList(), currency),
               loading: () => const SizedBox(
                 height: 200,
                 child: Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
@@ -51,7 +54,7 @@ class RecentTripsTable extends ConsumerWidget {
     );
   }
 
-  Widget _buildTable(List<Trip> recentTrips) {
+  Widget _buildTable(List<Trip> recentTrips, String currency) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
@@ -86,9 +89,9 @@ class RecentTripsTable extends ConsumerWidget {
               DataCell(
                 Text(
                   trip.actualFare != null
-                      ? '\$${trip.actualFare!.toStringAsFixed(2)}'
+                      ? formatMoney(trip.actualFare, currency)
                       : trip.estimatedFare != null
-                          ? '\$${trip.estimatedFare!.toStringAsFixed(2)}*'
+                          ? '${formatMoney(trip.estimatedFare, currency)}*'
                           : '-',
                   style: const TextStyle(color: Colors.white),
                 ),

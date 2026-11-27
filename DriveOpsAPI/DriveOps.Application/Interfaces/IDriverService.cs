@@ -14,6 +14,7 @@ namespace DriveOps.Application.Interfaces
         Task<DriverDto> PromoteDriverAsync(CreateDriverDto dto);
         Task<DriverDto> OnboardDriverAsync(OnboardDriverDto dto);
         Task<DriverDto> UpdateDriverAsync(UpdateDriverDto dto);
+        Task<DriverDto> UpdateOwnProfileAsync(Guid keycloakId, UpdateOwnDriverProfileDto dto);
         Task UpdateDriverLocationAsync(UpdateDriverLocationDto dto);
         Task SetDriverOnlineStatusAsync(Guid driverId, bool isOnline);
         Task SuspendDriverAsync(Guid driverId);

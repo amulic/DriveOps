@@ -120,3 +120,145 @@ public class RateTripDtoValidator : AbstractValidator<RateTripDto>
             .MaximumLength(1000).When(x => x.Feedback != null);
     }
 }
+
+public class UpdateVehicleDtoValidator : AbstractValidator<UpdateVehicleDto>
+{
+    public UpdateVehicleDtoValidator()
+    {
+        RuleFor(x => x.LicensePlate)
+            .MaximumLength(20).When(x => x.LicensePlate != null);
+        RuleFor(x => x.Make)
+            .MaximumLength(50).When(x => x.Make != null);
+        RuleFor(x => x.Model)
+            .MaximumLength(50).When(x => x.Model != null);
+        RuleFor(x => x.Year)
+            .InclusiveBetween(1900, DateTime.UtcNow.Year + 1)
+            .When(x => x.Year.HasValue);
+        RuleFor(x => x.Color)
+            .MaximumLength(30).When(x => x.Color != null);
+        RuleFor(x => x.Vin)
+            .Length(17)
+            .WithMessage("VIN must be exactly 17 characters.")
+            .When(x => !string.IsNullOrEmpty(x.Vin));
+        RuleFor(x => x.InsurancePolicyNumber)
+            .MaximumLength(50).When(x => x.InsurancePolicyNumber != null);
+    }
+}
+
+public class CreateCustomerDtoValidator : AbstractValidator<CreateCustomerDto>
+{
+    public CreateCustomerDtoValidator()
+    {
+        RuleFor(x => x.KeycloakId).NotEmpty();
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.PhoneNumber).NotEmpty().MaximumLength(20);
+        RuleFor(x => x.Email)
+            .MaximumLength(255)
+            .EmailAddress()
+            .WithMessage("Enter a valid email address.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+    }
+}
+
+public class UpdateCustomerDtoValidator : AbstractValidator<UpdateCustomerDto>
+{
+    public UpdateCustomerDtoValidator()
+    {
+        RuleFor(x => x.Name).MaximumLength(100).When(x => x.Name != null);
+        RuleFor(x => x.PhoneNumber).MaximumLength(20).When(x => x.PhoneNumber != null);
+        RuleFor(x => x.Email)
+            .MaximumLength(255)
+            .EmailAddress()
+            .WithMessage("Enter a valid email address.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+    }
+}
+
+public class UpdateOwnDriverProfileDtoValidator : AbstractValidator<UpdateOwnDriverProfileDto>
+{
+    public UpdateOwnDriverProfileDtoValidator()
+    {
+        RuleFor(x => x.FirstName).MaximumLength(100).When(x => x.FirstName != null);
+        RuleFor(x => x.LastName).MaximumLength(100).When(x => x.LastName != null);
+        RuleFor(x => x.PhoneNumber).MaximumLength(20).When(x => x.PhoneNumber != null);
+        RuleFor(x => x.Email)
+            .MaximumLength(255)
+            .EmailAddress()
+            .WithMessage("Enter a valid email address.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+        RuleFor(x => x.EmergencyContactName)
+            .MaximumLength(100).When(x => x.EmergencyContactName != null);
+        RuleFor(x => x.EmergencyContactPhone)
+            .MaximumLength(20).When(x => x.EmergencyContactPhone != null);
+        RuleFor(x => x.ProfileImageUrl)
+            .MaximumLength(500).When(x => x.ProfileImageUrl != null);
+    }
+}
+
+public class CreateAccountDtoValidator : AbstractValidator<CreateAccountDto>
+{
+    private static readonly string[] AllowedRoles = ["admin", "dispatcher", "driver", "customer"];
+
+    public CreateAccountDtoValidator()
+    {
+        RuleFor(x => x.Username)
+            .NotEmpty().MinimumLength(3).MaximumLength(50);
+        RuleFor(x => x.FirstName).MaximumLength(100);
+        RuleFor(x => x.LastName).MaximumLength(100);
+        RuleFor(x => x.Email)
+            .MaximumLength(255)
+            .EmailAddress()
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+        RuleFor(x => x.TemporaryPassword)
+            .NotEmpty().MinimumLength(8).MaximumLength(128);
+        RuleForEach(x => x.Roles)
+            .Must(r => AllowedRoles.Contains(r.ToLowerInvariant()))
+            .WithMessage($"Roles must be a subset of: {string.Join(", ", AllowedRoles)}.");
+    }
+}
+
+public class UpdateAccountDtoValidator : AbstractValidator<UpdateAccountDto>
+{
+    public UpdateAccountDtoValidator()
+    {
+        RuleFor(x => x.FirstName).MaximumLength(100).When(x => x.FirstName != null);
+        RuleFor(x => x.LastName).MaximumLength(100).When(x => x.LastName != null);
+        RuleFor(x => x.Email)
+            .MaximumLength(255)
+            .EmailAddress()
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+    }
+}
+
+public class SetAccountRolesDtoValidator : AbstractValidator<SetAccountRolesDto>
+{
+    private static readonly string[] AllowedRoles = ["admin", "dispatcher", "driver", "customer"];
+
+    public SetAccountRolesDtoValidator()
+    {
+        RuleForEach(x => x.Roles)
+            .Must(r => AllowedRoles.Contains(r.ToLowerInvariant()))
+            .WithMessage($"Roles must be a subset of: {string.Join(", ", AllowedRoles)}.");
+    }
+}
+
+public class ResetAccountPasswordDtoValidator : AbstractValidator<ResetAccountPasswordDto>
+{
+    public ResetAccountPasswordDtoValidator()
+    {
+        RuleFor(x => x.TemporaryPassword)
+            .NotEmpty().MinimumLength(8).MaximumLength(128);
+    }
+}
+
+public class UpdateFareSettingsDtoValidator : AbstractValidator<UpdateFareSettingsDto>
+{
+    public UpdateFareSettingsDtoValidator()
+    {
+        RuleFor(x => x.BaseFare).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.PerKmRate).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.PerMinuteRate).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.PremiumMultiplier).GreaterThan(0);
+        RuleFor(x => x.SharedMultiplier).GreaterThan(0);
+    }
+}

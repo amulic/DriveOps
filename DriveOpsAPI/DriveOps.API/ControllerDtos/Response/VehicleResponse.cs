@@ -15,7 +15,7 @@ namespace DriveOps.API.ControllerDtos.Response
         public DateOnly InsuranceExpiryDate { get; set; }
         public DateOnly RegistrationExpiryDate { get; set; }
         public VehicleStatus? Status { get; set; }
-        public int? Mileage { get; set; }
+        public decimal? Mileage { get; set; }
         public FuelType FuelType { get; set; }
         public int? SeatingCapacity { get; set; }
         public Guid? AssignedDriverId { get; set; }
@@ -41,5 +41,29 @@ namespace DriveOps.API.ControllerDtos.Response
         public DateTime ReportedAt { get; set; }
         public DateTime? ResolvedAt { get; set; }
         public string? ResolutionNotes { get; set; }
+    }
+
+    public class VehicleServiceRecordResponse
+    {
+        public Guid Id { get; set; }
+        public Guid VehicleId { get; set; }
+        public DateTime ServiceDate { get; set; }
+        public string ServiceType { get; set; } = "RoutineMaintenance";
+        public string? Description { get; set; }
+        public string? PerformedBy { get; set; }
+        public decimal? OdometerKm { get; set; }
+        public decimal? Cost { get; set; }
+        public DateTime? CreatedAt { get; set; }
+    }
+
+    public class VehicleServiceReminderResponse
+    {
+        public Guid VehicleId { get; set; }
+        public string LicensePlate { get; set; } = null!;
+        public string Make { get; set; } = null!;
+        public string Model { get; set; } = null!;
+        public string Type { get; set; } = null!;
+        public string Reason { get; set; } = null!;
+        public DateTime? DueAt { get; set; }
     }
 }

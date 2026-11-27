@@ -14,5 +14,8 @@ namespace DriveOps.Application.Interfaces
         Task<Trip?> GetWithDetailsAsync(Guid tripId);
         Task<int> CountByCustomerIdAsync(Guid customerId);
         Task<int> CountByDriverIdAsync(Guid driverId);
+        Task<int> CountByVehicleIdAsync(Guid vehicleId);
+        Task<bool> HasActiveTripForDriverAsync(Guid driverId, Guid? excludeTripId = null);
+        Task<bool> HasActiveTripForVehicleAsync(Guid vehicleId, Guid? excludeTripId = null);
     }
 }

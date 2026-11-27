@@ -17,17 +17,22 @@ namespace DriveOps.Application.Helpers
 
         public static void Configure(FareCalculatorOptions options) => _options = options;
 
+        public static FareCalculatorOptions CurrentOptions => _options;
+
         public static decimal Calculate(decimal distanceKm, int durationMinutes, TripType tripType)
+            => Calculate(distanceKm, durationMinutes, tripType, _options);
+
+        public static decimal Calculate(decimal distanceKm, int durationMinutes, TripType tripType, FareCalculatorOptions options)
         {
             decimal multiplier = tripType switch
             {
-                TripType.Premium => _options.PremiumMultiplier,
-                TripType.Shared => _options.SharedMultiplier,
+                TripType.Premium => options.PremiumMultiplier,
+                TripType.Shared => options.SharedMultiplier,
                 _ => 1.0m
             };
 
             return Math.Round(
-                (_options.BaseFare + distanceKm * _options.PerKmRate + durationMinutes * _options.PerMinuteRate) * multiplier, 2);
+                (options.BaseFare + distanceKm * options.PerKmRate + durationMinutes * options.PerMinuteRate) * multiplier, 2);
         }
     }
 }

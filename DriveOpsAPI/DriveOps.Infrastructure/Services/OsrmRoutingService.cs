@@ -12,10 +12,12 @@ namespace DriveOps.Infrastructure.Services
     public class OsrmRoutingService : IRoutingService
     {
         private readonly HttpClient _httpClient;
+        private readonly IFareSettingsProvider _fareSettings;
 
-        public OsrmRoutingService(HttpClient httpClient)
+        public OsrmRoutingService(HttpClient httpClient, IFareSettingsProvider fareSettings)
         {
             _httpClient = httpClient;
+            _fareSettings = fareSettings;
         }
 
         public async Task<RouteResultDto?> GetRouteAsync(decimal originLat, decimal originLon, decimal destLat, decimal destLon)
@@ -69,7 +71,9 @@ namespace DriveOps.Infrastructure.Services
             if (route == null)
                 throw new InvalidOperationException("Route could not be calculated for the given coordinates.");
 
-            var fare = CalculateFare(route.DistanceKm, route.DurationMinutes, tripType);
+            var fareOptions = await _fareSettings.GetAsync();
+            var fare = FareCalculator.Calculate(
+                (decimal)route.DistanceKm, route.DurationMinutes, tripType, fareOptions);
 
             return new TripEstimateDto
             {
@@ -79,9 +83,6 @@ namespace DriveOps.Infrastructure.Services
                 RoutePoints = route.RoutePoints
             };
         }
-
-        private static decimal CalculateFare(double distanceKm, int durationMinutes, TripType tripType)
-            => FareCalculator.Calculate((decimal)distanceKm, durationMinutes, tripType);
 
         private static string FormatCoord(decimal value)
         {

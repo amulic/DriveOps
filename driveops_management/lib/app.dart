@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/config/theme.dart';
 import 'package:driveops_management/config/router.dart';
+import 'package:driveops_management/config/messenger.dart';
 
 class DriveOpsApp extends ConsumerWidget {
   const DriveOpsApp({super.key});
@@ -13,6 +14,7 @@ class DriveOpsApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'DriveOps Management',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,

@@ -126,9 +126,22 @@ namespace DriveOps.Application.Mappings
             InternalName = dto.InternalName,
             LastServiceDate = dto.LastServiceDate,
             Status = VehicleStatus.Available,
-            Mileage = 0,
+            Mileage = 0m,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
+        };
+
+        public static VehicleServiceRecordDto ToDto(this VehicleServiceRecord record) => new()
+        {
+            Id = record.Id,
+            VehicleId = record.VehicleId,
+            ServiceDate = record.ServiceDate,
+            ServiceType = record.ServiceType,
+            Description = record.Description,
+            PerformedBy = record.PerformedBy,
+            OdometerKm = record.OdometerKm,
+            Cost = record.Cost,
+            CreatedAt = record.CreatedAt
         };
 
         // ── Trip ──

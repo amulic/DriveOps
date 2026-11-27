@@ -19,6 +19,7 @@ abstract class DriverRepository {
   Future<List<Driver>> getNearbyDrivers(double latitude, double longitude, double radiusKm);
   Future<Driver> createDriver(CreateDriverRequest request);
   Future<Driver> updateDriver(String id, UpdateDriverRequest request);
+  Future<Driver> updateOwnProfile(UpdateOwnDriverProfileRequest request);
   Future<void> suspendDriver(String id);
   Future<void> activateDriver(String id);
   Future<void> setDriverStatus(String id, bool isOnline);

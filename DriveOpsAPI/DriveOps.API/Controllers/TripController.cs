@@ -135,6 +135,11 @@ namespace DriveOps.API.Controllers
             {
                 return Conflict(new { message = ex.Message });
             }
+            catch (TripRequestValidationException ex)
+            {
+                // Business precondition (e.g. card required, unsupported method).
+                return BadRequest(new { message = ex.Message, code = ex.Code });
+            }
             catch (PaymentGatewayException ex)
             {
                 // Stripe unreachable while checking the saved-card guard.
@@ -180,8 +185,23 @@ namespace DriveOps.API.Controllers
         [Authorize(Roles = "admin,dispatcher")]
         public async Task<IActionResult> AssignDriver(Guid id, [FromBody] AssignDriverRequest request)
         {
-            var trip = await _tripService.AssignDriverAsync(id, request.DriverId, request.VehicleId);
-            return Ok(trip.ToResponse());
+            try
+            {
+                var trip = await _tripService.AssignDriverAsync(id, request.DriverId, request.VehicleId);
+                return Ok(trip.ToResponse());
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (TripAssignmentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("{id:guid}/start")]

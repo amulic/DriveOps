@@ -482,9 +482,75 @@ public static class SeedData
         };
 
         await context.VehicleDefectReports.AddRangeAsync(defectReports);
+
+        var serviceRecords = new[]
+        {
+            new VehicleServiceRecord
+            {
+                Id = Guid.Parse("a1b2c3d4-0001-4000-8000-000000000001"),
+                VehicleId = vehicles[0].Id,
+                ServiceDate = now.AddDays(-40),
+                ServiceType = VehicleServiceType.RoutineMaintenance,
+                Description = "Oil and filter change, brake fluid top-up.",
+                PerformedBy = "Partner Garage Mostar",
+                OdometerKm = 44_800m,
+                Cost = 120.00m,
+                CreatedAt = now.AddDays(-40)
+            },
+            new VehicleServiceRecord
+            {
+                Id = Guid.Parse("a1b2c3d4-0002-4000-8000-000000000002"),
+                VehicleId = vehicles[0].Id,
+                ServiceDate = now.AddDays(-220),
+                ServiceType = VehicleServiceType.Inspection,
+                Description = "Annual technical inspection passed.",
+                PerformedBy = "Technical Inspection Center",
+                OdometerKm = 38_500m,
+                Cost = 80.00m,
+                CreatedAt = now.AddDays(-220)
+            },
+            new VehicleServiceRecord
+            {
+                Id = Guid.Parse("a1b2c3d4-0003-4000-8000-000000000003"),
+                VehicleId = vehicles[1].Id,
+                ServiceDate = now.AddDays(-25),
+                ServiceType = VehicleServiceType.RoutineMaintenance,
+                Description = "Tire rotation and cabin filter replacement.",
+                PerformedBy = "Partner Garage Mostar",
+                OdometerKm = 21_700m,
+                Cost = 95.00m,
+                CreatedAt = now.AddDays(-25)
+            },
+            new VehicleServiceRecord
+            {
+                Id = Guid.Parse("a1b2c3d4-0004-4000-8000-000000000004"),
+                VehicleId = vehicles[2].Id,
+                ServiceDate = now.AddDays(-60),
+                ServiceType = VehicleServiceType.Inspection,
+                Description = "EV battery health inspection.",
+                PerformedBy = "EV Service Center",
+                OdometerKm = 18_100m,
+                Cost = 75.00m,
+                CreatedAt = now.AddDays(-60)
+            },
+            new VehicleServiceRecord
+            {
+                Id = Guid.Parse("a1b2c3d4-0005-4000-8000-000000000005"),
+                VehicleId = vehicles[4].Id,
+                ServiceDate = now.AddDays(-5),
+                ServiceType = VehicleServiceType.Repair,
+                Description = "Diagnostics opened for engine warning light; awaiting parts.",
+                PerformedBy = "Partner Garage Mostar",
+                OdometerKm = null,
+                Cost = null,
+                CreatedAt = now.AddDays(-5)
+            }
+        };
+
+        await context.VehicleServiceRecords.AddRangeAsync(serviceRecords);
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Database seeded with {CustomerCount} customers, {DriverCount} drivers, {VehicleCount} vehicles, {TripCount} trips, {PaymentCount} payments, {DefectCount} defect reports.",
-            customers.Length, drivers.Length, vehicles.Length, trips.Length, payments.Length, defectReports.Length);
+        logger.LogInformation("Database seeded with {CustomerCount} customers, {DriverCount} drivers, {VehicleCount} vehicles, {TripCount} trips, {PaymentCount} payments, {DefectCount} defect reports, {ServiceCount} service records.",
+            customers.Length, drivers.Length, vehicles.Length, trips.Length, payments.Length, defectReports.Length, serviceRecords.Length);
     }
 }

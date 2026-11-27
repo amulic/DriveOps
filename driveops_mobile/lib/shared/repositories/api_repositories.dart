@@ -102,6 +102,14 @@ class ApiDriverRepository implements DriverRepository {
   }
 
   @override
+  Future<Driver> updateOwnProfile(UpdateOwnDriverProfileRequest request) async {
+    final driver = await _api.updateOwnProfile(request);
+    await _cache.remove(CacheService.driversAll);
+    await _cache.remove(CacheService.driver(driver.id));
+    return driver;
+  }
+
+  @override
   Future<void> suspendDriver(String id) async {
     await _api.suspendDriver(id);
     await _cache.remove(CacheService.driversAll);

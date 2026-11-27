@@ -15,7 +15,7 @@ namespace DriveOps.Application.DTOs
         public DateOnly InsuranceExpiryDate { get; init; }
         public DateOnly RegistrationExpiryDate { get; init; }
         public VehicleStatus? Status { get; init; }
-        public int? Mileage { get; init; }
+        public decimal? Mileage { get; init; }
         public FuelType FuelType { get; init; }
         public int? SeatingCapacity { get; init; }
         public Guid? AssignedDriverId { get; init; }
@@ -59,7 +59,7 @@ namespace DriveOps.Application.DTOs
         public DateOnly? InsuranceExpiryDate { get; set; }
         public DateOnly? RegistrationExpiryDate { get; set; }
         public VehicleStatus? Status { get; set; }
-        public int? Mileage { get; set; }
+        public decimal? Mileage { get; set; }
         public string? PhotoUrl { get; set; }
         public string? InternalName { get; set; }
         public DateTime? LastServiceDate { get; set; }
@@ -94,5 +94,50 @@ namespace DriveOps.Application.DTOs
     public class ResolveVehicleDefectDto
     {
         public string? ResolutionNotes { get; set; }
+    }
+
+    public class CreateVehicleServiceRecordDto
+    {
+        public Guid VehicleId { get; set; }
+        public DateTime ServiceDate { get; set; }
+        public VehicleServiceType ServiceType { get; set; } = VehicleServiceType.RoutineMaintenance;
+        public string? Description { get; set; }
+        public string? PerformedBy { get; set; }
+        public decimal? OdometerKm { get; set; }
+        public decimal? Cost { get; set; }
+    }
+
+    public record VehicleServiceRecordDto
+    {
+        public Guid Id { get; init; }
+        public Guid VehicleId { get; init; }
+        public DateTime ServiceDate { get; init; }
+        public VehicleServiceType ServiceType { get; init; }
+        public string? Description { get; init; }
+        public string? PerformedBy { get; init; }
+        public decimal? OdometerKm { get; init; }
+        public decimal? Cost { get; init; }
+        public DateTime? CreatedAt { get; init; }
+    }
+
+    public record VehicleServiceReminderDto
+    {
+        public Guid VehicleId { get; init; }
+        public string LicensePlate { get; init; } = null!;
+        public string Make { get; init; } = null!;
+        public string Model { get; init; } = null!;
+        /// <summary>"Service" or "Inspection".</summary>
+        public string Type { get; init; } = null!;
+        public string Reason { get; init; } = null!;
+        public DateTime? DueAt { get; init; }
+    }
+
+    public class UpdateFareSettingsDto
+    {
+        public decimal BaseFare { get; set; }
+        public decimal PerKmRate { get; set; }
+        public decimal PerMinuteRate { get; set; }
+        public decimal PremiumMultiplier { get; set; }
+        public decimal SharedMultiplier { get; set; }
     }
 }

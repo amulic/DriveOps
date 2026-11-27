@@ -52,7 +52,8 @@ class VehiclesServiceTable extends ConsumerWidget {
           DataColumn(label: Text('Plate')),
           DataColumn(label: Text('Make / Model')),
           DataColumn(label: Text('Status')),
-          DataColumn(label: Text('Mileage')),
+          DataColumn(label: Text('Mileage (km)')),
+          DataColumn(label: Text('Last Service')),
           DataColumn(label: Text('Insurance')),
           DataColumn(label: Text('Registration')),
         ],
@@ -79,6 +80,18 @@ class VehiclesServiceTable extends ConsumerWidget {
                 Text(
                   _formatMileage(vehicle.mileage),
                   style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              DataCell(
+                Text(
+                  vehicle.lastServiceDate != null
+                      ? _formatDate(vehicle.lastServiceDate!)
+                      : 'Never',
+                  style: TextStyle(
+                    color: vehicle.lastServiceDate != null
+                        ? Colors.white70
+                        : const Color(0xFFF59E0B),
+                  ),
                 ),
               ),
               DataCell(
@@ -141,9 +154,10 @@ class VehiclesServiceTable extends ConsumerWidget {
     );
   }
 
-  String _formatMileage(int? mileage) {
+  String _formatMileage(double? mileage) {
     if (mileage == null) return '-';
-    return '${(mileage / 1000).toStringAsFixed(1)}k mi';
+    // Server accumulates kilometers — display the same unit.
+    return '${mileage.toStringAsFixed(1)} km';
   }
 
   String _formatDate(DateTime date) {

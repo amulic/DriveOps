@@ -5,6 +5,8 @@ import 'package:driveops_management/shared/providers/repository_providers.dart';
 import 'package:driveops_management/features/drivers/presentation/providers/drivers_providers.dart';
 import 'package:driveops_management/features/drivers/presentation/widgets/add_driver_dialog.dart';
 import 'package:driveops_management/features/drivers/presentation/widgets/driver_detail_dialog.dart';
+import 'package:driveops_management/services/config_api_service.dart';
+import 'package:driveops_management/shared/utils/money.dart';
 
 class DriversScreen extends ConsumerStatefulWidget {
   const DriversScreen({super.key});
@@ -156,6 +158,7 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
   }
 
   Widget _buildTable(List<Driver> drivers) {
+    final currency = ref.watch(currencyCodeProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Card(
@@ -196,7 +199,7 @@ class _DriversScreenState extends ConsumerState<DriversScreen> {
                     style: const TextStyle(color: Colors.white),
                   )),
                   DataCell(Text(
-                    '\$${driver.totalRevenue.toStringAsFixed(0)}',
+                    formatMoneyWhole(driver.totalRevenue, currency),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,

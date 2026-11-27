@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:driveops_management/services/api_service.dart';
 import 'package:driveops_management/shared/models/vehicle.dart';
+import 'package:driveops_management/shared/models/vehicle_service_record.dart';
 import 'package:driveops_management/shared/dtos/requests/vehicle_requests.dart';
 import 'package:driveops_management/config/api_config.dart';
 
@@ -64,5 +65,36 @@ class VehicleApiService {
 
   Future<void> deleteVehicle(String id) async {
     await _api.delete('${ApiConfig.vehicleEndpoint}/$id');
+  }
+
+  Future<List<VehicleServiceRecord>> getServiceRecords(String id) async {
+    final response = await _api.get(
+      '${ApiConfig.vehicleEndpoint}/$id/service-records',
+      queryParameters: {'pageSize': 100},
+    );
+    final data = response.data as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>;
+    return items
+        .map((json) => VehicleServiceRecord.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<VehicleServiceRecord> addServiceRecord(
+    String id,
+    CreateVehicleServiceRecordRequest request,
+  ) async {
+    final response = await _api.post(
+      '${ApiConfig.vehicleEndpoint}/$id/service-records',
+      data: request.toJson(),
+    );
+    return VehicleServiceRecord.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<VehicleServiceReminder>> getServiceReminders() async {
+    final response = await _api.get('${ApiConfig.vehicleEndpoint}/service-reminders');
+    final data = response.data as List<dynamic>;
+    return data
+        .map((json) => VehicleServiceReminder.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 }

@@ -67,6 +67,21 @@ namespace DriveOps.Application.DTOs
         public string? EmergencyContactPhone { get; set; }
     }
 
+    /// <summary>
+    /// Fields a driver may edit on their own profile. Administrative data
+    /// (status, license verification, ratings, assignment, keycloak id) is excluded.
+    /// </summary>
+    public class UpdateOwnDriverProfileDto
+    {
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? EmergencyContactName { get; set; }
+        public string? EmergencyContactPhone { get; set; }
+        public string? ProfileImageUrl { get; set; }
+    }
+
     public class UpdateDriverLocationDto
     {
         public Guid DriverId { get; set; }

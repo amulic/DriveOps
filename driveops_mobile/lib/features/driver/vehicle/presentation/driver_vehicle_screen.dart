@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:driveops_mobile/features/driver/vehicle/presentation/widgets/report_defect_dialog.dart';
@@ -134,7 +134,7 @@ class _VehicleDetails extends StatelessWidget {
               _detailRow(Icons.local_gas_station_outlined, 'Fuel',
                   _fuelLabel(vehicle.fuelType)),
               _detailRow(Icons.speed, 'Mileage',
-                  vehicle.mileage != null ? '${vehicle.mileage} km' : 'â€”'),
+                  vehicle.mileage != null ? '${vehicle.mileage!.toStringAsFixed(1)} km' : 'â€”'),
               _detailRow(
                 Icons.build_outlined,
                 'Last service',
